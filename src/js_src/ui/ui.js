@@ -193,8 +193,7 @@ function positionSidebar ($card) {
       sidebarTop -= contentHeight - heightVis + 8
     }
     $sidebar.css({
-      // position: 'fixed', // sticky would be nice, but still visible when
-                            //  docked off to the left
+      // position: 'fixed', // sticky would be nice, but still visible when docked off to the left
       // top: topSidebarFixed + 'px', // position: fixed
       top: sidebarTop + 'px' // position absolute
       // height: heightVis + 'px'

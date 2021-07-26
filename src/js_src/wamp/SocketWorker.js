@@ -8,8 +8,8 @@ export function SocketWorker (pubSub, config) {
   this.connection = null
   this.hasMsgQueue = false
   this.msgQueue = new Queue()
-  pubSub.subscribe('onmessage', function (cmd) {
-    // console.info('socketWorker: onmessage', cmd)
+  pubSub.subscribe('wamp', function (cmd) {
+    // console.info('socketWorker: wamp', cmd)
     // var workerResult = 'Result: ' + (e.data[0] * e.data[1])
     // postMessage(workerResult)
     // console.log('data', e.data)
@@ -24,10 +24,11 @@ export function SocketWorker (pubSub, config) {
     } else if (cmd === 'getMsg') {
       var msg = self.msgQueue.shift()
       // postMessage(['msg', msg])
-      pubSub.publish('websocket', 'msg', msg)
       if (typeof msg === 'undefined') {
         self.hasMsgQueue = false
+        return
       }
+      pubSub.publish('wamp', 'msg', msg)
     }
   })
 }
@@ -41,17 +42,17 @@ SocketWorker.prototype.getConnection = function () {
   connection.onopen = function (session, details) {
     // console.info('Connection opened')
     // postMessage('connectionOpened')
-    self.pubSub.publish('websocket', 'connectionOpened')
+    self.pubSub.publish('wamp', 'connectionOpened')
     // var myWorker = new Worker('socketWorker.js')
     // SUBSCRIBE to a topic and receive events
-    session.subscribe('bdk.debug', function (row) {
+    session.subscribe('bdk.debug', function (msg) {
       // console.log('recvd args', Object.keys(row[1][1]))
       if (!self.hasMsgQueue) {
         self.hasMsgQueue = true
         // postMessage(['msg', row])
-        self.pubSub.publish('websocket', 'msg', row)
+        self.pubSub.publish('wamp', 'msg', msg)
       } else {
-        self.msgQueue.push(row)
+        self.msgQueue.push(msg)
       }
     }).then(
       function (sub) {
@@ -65,7 +66,7 @@ SocketWorker.prototype.getConnection = function () {
   connection.onclose = function (reason, details) {
     // console.warn('Connection closed: ' + reason)
     // postMessage('connectionClosed')
-    self.pubSub.publish('websocket', 'connectionClosed')
+    self.pubSub.publish('wamp', 'connectionClosed')
   }
   connection.open()
   // console.log('connection', connection)

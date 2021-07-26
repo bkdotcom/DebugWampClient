@@ -112,7 +112,7 @@ export var methods = {
     $container.removeClass('working')
     $container.find('.card-header .fa-spinner').remove()
     $container.find('.debug > .fa-spinner').remove()
-    if (responseCode && responseCode !== '200') {
+    if (responseCode && responseCode + '' !== '200') {
       $container.find('.card-title').append(' <span class="label label-default" title="Response Code">' + responseCode + '</span>')
       if (responseCode.toString().match(/^5/)) {
         $container.addClass('bg-danger')

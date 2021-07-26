@@ -10,7 +10,9 @@
       publish: function (topic, args) {
         // If the topic doesn't exist, or there's no listeners in queue, just leave
         // console.info('publish', topic, args)
-        if (!hOP.call(topics, topic)) { return }
+        if (!hOP.call(topics, topic)) {
+          return
+        }
         // Cycle through topics queue, fire!
         args = Array.prototype.slice.call(arguments, 1);
         topics[topic].forEach(function (item) {
@@ -20,7 +22,9 @@
       },
       subscribe: function (topic, listener) {
         // Create the topic's object if not yet created
-        if (!hOP.call(topics, topic)) { topics[topic] = []; }
+        if (!hOP.call(topics, topic)) {
+          topics[topic] = [];
+        }
         // Add the listener to queue
         var index = topics[topic].push(listener) - 1;
         // Provide handle back for removal of topic
@@ -349,8 +353,7 @@
         sidebarTop -= contentHeight - heightVis + 8;
       }
       $sidebar.css({
-        // position: 'fixed', // sticky would be nice, but still visible when
-                              //  docked off to the left
+        // position: 'fixed', // sticky would be nice, but still visible when docked off to the left
         // top: topSidebarFixed + 'px', // position: fixed
         top: sidebarTop + 'px' // position absolute
         // height: heightVis + 'px'
@@ -551,16 +554,23 @@
     this.OUTPUT_ATTRIBUTES_PROP = 1024;
     this.OUTPUT_ATTRIBUTES_METHOD = 4096;
     this.OUTPUT_ATTRIBUTES_PARAM = 16384;
+    this.OUTPUT_PHPDOC = 65536;
   }
 
   DumpObject.prototype.dumpObject = function (abs) {
     // console.info('dumpObject', abs)
     var html = '';
-    var title = ((abs.phpDoc.summary || '') + '\n\n' + (abs.phpDoc.description || '')).trim();
-    var strClassName = this.dump.markupIdentifier(abs.className, {
-      title: title.length ? title : null
+    var outPhpDoc = true;
+    var phpDoc = abs.phpDoc || {};
+    var strClassName = '';
+    var title = ((phpDoc.summary || '') + '\n\n' + (phpDoc.desc || '')).trim();
+    if (typeof abs.flags === 'undefined') {
+      abs.flags = 0x1FFFF;
+    }
+    outPhpDoc = abs.flags & this.OUTPUT_PHPDOC;
+    strClassName = this.dump.markupIdentifier(abs.className, {
+      title: outPhpDoc && title.length ? title : null
     });
-
     if (abs.isRecursion) {
       return strClassName +
         ' <span class="t_recursion">*RECURSION*</span>'
@@ -576,12 +586,12 @@
             ? '<dt class="t_modifier_final">final</dt>'
             : ''
           ) +
-          (abs.extends.length
+          (abs.extends && abs.extends.length
             ? '<dt>extends</dt>' +
               '<dd class="extends">' + abs.extends.join('</dd><dd class="extends">') + '</dd>'
             : ''
           ) +
-          (abs.implements.length
+          (abs.implements && abs.implements.length
             ? '<dt>implements</dt>' +
               '<dd class="interface">' + abs.implements.join('</dd><dd class="interface">') + '</dd>'
             : ''
@@ -605,7 +615,7 @@
     var title;
     var valAppend = '';
     var $toStringDump;
-    if (abs.stringified !== null) {
+    if (typeof abs.stringified !== 'undefined' && abs.stringified !== null) {
       val = abs.stringified;
     } else if (typeof abs.methods.__toString !== 'undefined' && abs.methods.__toString.returnValue) {
       val = abs.methods.__toString.returnValue;
@@ -672,22 +682,25 @@
   };
 
   DumpObject.prototype.dumpConstants = function (abs) {
-    var html = Object.keys(abs.constants).length
+    var html = abs.constants && Object.keys(abs.constants).length
       ? '<dt class="constants">constants</dt>'
       : '';
     var self = this;
     var $dd;
-    if ((abs.flags & this.OUTPUT_CONSTANTS) !== this.OUTPUT_CONSTANTS) {
+    var outAttributes = abs.flags & this.OUTPUT_ATTRIBUTES_CONST;
+    var outConstants = abs.flags & this.OUTPUT_CONSTANTS;
+    var outPhpDoc = abs.flags & this.OUTPUT_PHPDOC;
+    if (!abs.constants || !outConstants) {
       return ''
     }
     $.each(abs.constants, function (key, info) {
       $dd = $('<dd class="constant ' + info.visibility + '">' +
         '<span class="t_modifier_' + info.visibility + '">' + info.visibility + '</span> ' +
-        '<span class="t_identifier">' + key + '</span> ' +
+        '<span class="t_identifier"' + (outPhpDoc && info.desc ? ' title="' + info.desc.escapeHtml() + '"' : '') + '>' + key + '</span> ' +
         '<span class="t_operator">=</span> ' +
         self.dump.dump(info.value) +
         '</dd>');
-      if ((abs.flags & this.OUTPUT_ATTRIBUTES_CONST) && info.attributes && info.attributes.length) {
+      if (outAttributes && info.attributes && info.attributes.length) {
         $dd.attr('data-attributes', JSON.stringify(info.attributes));
       }
       html += $dd[0].outerHTML;
@@ -754,6 +767,8 @@
     var label = Object.keys(properties).length
       ? 'properties'
       : 'no properties';
+    var outPhpDoc = abs.flags & this.OUTPUT_PHPDOC;
+    var outAttributes = abs.flags & this.OUTPUT_ATTRIBUTES_PROP;
     var self = this;
     if (meta.viaDebugInfo) {
       label += ' <span class="text-muted">(via __debugInfo)</span>';
@@ -795,7 +810,7 @@
           : ''
         ) +
         ' <span class="t_identifier"' +
-          (info.desc
+          (outPhpDoc && info.desc
             ? ' title="' + info.desc.escapeHtml() + '"'
             : ''
           ) +
@@ -807,7 +822,7 @@
         ) +
         '</dd>'
       );
-      if ((abs.flags & this.OUTPUT_ATTRIBUTES_PROP) && info.attributes && info.attributes.length) {
+      if (outAttributes && info.attributes && info.attributes.length) {
         $dd.attr('data-attributes', JSON.stringify(info.attributes));
       }
       if (info.inheritedFrom) {
@@ -830,15 +845,19 @@
     var html = '<dt class="methods">' + label + '</dt>' +
       magicMethodInfo(abs, ['__call', '__callStatic']);
     var self = this;
-    var outputMethods = abs.flags & this.OUTPUT_METHODS;
-    if (!outputMethods) {
+    var outAttributes = abs.flags & this.OUTPUT_ATTRIBUTES_METHOD;
+    var outAttributesParam = abs.flags & this.OUTPUT_ATTRIBUTES_PARAM;
+    var outMethods = abs.flags & this.OUTPUT_METHODS;
+    var outPhpDoc = abs.flags & this.OUTPUT_PHPDOC;
+    if (!outMethods) {
       return ''
     }
     $.each(abs.methods, function (k, info) {
       var $dd = $('<dd class="method"></dd>').addClass(info.visibility);
       var modifiers = [];
       var paramStr = self.dumpMethodParams(info.params, {
-        outputAttributes: abs.flags & this.OUTPUT_ATTRIBUTES_PARAM
+        outAttributes: outAttributesParam,
+        outPhpDoc: outPhpDoc
       });
       var returnType = '';
       if (info.isFinal) {
@@ -851,7 +870,7 @@
       }
       if (info.return && info.return.type) {
         returnType = ' <span class="t_type"' +
-          (info.return.desc !== null
+          (outPhpDoc && info.return.desc !== null
             ? ' title="' + info.return.desc.escapeHtml() + '"'
             : ''
           ) +
@@ -861,7 +880,7 @@
         modifiers.join(' ') +
         returnType +
         ' <span class="t_identifier"' +
-          (info.phpDoc && info.phpDoc.summary !== null
+          (outPhpDoc && info.phpDoc && info.phpDoc.summary !== null
             ? ' title="' + info.phpDoc.summary.escapeHtml() + '"'
             : ''
           ) +
@@ -873,7 +892,7 @@
         ) +
         '</dd>'
       );
-      if ((abs.flags & this.OUTPUT_ATTRIBUTES_METHOD) && info.attributes && info.attributes.length) {
+      if (outAttributes && info.attributes && info.attributes.length) {
         $dd.attr('data-attributes', JSON.stringify(info.attributes));
       }
       if (info.implements && info.implements.length) {
@@ -899,23 +918,26 @@
   DumpObject.prototype.dumpMethodParams = function (params, opts) {
     var $param;
     var defaultValue;
-    // var html = ''
     var self = this;
     $.each(params, function (i, info) {
       $param = $('<span />', {
         class: 'parameter'
       });
+      info = $.extend({
+        desc: null,
+        defaultValue: self.dump.UNDEFINED
+      }, info);
       if (info.isPromoted) {
         $param.addClass('isPromoted');
       }
-      if (opts.outputAttributes && info.attributes && info.attributes.length) {
+      if (opts.outAttributes && info.attributes && info.attributes.length) {
         $param.attr('data-attributes', JSON.stringify(info.attributes));
       }
       if (typeof info.type === 'string') {
         $param.append('<span class="t_type">' + info.type + '</span> ');
       }
       $param.append('<span class="t_parameter-name"' +
-        (info.desc !== null
+        (opts.outPhpDoc && info.desc !== null
           ? ' title="' + info.desc.escapeHtml().replace('\n', ' ') + '"'
           : ''
         ) + '>' + info.name.escapeHtml() + '</span>');
@@ -931,11 +953,6 @@
       }
       params[i] = $param[0].outerHTML;
     });
-    /*
-    if (html.length) {
-      html = html.substr(0, html.length - 2) // remove ', '
-    }
-    */
     return params
       ? params.join('<span class="t_punct">,</span> ')
       : ''
@@ -1935,16 +1952,25 @@
     var dumpOpts = $.extend({
       asFileTree: false,
       expand: null,
+      maxDepth: false,
       showListKeys: true
     }, this.getDumpOpts());
-    // console.log('array', JSON.parse(JSON.stringify(array)))
+    /*
+    console.warn('dumpArray', {
+      array: JSON.parse(JSON.stringify(array)),
+      dumpOpts: JSON.parse(JSON.stringify(dumpOpts))
+    })
+    */
     if (dumpOpts.expand !== null) {
       dumpOpts.attribs['data-expand'] = dumpOpts.expand;
     }
     if (dumpOpts.asFileTree) {
       dumpOpts.attribs.class.push('array-file-tree');
     }
-    if (length === 0) {
+    if (dumpOpts.maxDepth) {
+      dumpOpts.attribs.class.push('max-depth');
+    }
+    if (length === 0 && dumpOpts.maxDepth === false) {
       return '<span class="t_keyword">array</span>' +
           '<span class="t_punct">(</span>\n' +
           '<span class="t_punct">)</span>'
@@ -2254,7 +2280,7 @@
       $container.removeClass('working');
       $container.find('.card-header .fa-spinner').remove();
       $container.find('.debug > .fa-spinner').remove();
-      if (responseCode && responseCode !== '200') {
+      if (responseCode && responseCode + '' !== '200') {
         $container.find('.card-title').append(' <span class="label label-default" title="Response Code">' + responseCode + '</span>');
         if (responseCode.toString().match(/^5/)) {
           $container.addClass('bg-danger');
@@ -3172,7 +3198,7 @@
 
   /**
    * Merge defaults with user options
-   * @private
+   *
    * @param {Object} defaults Default settings
    * @param {Object} options User options
    * @returns {Object} Merged values of defaults and options
@@ -3182,7 +3208,6 @@
     var i;
     var length;
     var prop;
-    // var vals
     for (i = 0, length = arguments.length; i < length; i++) {
       for (prop in arguments[i]) {
         if (Object.prototype.hasOwnProperty.call(arguments[i], prop)) {
@@ -3983,8 +4008,8 @@
     this.connection = null;
     this.hasMsgQueue = false;
     this.msgQueue = new Queue();
-    pubSub.subscribe('onmessage', function (cmd) {
-      // console.info('socketWorker: onmessage', cmd)
+    pubSub.subscribe('wamp', function (cmd) {
+      // console.info('socketWorker: wamp', cmd)
       // var workerResult = 'Result: ' + (e.data[0] * e.data[1])
       // postMessage(workerResult)
       // console.log('data', e.data)
@@ -3999,10 +4024,11 @@
       } else if (cmd === 'getMsg') {
         var msg = self.msgQueue.shift();
         // postMessage(['msg', msg])
-        pubSub.publish('websocket', 'msg', msg);
         if (typeof msg === 'undefined') {
           self.hasMsgQueue = false;
+          return
         }
+        pubSub.publish('wamp', 'msg', msg);
       }
     });
   }
@@ -4016,17 +4042,20 @@
     connection.onopen = function (session, details) {
       // console.info('Connection opened')
       // postMessage('connectionOpened')
-      self.pubSub.publish('websocket', 'connectionOpened');
+      self.pubSub.publish('wamp', 'connectionOpened');
       // var myWorker = new Worker('socketWorker.js')
       // SUBSCRIBE to a topic and receive events
-      session.subscribe('bdk.debug', function (row) {
+
+      // session.publish('bdk.debug.xdebug', ['does this work'])
+
+      session.subscribe('bdk.debug', function (msg) {
         // console.log('recvd args', Object.keys(row[1][1]))
         if (!self.hasMsgQueue) {
           self.hasMsgQueue = true;
           // postMessage(['msg', row])
-          self.pubSub.publish('websocket', 'msg', row);
+          self.pubSub.publish('wamp', 'msg', msg);
         } else {
-          self.msgQueue.push(row);
+          self.msgQueue.push(msg);
         }
       }).then(
         function (sub) {
@@ -4040,7 +4069,7 @@
     connection.onclose = function (reason, details) {
       // console.warn('Connection closed: ' + reason)
       // postMessage('connectionClosed')
-      self.pubSub.publish('websocket', 'connectionClosed');
+      self.pubSub.publish('wamp', 'connectionClosed');
     };
     connection.open();
     // console.log('connection', connection)
@@ -4058,11 +4087,7 @@
     'debugWampClient'
   );
 
-  initSocketWorker();
-
-  function initSocketWorker () {
-    return new SocketWorker(PubSub, config)
-  }
+  initWamp();
 
   $(function () {
     var hasConnected = false;
@@ -4076,8 +4101,8 @@
       useLocalStorage: false
     });
 
-    PubSub.subscribe('websocket', function (cmd, data) {
-      if (cmd === 'msg' && data) {
+    PubSub.subscribe('wamp', function (cmd, data) {
+      if (cmd === 'msg') {
         processEntry({
           method: data[0],
           args: data[1],
@@ -4090,7 +4115,7 @@
           });
         }
         // myWorker.postMessage('getMsg') // request next msg
-        PubSub.publish('onmessage', 'getMsg');
+        PubSub.publish('wamp', 'getMsg');
       } else if (cmd === 'connectionClosed') {
         $('#alert.connecting').remove();
         if ($('#alert.closed').length) {
@@ -4110,17 +4135,12 @@
         $('#alert').remove();
       }
     });
-    /*
-    myWorker.onerror = function(error) {
-      console.log('error', error)
-    }
-    */
 
     // myWorker.postMessage(['setCfg', config.get()])
     // myWorker.postMessage('connectionOpen')
     // console.log('config', config)
     // events.publish('onmessage', 'setCfg', config.get())
-    PubSub.publish('onmessage', 'connectionOpen');
+    PubSub.publish('wamp', 'connectionOpen');
 
     PubSub.subscribe('phpDebugConsoleConfig', function (vals) {
       $('body').debugEnhance('setConfig', vals);
@@ -4128,5 +4148,9 @@
 
     config.checkPhpDebugConsole();
   });
+
+  function initWamp () {
+    return new SocketWorker(PubSub, config)
+  }
 
 }(window.jQuery));

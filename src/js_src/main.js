@@ -4,7 +4,7 @@ import './prototypeMethods.js' // import for side-effects only
 import * as ui from './ui/ui.js'
 import * as logger from './Logger/Logger.js'
 import { Config } from './Config.js'
-import { SocketWorker } from './wamp/SocketWorker.js'
+import { SocketWorker as Wamp } from './wamp/SocketWorker.js'
 
 var config = new Config(
   {
@@ -17,11 +17,7 @@ var config = new Config(
   'debugWampClient'
 )
 
-initSocketWorker()
-
-function initSocketWorker () {
-  return new SocketWorker(PubSub, config)
-}
+initWamp()
 
 $(function () {
   var hasConnected = false
@@ -35,8 +31,8 @@ $(function () {
     useLocalStorage: false
   })
 
-  PubSub.subscribe('websocket', function (cmd, data) {
-    if (cmd === 'msg' && data) {
+  PubSub.subscribe('wamp', function (cmd, data) {
+    if (cmd === 'msg') {
       logger.processEntry({
         method: data[0],
         args: data[1],
@@ -49,7 +45,7 @@ $(function () {
         })
       }
       // myWorker.postMessage('getMsg') // request next msg
-      PubSub.publish('onmessage', 'getMsg')
+      PubSub.publish('wamp', 'getMsg')
     } else if (cmd === 'connectionClosed') {
       $('#alert.connecting').remove()
       if ($('#alert.closed').length) {
@@ -69,17 +65,12 @@ $(function () {
       $('#alert').remove()
     }
   })
-  /*
-  myWorker.onerror = function(error) {
-    console.log('error', error)
-  }
-  */
 
   // myWorker.postMessage(['setCfg', config.get()])
   // myWorker.postMessage('connectionOpen')
   // console.log('config', config)
   // events.publish('onmessage', 'setCfg', config.get())
-  PubSub.publish('onmessage', 'connectionOpen')
+  PubSub.publish('wamp', 'connectionOpen')
 
   PubSub.subscribe('phpDebugConsoleConfig', function (vals) {
     $('body').debugEnhance('setConfig', vals)
@@ -87,3 +78,7 @@ $(function () {
 
   config.checkPhpDebugConsole()
 })
+
+function initWamp () {
+  return new Wamp(PubSub, config)
+}

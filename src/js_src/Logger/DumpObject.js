@@ -10,16 +10,23 @@ export function DumpObject (dump) {
   this.OUTPUT_ATTRIBUTES_PROP = 1024
   this.OUTPUT_ATTRIBUTES_METHOD = 4096
   this.OUTPUT_ATTRIBUTES_PARAM = 16384
+  this.OUTPUT_PHPDOC = 65536
 }
 
 DumpObject.prototype.dumpObject = function (abs) {
   // console.info('dumpObject', abs)
   var html = ''
-  var title = ((abs.phpDoc.summary || '') + '\n\n' + (abs.phpDoc.description || '')).trim()
-  var strClassName = this.dump.markupIdentifier(abs.className, {
-    title: title.length ? title : null
+  var outPhpDoc = true
+  var phpDoc = abs.phpDoc || {}
+  var strClassName = ''
+  var title = ((phpDoc.summary || '') + '\n\n' + (phpDoc.desc || '')).trim()
+  if (typeof abs.flags === 'undefined') {
+    abs.flags = 0x1FFFF
+  }
+  outPhpDoc = abs.flags & this.OUTPUT_PHPDOC
+  strClassName = this.dump.markupIdentifier(abs.className, {
+    title: outPhpDoc && title.length ? title : null
   })
-
   if (abs.isRecursion) {
     return strClassName +
       ' <span class="t_recursion">*RECURSION*</span>'
@@ -35,12 +42,12 @@ DumpObject.prototype.dumpObject = function (abs) {
           ? '<dt class="t_modifier_final">final</dt>'
           : ''
         ) +
-        (abs.extends.length
+        (abs.extends && abs.extends.length
           ? '<dt>extends</dt>' +
             '<dd class="extends">' + abs.extends.join('</dd><dd class="extends">') + '</dd>'
           : ''
         ) +
-        (abs.implements.length
+        (abs.implements && abs.implements.length
           ? '<dt>implements</dt>' +
             '<dd class="interface">' + abs.implements.join('</dd><dd class="interface">') + '</dd>'
           : ''
@@ -64,7 +71,7 @@ DumpObject.prototype.dumpToString = function (abs) {
   var title
   var valAppend = ''
   var $toStringDump
-  if (abs.stringified !== null) {
+  if (typeof abs.stringified !== 'undefined' && abs.stringified !== null) {
     val = abs.stringified
   } else if (typeof abs.methods.__toString !== 'undefined' && abs.methods.__toString.returnValue) {
     val = abs.methods.__toString.returnValue
@@ -131,22 +138,25 @@ DumpObject.prototype.dumpAttributes = function (abs) {
 }
 
 DumpObject.prototype.dumpConstants = function (abs) {
-  var html = Object.keys(abs.constants).length
+  var html = abs.constants && Object.keys(abs.constants).length
     ? '<dt class="constants">constants</dt>'
     : ''
   var self = this
   var $dd
-  if ((abs.flags & this.OUTPUT_CONSTANTS) !== this.OUTPUT_CONSTANTS) {
+  var outAttributes = abs.flags & this.OUTPUT_ATTRIBUTES_CONST
+  var outConstants = abs.flags & this.OUTPUT_CONSTANTS
+  var outPhpDoc = abs.flags & this.OUTPUT_PHPDOC
+  if (!abs.constants || !outConstants) {
     return ''
   }
   $.each(abs.constants, function (key, info) {
     $dd = $('<dd class="constant ' + info.visibility + '">' +
       '<span class="t_modifier_' + info.visibility + '">' + info.visibility + '</span> ' +
-      '<span class="t_identifier">' + key + '</span> ' +
+      '<span class="t_identifier"' + (outPhpDoc && info.desc ? ' title="' + info.desc.escapeHtml() + '"' : '') + '>' + key + '</span> ' +
       '<span class="t_operator">=</span> ' +
       self.dump.dump(info.value) +
       '</dd>')
-    if ((abs.flags & this.OUTPUT_ATTRIBUTES_CONST) && info.attributes && info.attributes.length) {
+    if (outAttributes && info.attributes && info.attributes.length) {
       $dd.attr('data-attributes', JSON.stringify(info.attributes))
     }
     html += $dd[0].outerHTML
@@ -213,6 +223,8 @@ DumpObject.prototype.dumpProperties = function (abs, meta) {
   var label = Object.keys(properties).length
     ? 'properties'
     : 'no properties'
+  var outPhpDoc = abs.flags & this.OUTPUT_PHPDOC
+  var outAttributes = abs.flags & this.OUTPUT_ATTRIBUTES_PROP
   var self = this
   if (meta.viaDebugInfo) {
     label += ' <span class="text-muted">(via __debugInfo)</span>'
@@ -254,7 +266,7 @@ DumpObject.prototype.dumpProperties = function (abs, meta) {
         : ''
       ) +
       ' <span class="t_identifier"' +
-        (info.desc
+        (outPhpDoc && info.desc
           ? ' title="' + info.desc.escapeHtml() + '"'
           : ''
         ) +
@@ -266,7 +278,7 @@ DumpObject.prototype.dumpProperties = function (abs, meta) {
       ) +
       '</dd>'
     )
-    if ((abs.flags & this.OUTPUT_ATTRIBUTES_PROP) && info.attributes && info.attributes.length) {
+    if (outAttributes && info.attributes && info.attributes.length) {
       $dd.attr('data-attributes', JSON.stringify(info.attributes))
     }
     if (info.inheritedFrom) {
@@ -289,15 +301,19 @@ DumpObject.prototype.dumpMethods = function (abs) {
   var html = '<dt class="methods">' + label + '</dt>' +
     magicMethodInfo(abs, ['__call', '__callStatic'])
   var self = this
-  var outputMethods = abs.flags & this.OUTPUT_METHODS
-  if (!outputMethods) {
+  var outAttributes = abs.flags & this.OUTPUT_ATTRIBUTES_METHOD
+  var outAttributesParam = abs.flags & this.OUTPUT_ATTRIBUTES_PARAM
+  var outMethods = abs.flags & this.OUTPUT_METHODS
+  var outPhpDoc = abs.flags & this.OUTPUT_PHPDOC
+  if (!outMethods) {
     return ''
   }
   $.each(abs.methods, function (k, info) {
     var $dd = $('<dd class="method"></dd>').addClass(info.visibility)
     var modifiers = []
     var paramStr = self.dumpMethodParams(info.params, {
-      outputAttributes: abs.flags & this.OUTPUT_ATTRIBUTES_PARAM
+      outAttributes: outAttributesParam,
+      outPhpDoc: outPhpDoc
     })
     var returnType = ''
     if (info.isFinal) {
@@ -310,7 +326,7 @@ DumpObject.prototype.dumpMethods = function (abs) {
     }
     if (info.return && info.return.type) {
       returnType = ' <span class="t_type"' +
-        (info.return.desc !== null
+        (outPhpDoc && info.return.desc !== null
           ? ' title="' + info.return.desc.escapeHtml() + '"'
           : ''
         ) +
@@ -320,7 +336,7 @@ DumpObject.prototype.dumpMethods = function (abs) {
       modifiers.join(' ') +
       returnType +
       ' <span class="t_identifier"' +
-        (info.phpDoc && info.phpDoc.summary !== null
+        (outPhpDoc && info.phpDoc && info.phpDoc.summary !== null
           ? ' title="' + info.phpDoc.summary.escapeHtml() + '"'
           : ''
         ) +
@@ -332,7 +348,7 @@ DumpObject.prototype.dumpMethods = function (abs) {
       ) +
       '</dd>'
     )
-    if ((abs.flags & this.OUTPUT_ATTRIBUTES_METHOD) && info.attributes && info.attributes.length) {
+    if (outAttributes && info.attributes && info.attributes.length) {
       $dd.attr('data-attributes', JSON.stringify(info.attributes))
     }
     if (info.implements && info.implements.length) {
@@ -358,23 +374,26 @@ DumpObject.prototype.dumpMethods = function (abs) {
 DumpObject.prototype.dumpMethodParams = function (params, opts) {
   var $param
   var defaultValue
-  // var html = ''
   var self = this
   $.each(params, function (i, info) {
     $param = $('<span />', {
       class: 'parameter'
     })
+    info = $.extend({
+      desc: null,
+      defaultValue: self.dump.UNDEFINED
+    }, info)
     if (info.isPromoted) {
       $param.addClass('isPromoted')
     }
-    if (opts.outputAttributes && info.attributes && info.attributes.length) {
+    if (opts.outAttributes && info.attributes && info.attributes.length) {
       $param.attr('data-attributes', JSON.stringify(info.attributes))
     }
     if (typeof info.type === 'string') {
       $param.append('<span class="t_type">' + info.type + '</span> ')
     }
     $param.append('<span class="t_parameter-name"' +
-      (info.desc !== null
+      (opts.outPhpDoc && info.desc !== null
         ? ' title="' + info.desc.escapeHtml().replace('\n', ' ') + '"'
         : ''
       ) + '>' + info.name.escapeHtml() + '</span>')
@@ -390,11 +409,6 @@ DumpObject.prototype.dumpMethodParams = function (params, opts) {
     }
     params[i] = $param[0].outerHTML
   })
-  /*
-  if (html.length) {
-    html = html.substr(0, html.length - 2) // remove ', '
-  }
-  */
   return params
     ? params.join('<span class="t_punct">,</span> ')
     : ''

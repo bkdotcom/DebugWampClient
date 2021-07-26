@@ -155,16 +155,25 @@ Dump.prototype.dumpArray = function (array) {
   var dumpOpts = $.extend({
     asFileTree: false,
     expand: null,
+    maxDepth: false,
     showListKeys: true
   }, this.getDumpOpts())
-  // console.log('array', JSON.parse(JSON.stringify(array)))
+  /*
+  console.warn('dumpArray', {
+    array: JSON.parse(JSON.stringify(array)),
+    dumpOpts: JSON.parse(JSON.stringify(dumpOpts))
+  })
+  */
   if (dumpOpts.expand !== null) {
     dumpOpts.attribs['data-expand'] = dumpOpts.expand
   }
   if (dumpOpts.asFileTree) {
     dumpOpts.attribs.class.push('array-file-tree')
   }
-  if (length === 0) {
+  if (dumpOpts.maxDepth) {
+    dumpOpts.attribs.class.push('max-depth')
+  }
+  if (length === 0 && dumpOpts.maxDepth === false) {
     return '<span class="t_keyword">array</span>' +
         '<span class="t_punct">(</span>\n' +
         '<span class="t_punct">)</span>'

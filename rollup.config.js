@@ -5,6 +5,7 @@
 // import babel from 'rollup-plugin-babel';
 import commonjs from 'rollup-plugin-commonjs'
 import legacy from 'rollup-plugin-legacy'
+// import nodePolyfills from 'rollup-plugin-node-polyfills'
 import resolve from 'rollup-plugin-node-resolve'
 import { uglify } from 'rollup-plugin-uglify'
 
@@ -33,13 +34,14 @@ var tasks = [
       // babel({
         // exclude: ['node_modules/**'],
       // }),
-      commonjs({
-        include: ['node_modules/**'],
-      }),
+      // nodePolyfills(),
       resolve({
         jsnext: true,
         main: true,
         browser: true,
+      }),
+      commonjs({
+        include: ['node_modules/**'],
       }),
       legacy({
         // add a default export, corresponding to `someLibrary`
@@ -62,13 +64,14 @@ if (process.env.NODE_ENV !== 'watch') {
     // babel({
       // exclude: ['node_modules/**'],
     // }),
-    commonjs({
-      include: ['node_modules/**'],
-    }),
+    // nodePolyfills(),
     resolve({
       jsnext: true,
       main: true,
       browser: true,
+    }),
+    commonjs({
+      include: ['node_modules/**'],
     }),
     legacy({
       // add a default export, corresponding to `someLibrary`
