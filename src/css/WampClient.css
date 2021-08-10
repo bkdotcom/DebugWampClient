@@ -10,8 +10,10 @@ kbd { background-color: #ccc; color: #000; }
 .card.bg-danger, .card.bg-danger > .card-header { background-color: #f2dede !important; color: #a94442; }
 .card.bg-warning, .card.bg-warning > .card-header { background-color: #fcf8e3 !important; color: #8a6d3b; }
 .card.expanded .card-header { border-bottom-width: 1px; }
-.card.sticky > .card-header { position: sticky; top: 38px; z-index: 1; }
-.card.sticky > .card-body > .debug-menu-bar { position: sticky; z-index: 1; top: 78px; }
+.card.sticky > .card-header { position: sticky; top: 39px; z-index: 1; }
+.card.sticky > .card-body > .debug-bar { position: sticky; z-index: 1; }
+.card.sticky > .card-body > .debug-menu-bar { top: 78px; }
+.card.sticky > .card-body > .xdebug-menu-bar { top: 108px; }
 .card .sidebar-trigger { position: absolute; width: 12px; height: 100%; }
 .card .debug-sidebar { z-index: 1; width: 120px; border-right: #ddd solid 1px; font-size: 13px; transform: translateX(-120px); }
 .card .debug-sidebar .sidebar-content { padding-right: 4px; }
@@ -42,8 +44,8 @@ kbd { background-color: #ccc; color: #000; }
 .navbar .btn, .navbar a { color: inherit; }
 
 .debug { transform: none; }
-.debug.debug-enhanced-ui .debug-menu-bar { border-top: 0; }
-.debug.debug-enhanced-ui .debug-menu-bar nav { margin-left: 0; }
+.debug.debug-enhanced-ui .debug-bar { border-top: 0; }
+.debug.debug-enhanced-ui .debug-bar nav { margin-left: 0; }
 .debug .debug-sidebar + .tab-body { margin-left: 0; padding-left: 0; }
 .debug .debug-sidebar.show + .tab-body { margin-left: 0; }
 

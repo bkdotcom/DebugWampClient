@@ -24,6 +24,8 @@ class WampClient
 {
 
     protected $cfg = array();
+    protected $debug;
+    protected $request;
 
     /**
      * Constructor
@@ -34,6 +36,7 @@ class WampClient
     public function __construct(Debug $debug, $cfg = array())
     {
         $this->debug = $debug;
+        $this->request = $debug->request;
         $this->cfg = \array_merge(array(
             'jquery' => '//ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js',
             'bootstrapJs' => '//stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js',
@@ -50,8 +53,9 @@ class WampClient
      */
     public function handleRequest()
     {
-        $action = isset($_GET['action'])
-            ? $_GET['action']
+        $query = $this->request->getQueryParams();
+        $action = isset($query['action'])
+            ? $query['action']
             : 'index';
         $method = 'action' . \ucfirst($action);
         if (\method_exists($this, $method) === false) {
@@ -98,13 +102,30 @@ class WampClient
      */
     public function actionImg()
     {
-        $src = isset($_GET['src']) ? $_GET['src'] : null;
+        $query = $this->request->getQueryParams();
+        $src = isset($query['src']) ?
+            $query['src']
+            : null;
         $srcSanitized = __DIR__ . '/img/' . \str_replace('..', '', $src);
         if (!$src || \file_exists($srcSanitized) === false) {
             \header('HTTP/1.0 404 Not Found');
             return;
         }
-        \header('Content-Type: image/png');
+        $extension = \strtolower(
+            \pathinfo($srcSanitized, PATHINFO_EXTENSION)
+        );
+        $mimes = array(
+            'bmp' => 'image/bmp',
+            'gif' => 'image/gif',
+            'ico' => 'image/vnd.microsoft.icon',
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'svg' => 'image/svg+xml',
+            'tif' => 'image/tiff',
+            'tiff' => 'image/tiff',
+        );
+        \header('Content-Type: ' . $mimes[$extension]);
         \header('Content-Disposition: inline; filename="' . \rawurlencode(\basename($srcSanitized)) . '"');
         \header('Content-Length: ' . \filesize($srcSanitized));
         \readfile($srcSanitized);

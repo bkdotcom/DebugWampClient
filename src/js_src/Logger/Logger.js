@@ -1,12 +1,94 @@
 import $ from 'jquery' // external global
 import * as methods from './Methods.js'
 
-export function getNodeInfo (meta) {
+export function processEntry (logEntry) {
+  // console.log(JSON.parse(JSON.stringify(logEntry)));
+  var method = logEntry.method
+  var meta = logEntry.meta
+  var i
+  var info = getNodeInfo(meta)
+  var channelsTab = info.channels.filter(function (channelInfo) {
+    return channelInfo.name === info.channelNameTop || channelInfo.name.indexOf(info.channelNameTop + '.') === 0
+  })
+  var $node
+
+  try {
+    if (meta.format === 'html') {
+      if (typeof logEntry.args === 'object') {
+        $node = $('<li />', { class: 'm_' + method })
+        for (i = 0; i < logEntry.args.length; i++) {
+          $node.append(logEntry.args[i])
+        }
+      } else {
+        $node = $(logEntry.args)
+        if (!$node.is('.m_' + method)) {
+          $node = $('<li />', { class: 'm_' + method }).html(logEntry.args)
+        }
+      }
+    } else if (methods.methods[method]) {
+      $node = methods.methods[method](logEntry, info)
+    } else {
+      $node = methods.methods.default(logEntry, info)
+    }
+    updateSidebar(logEntry, info, $node !== false)
+    if (!$node) {
+      return;
+    }
+    if (meta.attribs && meta.attribs.class && meta.attribs.class === 'php-shutdown') {
+      info.$node = info.$container.find('> .debug > .tab-panes > .tab-primary > .tab-body > .debug-log.group-body')
+    }
+    info.$node.append($node)
+    $node.attr('data-channel', meta.channel) // using attr so can use [data-channel="xxx"] selector
+    if (meta.attribs && Object.keys(meta.attribs).length) {
+      if (meta.attribs.class) {
+        $node.addClass(meta.attribs.class)
+        delete meta.attribs.class
+      }
+      $node.attr(meta.attribs)
+    }
+    if (meta.icon) {
+      $node.data('icon', meta.icon)
+    }
+    if (
+      channelsTab.length > 1 &&
+      info.channelName !== info.channelNameRoot + '.phpError' &&
+      !info.$container.find('.channels input[value="' + info.channelName + '"]').prop('checked')
+    ) {
+      $node.addClass('filter-hidden')
+    }
+    if (meta.detectFiles) {
+      // using attr so can find via css selector
+      $node.attr('data-detect-files', meta.detectFiles)
+      $node.attr('data-found-files', meta.foundFiles ? meta.foundFiles : [])
+    }
+    if ($node.is(':visible:not(.filter-hidden)')) {
+      $node.debugEnhance()
+    }
+    $node.closest('.m_group').removeClass('empty')
+  } catch (err) {
+    console.warn('Logger.processEntry error', err)
+    console.log('logEntry', logEntry)
+    /*
+    processEntry({
+      method: 'error',
+      args: [
+        '%cDebugWampClient: %cerror processing %c' + method + '()',
+        'font-weight:bold;',
+        '',
+        'font-family:monospace;'
+      ],
+      meta: meta
+    })
+    */
+  }
+}
+
+function getNodeInfo (meta) {
   var $container = $('#' + meta.requestId)
   var $debug
   var $node
   var $tabPane
-  var channelNameRoot = $container.data('channelNameRoot') || 'general'
+  var channelNameRoot = $container.find('.debug').data('channelNameRoot') || 'general'
   var channelName = meta.channel || channelNameRoot
   var channelSplit = channelName.split('.')
   var info = {
@@ -24,13 +106,6 @@ export function getNodeInfo (meta) {
   } else {
     // create
     //   header and card are separate so we can sticky the header
-    /*
-    $header = $('' +
-      '<div class="card" id="' + meta.requestId + '-header">' +
-        // formerly header was inside card-body
-      '</div>'
-    )
-    */
     $container = $('' +
       '<div class="card mb-3 sticky working" id="' + meta.requestId + '">' +
         '<div class="card-header" data-toggle="collapse" data-target="#' + meta.requestId + ' &gt; .collapse">' +
@@ -42,7 +117,7 @@ export function getNodeInfo (meta) {
           '</div>' +
         '</div>' +
         '<div class="bg-white card-body collapse debug debug-enhanced-ui">' +
-          '<header class="debug-menu-bar hide">' +
+          '<header class="debug-bar debug-menu-bar">' +
             '<nav role="tablist">' +
               '<a class="active nav-link" data-target=".' + nameToClassname(channelNameRoot) + '" data-toggle="tab" role="tab"><i class="fa fa-list-ul"></i>Log</a>' +
             '</nav>' +
@@ -86,91 +161,6 @@ export function getNodeInfo (meta) {
   })
   addChannel(info, meta)
   return info
-}
-
-export function processEntry (logEntry) {
-  // console.log(JSON.parse(JSON.stringify(logEntry)));
-  var method = logEntry.method
-  var meta = logEntry.meta
-  var i
-  var info = getNodeInfo(meta)
-  var channelsTab = info.channels.filter(function (channelInfo) {
-    return channelInfo.name === info.channelNameTop || channelInfo.name.indexOf(info.channelNameTop + '.') === 0
-  })
-  var $node
-
-  try {
-    if (meta.format === 'html') {
-      if (typeof logEntry.args === 'object') {
-        $node = $('<li />', { class: 'm_' + method })
-        for (i = 0; i < logEntry.args.length; i++) {
-          $node.append(logEntry.args[i])
-        }
-      } else {
-        $node = $(logEntry.args)
-        if (!$node.is('.m_' + method)) {
-          $node = $('<li />', { class: 'm_' + method }).html(logEntry.args)
-        }
-      }
-    } else if (methods.methods[method]) {
-      $node = methods.methods[method](logEntry, info)
-    } else {
-      $node = methods.methods.default(logEntry, info)
-    }
-    updateSidebar(logEntry, info, $node !== false)
-    if ($node) {
-      if (meta.attribs && meta.attribs.class && meta.attribs.class === 'php-shutdown') {
-        info.$node = info.$container.find('> .debug > .tab-panes > .tab-primary > .tab-body > .debug-log.group-body')
-      }
-      info.$node.append($node)
-      $node.attr('data-channel', meta.channel) // using attr so can use [data-channel="xxx"] selector
-      if (meta.attribs && Object.keys(meta.attribs).length) {
-        if (meta.attribs.class) {
-          $node.addClass(meta.attribs.class)
-          delete meta.attribs.class
-        }
-        $node.attr(meta.attribs)
-      }
-      if (meta.icon) {
-        $node.data('icon', meta.icon)
-      }
-      if (
-        channelsTab.length > 1 &&
-        info.channelName !== info.channelNameRoot + '.phpError' &&
-        !info.$container.find('.channels input[value="' + info.channelName + '"]').prop('checked')
-      ) {
-        $node.addClass('filter-hidden')
-      }
-      if (meta.detectFiles) {
-        // using attr so can find via css selector
-        $node.attr('data-detect-files', meta.detectFiles)
-        $node.attr('data-found-files', meta.foundFiles ? meta.foundFiles : [])
-      }
-      if ($node.is(':visible:not(.filter-hidden)')) {
-        $node.debugEnhance()
-      }
-      if (!$node.is('.m_group')) {
-        // don't remove from ourself
-        // console.warn('remove empty from parent groups', $node[0])
-        $node.parents('.m_group').removeClass('empty')
-      }
-    }
-  } catch (err) {
-    console.warn(err)
-    console.log('logEntry', logEntry)
-    /*
-    processEntry({
-      method: 'error',
-      args: [
-        '%cDebugWampClient: %cerror processing %c' + method + '()',
-        'font-weight:bold;',
-        '',
-        'font-family:monospace;'
-      ],
-      meta: meta
-    })
-    */
-  }
 }
 
 function addChannel (info, meta) {

@@ -41,13 +41,18 @@ kbd {
   &.sticky {
     > .card-header {
       position: sticky;
-      top: 38px;
+      top: 39px;
+      z-index: 1;
+    }
+    > .card-body > .debug-bar {
+      position: sticky;
       z-index: 1;
     }
     > .card-body > .debug-menu-bar {
-      position: sticky;
-      z-index: 1;
       top: 78px; // will be updated on expand
+    }
+    > .card-body > .xdebug-menu-bar {
+      top: 108px; // will be updated on expand
     }
   }
 
@@ -175,7 +180,7 @@ kbd {
 .debug {
 	transform: none;
   &.debug-enhanced-ui {
-    .debug-menu-bar {
+    .debug-bar {
       border-top: 0;
       nav {
         margin-left: 0;

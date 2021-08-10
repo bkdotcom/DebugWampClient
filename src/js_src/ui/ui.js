@@ -5,7 +5,7 @@ import { updateCssProperty } from './Css.js'
 var classCollapsed = 'fa-chevron-right'
 var classExpanded = 'fa-chevron-down'
 var timeoutHandler
-var navbarHeight // = $('.navbar-collapse').outerHeight()
+var navbarHeight // = $('nav.navbar').outerHeight()
 var $cardsInViewport = $()
 
 export function init (config) {
@@ -70,11 +70,16 @@ export function init (config) {
   $('body').on('shown.bs.collapse hidden.bs.collapse', '.card-body', function (e) {
     var $cardBody = $(this)
     var $card = $cardBody.closest('.card')
+    var $cardHeader = $card.find('> .card-header')
     var $icon = $card.find('.card-header .' + classCollapsed + ', .card-header .' + classExpanded)
     $icon.toggleClass(classExpanded + ' ' + classCollapsed)
     $card.toggleClass('expanded')
     if (e.type === 'shown') {
-      $cardBody.find('> .debug-menu-bar').css('top', (navbarHeight + $card.find('> .card-header').outerHeight()) + 'px')
+      $cardHeader.css('top', navbarHeight + 'px')
+      $cardBody.find('> .debug-menu-bar').css('top', (
+        navbarHeight +
+        $cardHeader.outerHeight()
+      ) + 'px')
       $cardBody.find('.m_alert, .group-body:visible').debugEnhance()
     }
   })
@@ -119,7 +124,7 @@ export function init (config) {
 
   $('body').on('click', '.card-header[data-toggle=collapse]', function () {
     var $target = $($(this).data('target'))
-    navbarHeight = $('.navbar-collapse').outerHeight()
+    navbarHeight = $('nav.navbar').outerHeight()
     $target.collapse('toggle')
   })
 
@@ -145,7 +150,7 @@ export function init (config) {
   configModal.init(config)
 
   // note:  navbar may not yet be at final height
-  navbarHeight = $('.navbar-collapse').outerHeight()
+  navbarHeight = $('nav.navbar').outerHeight()
 }
 
 function debounce (fn, ms) {

@@ -133,7 +133,6 @@ Table.prototype.buildBody = function (rows, tableInfo, onBuildRow) {
   Add totals (tfoot)
 */
 Table.prototype.buildFooter = function (tableInfo) {
-  var $cell
   var cells = []
   var colHasTotal
   var haveTotal = false
@@ -144,12 +143,12 @@ Table.prototype.buildFooter = function (tableInfo) {
     info = tableInfo.columns[i]
     colHasTotal = typeof info.total !== 'undefined'
     haveTotal = haveTotal || colHasTotal
-    $cell = $('<td></td>')
     if (colHasTotal) {
       info.total = parseFloat(info.total.toFixed(6), 10)
-      $cell = this.dump.dump(info.total, { tagName: 'td' })
+      cells.push(this.dump.dump(info.total, { tagName: 'td' }))
+      continue;
     }
-    cells.push($cell[0].outerHTML)
+    cells.push('<td></td>')
   }
   if (haveTotal) {
     $table.append('<tfoot>' +

@@ -258,7 +258,8 @@ export var methods = {
     var metaVals = logEntry.args[0]
     var meta = logEntry.meta
     // console.log('meta', meta)
-    info.$container.data('channelNameRoot', meta.channelNameRoot)
+    info.$container.data('meta', metaVals)
+    info.$container.find('.debug').data('channelNameRoot', meta.channelNameRoot)
     info.$container.data('options', {
       drawer: meta.drawer
     })

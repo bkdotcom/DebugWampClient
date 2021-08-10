@@ -3,6 +3,7 @@ import PubSub from './PubSub.js'
 import './prototypeMethods.js' // import for side-effects only
 import * as ui from './ui/ui.js'
 import * as logger from './Logger/Logger.js'
+import { Xdebug } from './Xdebug/Xdebug.js'
 import { Config } from './Config.js'
 import { SocketWorker as Wamp } from './wamp/SocketWorker.js'
 
@@ -18,6 +19,7 @@ var config = new Config(
 )
 
 initWamp()
+var xdebug = initXdebug()
 
 $(function () {
   var hasConnected = false
@@ -32,17 +34,23 @@ $(function () {
   })
 
   PubSub.subscribe('wamp', function (cmd, data) {
+    var logEntry = {}
     if (cmd === 'msg') {
-      logger.processEntry({
-        method: data[0],
-        args: data[1],
-        meta: data[2]
-      })
-      if (data[0] === 'meta' && data[2].linkFilesTemplateDefault) {
-        config.setDefault({
-          linkFiles: true,
-          linkFilesTemplate: data[2].linkFilesTemplateDefault
-        })
+      logEntry = {
+        method: data.msg[0],
+        args: data.msg[1],
+        meta: data.msg[2]
+      }
+      if (data.topic == 'bdk.debug') {
+        logger.processEntry(logEntry)
+        if (logEntry.method === 'meta' && logEntry.meta.linkFilesTemplateDefault) {
+          config.setDefault({
+            linkFiles: true,
+            linkFilesTemplate: logEntry.meta.linkFilesTemplateDefault
+          })
+        }
+      } else if (data.topic === 'bdk.debug.xdebug') {
+        xdebug.processEntry(logEntry)
       }
       // myWorker.postMessage('getMsg') // request next msg
       PubSub.publish('wamp', 'getMsg')
@@ -81,4 +89,8 @@ $(function () {
 
 function initWamp () {
   return new Wamp(PubSub, config)
+}
+
+function initXdebug () {
+  return new Xdebug(PubSub)
 }

@@ -165,7 +165,7 @@
   var classCollapsed = 'fa-chevron-right';
   var classExpanded = 'fa-chevron-down';
   var timeoutHandler;
-  var navbarHeight; // = $('.navbar-collapse').outerHeight()
+  var navbarHeight; // = $('nav.navbar').outerHeight()
   var $cardsInViewport = $();
 
   function init$1 (config) {
@@ -230,11 +230,16 @@
     $('body').on('shown.bs.collapse hidden.bs.collapse', '.card-body', function (e) {
       var $cardBody = $(this);
       var $card = $cardBody.closest('.card');
+      var $cardHeader = $card.find('> .card-header');
       var $icon = $card.find('.card-header .' + classCollapsed + ', .card-header .' + classExpanded);
       $icon.toggleClass(classExpanded + ' ' + classCollapsed);
       $card.toggleClass('expanded');
       if (e.type === 'shown') {
-        $cardBody.find('> .debug-menu-bar').css('top', (navbarHeight + $card.find('> .card-header').outerHeight()) + 'px');
+        $cardHeader.css('top', navbarHeight + 'px');
+        $cardBody.find('> .debug-menu-bar').css('top', (
+          navbarHeight +
+          $cardHeader.outerHeight()
+        ) + 'px');
         $cardBody.find('.m_alert, .group-body:visible').debugEnhance();
       }
     });
@@ -279,7 +284,7 @@
 
     $('body').on('click', '.card-header[data-toggle=collapse]', function () {
       var $target = $($(this).data('target'));
-      navbarHeight = $('.navbar-collapse').outerHeight();
+      navbarHeight = $('nav.navbar').outerHeight();
       $target.collapse('toggle');
     });
 
@@ -305,7 +310,7 @@
     init(config);
 
     // note:  navbar may not yet be at final height
-    navbarHeight = $('.navbar-collapse').outerHeight();
+    navbarHeight = $('nav.navbar').outerHeight();
   }
 
   function debounce (fn, ms) {
@@ -494,7 +499,6 @@
     Add totals (tfoot)
   */
   Table.prototype.buildFooter = function (tableInfo) {
-    var $cell;
     var cells = [];
     var colHasTotal;
     var haveTotal = false;
@@ -505,12 +509,12 @@
       info = tableInfo.columns[i];
       colHasTotal = typeof info.total !== 'undefined';
       haveTotal = haveTotal || colHasTotal;
-      $cell = $('<td></td>');
       if (colHasTotal) {
         info.total = parseFloat(info.total.toFixed(6), 10);
-        $cell = this.dump.dump(info.total, { tagName: 'td' });
+        cells.push(this.dump.dump(info.total, { tagName: 'td' }));
+        continue;
       }
-      cells.push($cell[0].outerHTML);
+      cells.push('<td></td>');
     }
     if (haveTotal) {
       $table.append('<tfoot>' +
@@ -545,7 +549,8 @@
   };
 
   function DumpObject (dump) {
-    this.dump = dump;
+    this.dumper = dump;
+    this.COLLECT_METHODS = 2;
     this.OUTPUT_CONSTANTS = 4;
     this.OUTPUT_METHODS = 8;
     this.OUTPUT_METHOD_DESC = 16;
@@ -557,20 +562,23 @@
     this.OUTPUT_PHPDOC = 65536;
   }
 
-  DumpObject.prototype.dumpObject = function (abs) {
+  DumpObject.prototype.dump = function (abs) {
     // console.info('dumpObject', abs)
     var html = '';
     var outPhpDoc = true;
     var phpDoc = abs.phpDoc || {};
     var strClassName = '';
     var title = ((phpDoc.summary || '') + '\n\n' + (phpDoc.desc || '')).trim();
-    if (typeof abs.flags === 'undefined') {
-      abs.flags = 0x1FFFF;
+    if (typeof abs.cfgFlags === 'undefined') {
+      abs.cfgFlags = 0x1FFFF;
     }
-    outPhpDoc = abs.flags & this.OUTPUT_PHPDOC;
-    strClassName = this.dump.markupIdentifier(abs.className, {
+    outPhpDoc = abs.cfgFlags & this.OUTPUT_PHPDOC;
+    strClassName = this.dumper.markupIdentifier(abs.className, {
       title: outPhpDoc && title.length ? title : null
     });
+    if (abs.isMaxDepth) {
+      this.dumper.getDumpOpts().attribs.class.push('max-depth');
+    }
     if (abs.isRecursion) {
       return strClassName +
         ' <span class="t_recursion">*RECURSION*</span>'
@@ -633,7 +641,7 @@
       val = val.substring(0, 100);
       valAppend = '&hellip; <i>(' + (len - 100) + ' more bytes)</i>';
     }
-    $toStringDump = $(this.dump.dump(val));
+    $toStringDump = $(this.dumper.dump(val));
     title = (!abs.stringified ? '__toString() : ' : '') + $toStringDump.prop('title');
     if (title === '__toString() : ') {
       title = '__toString()';
@@ -653,21 +661,21 @@
     if (abs.attributes === undefined) {
       return ''
     }
-    if ((abs.flags & this.OUTPUT_ATTRIBUTES_OBJ) !== this.OUTPUT_ATTRIBUTES_OBJ) {
+    if ((abs.cfgFlags & this.OUTPUT_ATTRIBUTES_OBJ) !== this.OUTPUT_ATTRIBUTES_OBJ) {
       return ''
     }
     // var $dd
     $.each(abs.attributes, function (key, attribute) {
       args = [];
       html += '<dd class="attribute">';
-      html += self.dump.markupIdentifier(attribute.name);
+      html += self.dumper.markupIdentifier(attribute.name);
       if (Object.keys(attribute.arguments).length) {
         $.each(attribute.arguments, function (i, val) {
           args.push(
             (i.match(/^\d+$/) === null
               ? '<span class="t_parameter-name">' + i + '</span><span class="t_punct">:</span>'
               : '') +
-            self.dump.dump(val)
+            self.dumper.dump(val)
           );
         });
         html += '<span class="t_punct">(</span>' +
@@ -687,9 +695,9 @@
       : '';
     var self = this;
     var $dd;
-    var outAttributes = abs.flags & this.OUTPUT_ATTRIBUTES_CONST;
-    var outConstants = abs.flags & this.OUTPUT_CONSTANTS;
-    var outPhpDoc = abs.flags & this.OUTPUT_PHPDOC;
+    var outAttributes = abs.cfgFlags & this.OUTPUT_ATTRIBUTES_CONST;
+    var outConstants = abs.cfgFlags & this.OUTPUT_CONSTANTS;
+    var outPhpDoc = abs.cfgFlags & this.OUTPUT_PHPDOC;
     if (!abs.constants || !outConstants) {
       return ''
     }
@@ -698,7 +706,7 @@
         '<span class="t_modifier_' + info.visibility + '">' + info.visibility + '</span> ' +
         '<span class="t_identifier"' + (outPhpDoc && info.desc ? ' title="' + info.desc.escapeHtml() + '"' : '') + '>' + key + '</span> ' +
         '<span class="t_operator">=</span> ' +
-        self.dump.dump(info.value) +
+        self.dumper.dump(info.value) +
         '</dd>');
       if (outAttributes && info.attributes && info.attributes.length) {
         $dd.attr('data-attributes', JSON.stringify(info.attributes));
@@ -767,8 +775,8 @@
     var label = Object.keys(properties).length
       ? 'properties'
       : 'no properties';
-    var outPhpDoc = abs.flags & this.OUTPUT_PHPDOC;
-    var outAttributes = abs.flags & this.OUTPUT_ATTRIBUTES_PROP;
+    var outPhpDoc = abs.cfgFlags & this.OUTPUT_PHPDOC;
+    var outAttributes = abs.cfgFlags & this.OUTPUT_ATTRIBUTES_PROP;
     var self = this;
     if (meta.viaDebugInfo) {
       label += ' <span class="text-muted">(via __debugInfo)</span>';
@@ -815,9 +823,9 @@
             : ''
           ) +
           '>' + name + '</span>' +
-        (info.value !== self.dump.UNDEFINED
+        (info.value !== self.dumper.UNDEFINED
           ? ' <span class="t_operator">=</span> ' +
-            self.dump.dump(info.value)
+            self.dumper.dump(info.value)
           : ''
         ) +
         '</dd>'
@@ -839,19 +847,24 @@
   };
 
   DumpObject.prototype.dumpMethods = function (abs) {
+    var self = this;
+    var html = '';
     var label = Object.keys(abs.methods).length
       ? 'methods'
       : 'no methods';
-    var html = '<dt class="methods">' + label + '</dt>' +
-      magicMethodInfo(abs, ['__call', '__callStatic']);
-    var self = this;
-    var outAttributes = abs.flags & this.OUTPUT_ATTRIBUTES_METHOD;
-    var outAttributesParam = abs.flags & this.OUTPUT_ATTRIBUTES_PARAM;
-    var outMethods = abs.flags & this.OUTPUT_METHODS;
-    var outPhpDoc = abs.flags & this.OUTPUT_PHPDOC;
+    var collectMethods = abs.cfgFlags & this.COLLECT_METHODS;
+    var outAttributes = abs.cfgFlags & this.OUTPUT_ATTRIBUTES_METHOD;
+    var outAttributesParam = abs.cfgFlags & this.OUTPUT_ATTRIBUTES_PARAM;
+    var outMethods = abs.cfgFlags & this.OUTPUT_METHODS;
+    var outPhpDoc = abs.cfgFlags & this.OUTPUT_PHPDOC;
     if (!outMethods) {
       return ''
     }
+    if (!collectMethods) {
+      return '<dt class="methdos">methods not collected</dt>'
+    }
+    html = '<dt class="methods">' + label + '</dt>';
+    html += magicMethodInfo(abs, ['__call', '__callStatic']);
     $.each(abs.methods, function (k, info) {
       var $dd = $('<dd class="method"></dd>').addClass(info.visibility);
       var modifiers = [];
@@ -887,11 +900,12 @@
           '>' + k + '</span>' +
         '<span class="t_punct">(</span>' + paramStr + '<span class="t_punct">)</span>' +
         (k === '__toString'
-          ? '<br />' + self.dump.dump(info.returnValue)
+          ? '<br />' + self.dumper.dump(info.returnValue)
           : ''
         ) +
         '</dd>'
       );
+
       if (outAttributes && info.attributes && info.attributes.length) {
         $dd.attr('data-attributes', JSON.stringify(info.attributes));
       }
@@ -925,7 +939,7 @@
       });
       info = $.extend({
         desc: null,
-        defaultValue: self.dump.UNDEFINED
+        defaultValue: self.dumper.UNDEFINED
       }, info);
       if (info.isPromoted) {
         $param.addClass('isPromoted');
@@ -941,13 +955,13 @@
           ? ' title="' + info.desc.escapeHtml().replace('\n', ' ') + '"'
           : ''
         ) + '>' + info.name.escapeHtml() + '</span>');
-      if (info.defaultValue !== self.dump.UNDEFINED) {
+      if (info.defaultValue !== self.dumper.UNDEFINED) {
         defaultValue = info.defaultValue;
         if (typeof defaultValue === 'string') {
           defaultValue = defaultValue.replace('\n', ' ');
         }
         $param.append(' <span class="t_operator">=</span> ' +
-          $(self.dump.dump(defaultValue))
+          $(self.dumper.dump(defaultValue))
             .addClass('t_parameter-default')[0].outerHTML
         );
       }
@@ -1924,7 +1938,8 @@
       'null',
       'string'
     ];
-    dumpOpts.attribs = abs.attribs || { };
+    var value;
+    dumpOpts.attribs = abs.attribs || {};
     if (dumpOpts.attribs.class === undefined) {
       dumpOpts.attribs.class = [];
     }
@@ -1937,8 +1952,18 @@
       $.extend(dumpOpts, abs.options);
     }
     if (simpleTypes.indexOf(abs.type) > -1) {
+      value = abs.value;
+      if (abs.type === 'array') {
+        // remove value so not setting as dumpOpt or passing redundently to dumpXxxx in 2nd param
+        delete abs.value;
+      }
+      for (k in abs) {
+        if (dumpOpts[k] === undefined) {
+          dumpOpts[k] = abs[k];
+        }
+      }
       dumpOpts.typeMore = abs.typeMore; // likely null
-      return this[method](abs.value, abs)
+      return this[method](value, abs)
     }
     return this[method](abs)
   };
@@ -1952,7 +1977,7 @@
     var dumpOpts = $.extend({
       asFileTree: false,
       expand: null,
-      maxDepth: false,
+      isMaxDepth: false,
       showListKeys: true
     }, this.getDumpOpts());
     /*
@@ -1967,10 +1992,10 @@
     if (dumpOpts.asFileTree) {
       dumpOpts.attribs.class.push('array-file-tree');
     }
-    if (dumpOpts.maxDepth) {
+    if (dumpOpts.isMaxDepth) {
       dumpOpts.attribs.class.push('max-depth');
     }
-    if (length === 0 && dumpOpts.maxDepth === false) {
+    if (length === 0 && dumpOpts.isMaxDepth === false) {
       return '<span class="t_keyword">array</span>' +
           '<span class="t_punct">(</span>\n' +
           '<span class="t_punct">)</span>'
@@ -2037,7 +2062,7 @@
     dumpOpts.attribs['data-accessible'] = abs.scopeClass === abs.className
       ? 'private'
       : 'public';
-    return this.objectDumper.dumpObject(abs)
+    return this.objectDumper.dump(abs)
   };
 
   Dump.prototype.dumpRecursion = function () {
@@ -2423,7 +2448,8 @@
       var metaVals = logEntry.args[0];
       var meta = logEntry.meta;
       // console.log('meta', meta)
-      info.$container.data('channelNameRoot', meta.channelNameRoot);
+      info.$container.data('meta', metaVals);
+      info.$container.find('.debug').data('channelNameRoot', meta.channelNameRoot);
       info.$container.data('options', {
         drawer: meta.drawer
       });
@@ -2795,12 +2821,94 @@
     return dump.dump(val)
   }
 
+  function processEntry (logEntry) {
+    // console.log(JSON.parse(JSON.stringify(logEntry)));
+    var method = logEntry.method;
+    var meta = logEntry.meta;
+    var i;
+    var info = getNodeInfo(meta);
+    var channelsTab = info.channels.filter(function (channelInfo) {
+      return channelInfo.name === info.channelNameTop || channelInfo.name.indexOf(info.channelNameTop + '.') === 0
+    });
+    var $node;
+
+    try {
+      if (meta.format === 'html') {
+        if (typeof logEntry.args === 'object') {
+          $node = $('<li />', { class: 'm_' + method });
+          for (i = 0; i < logEntry.args.length; i++) {
+            $node.append(logEntry.args[i]);
+          }
+        } else {
+          $node = $(logEntry.args);
+          if (!$node.is('.m_' + method)) {
+            $node = $('<li />', { class: 'm_' + method }).html(logEntry.args);
+          }
+        }
+      } else if (methods[method]) {
+        $node = methods[method](logEntry, info);
+      } else {
+        $node = methods.default(logEntry, info);
+      }
+      updateSidebar(logEntry, info, $node !== false);
+      if (!$node) {
+        return;
+      }
+      if (meta.attribs && meta.attribs.class && meta.attribs.class === 'php-shutdown') {
+        info.$node = info.$container.find('> .debug > .tab-panes > .tab-primary > .tab-body > .debug-log.group-body');
+      }
+      info.$node.append($node);
+      $node.attr('data-channel', meta.channel); // using attr so can use [data-channel="xxx"] selector
+      if (meta.attribs && Object.keys(meta.attribs).length) {
+        if (meta.attribs.class) {
+          $node.addClass(meta.attribs.class);
+          delete meta.attribs.class;
+        }
+        $node.attr(meta.attribs);
+      }
+      if (meta.icon) {
+        $node.data('icon', meta.icon);
+      }
+      if (
+        channelsTab.length > 1 &&
+        info.channelName !== info.channelNameRoot + '.phpError' &&
+        !info.$container.find('.channels input[value="' + info.channelName + '"]').prop('checked')
+      ) {
+        $node.addClass('filter-hidden');
+      }
+      if (meta.detectFiles) {
+        // using attr so can find via css selector
+        $node.attr('data-detect-files', meta.detectFiles);
+        $node.attr('data-found-files', meta.foundFiles ? meta.foundFiles : []);
+      }
+      if ($node.is(':visible:not(.filter-hidden)')) {
+        $node.debugEnhance();
+      }
+      $node.closest('.m_group').removeClass('empty');
+    } catch (err) {
+      console.warn('Logger.processEntry error', err);
+      console.log('logEntry', logEntry);
+      /*
+      processEntry({
+        method: 'error',
+        args: [
+          '%cDebugWampClient: %cerror processing %c' + method + '()',
+          'font-weight:bold;',
+          '',
+          'font-family:monospace;'
+        ],
+        meta: meta
+      })
+      */
+    }
+  }
+
   function getNodeInfo (meta) {
     var $container = $('#' + meta.requestId);
     var $debug;
     var $node;
     var $tabPane;
-    var channelNameRoot = $container.data('channelNameRoot') || 'general';
+    var channelNameRoot = $container.find('.debug').data('channelNameRoot') || 'general';
     var channelName = meta.channel || channelNameRoot;
     var channelSplit = channelName.split('.');
     var info = {
@@ -2818,13 +2926,6 @@
     } else {
       // create
       //   header and card are separate so we can sticky the header
-      /*
-      $header = $('' +
-        '<div class="card" id="' + meta.requestId + '-header">' +
-          // formerly header was inside card-body
-        '</div>'
-      )
-      */
       $container = $('' +
         '<div class="card mb-3 sticky working" id="' + meta.requestId + '">' +
           '<div class="card-header" data-toggle="collapse" data-target="#' + meta.requestId + ' &gt; .collapse">' +
@@ -2836,7 +2937,7 @@
             '</div>' +
           '</div>' +
           '<div class="bg-white card-body collapse debug debug-enhanced-ui">' +
-            '<header class="debug-menu-bar hide">' +
+            '<header class="debug-bar debug-menu-bar">' +
               '<nav role="tablist">' +
                 '<a class="active nav-link" data-target=".' + nameToClassname(channelNameRoot) + '" data-toggle="tab" role="tab"><i class="fa fa-list-ul"></i>Log</a>' +
               '</nav>' +
@@ -2880,91 +2981,6 @@
     });
     addChannel(info, meta);
     return info
-  }
-
-  function processEntry (logEntry) {
-    // console.log(JSON.parse(JSON.stringify(logEntry)));
-    var method = logEntry.method;
-    var meta = logEntry.meta;
-    var i;
-    var info = getNodeInfo(meta);
-    var channelsTab = info.channels.filter(function (channelInfo) {
-      return channelInfo.name === info.channelNameTop || channelInfo.name.indexOf(info.channelNameTop + '.') === 0
-    });
-    var $node;
-
-    try {
-      if (meta.format === 'html') {
-        if (typeof logEntry.args === 'object') {
-          $node = $('<li />', { class: 'm_' + method });
-          for (i = 0; i < logEntry.args.length; i++) {
-            $node.append(logEntry.args[i]);
-          }
-        } else {
-          $node = $(logEntry.args);
-          if (!$node.is('.m_' + method)) {
-            $node = $('<li />', { class: 'm_' + method }).html(logEntry.args);
-          }
-        }
-      } else if (methods[method]) {
-        $node = methods[method](logEntry, info);
-      } else {
-        $node = methods.default(logEntry, info);
-      }
-      updateSidebar(logEntry, info, $node !== false);
-      if ($node) {
-        if (meta.attribs && meta.attribs.class && meta.attribs.class === 'php-shutdown') {
-          info.$node = info.$container.find('> .debug > .tab-panes > .tab-primary > .tab-body > .debug-log.group-body');
-        }
-        info.$node.append($node);
-        $node.attr('data-channel', meta.channel); // using attr so can use [data-channel="xxx"] selector
-        if (meta.attribs && Object.keys(meta.attribs).length) {
-          if (meta.attribs.class) {
-            $node.addClass(meta.attribs.class);
-            delete meta.attribs.class;
-          }
-          $node.attr(meta.attribs);
-        }
-        if (meta.icon) {
-          $node.data('icon', meta.icon);
-        }
-        if (
-          channelsTab.length > 1 &&
-          info.channelName !== info.channelNameRoot + '.phpError' &&
-          !info.$container.find('.channels input[value="' + info.channelName + '"]').prop('checked')
-        ) {
-          $node.addClass('filter-hidden');
-        }
-        if (meta.detectFiles) {
-          // using attr so can find via css selector
-          $node.attr('data-detect-files', meta.detectFiles);
-          $node.attr('data-found-files', meta.foundFiles ? meta.foundFiles : []);
-        }
-        if ($node.is(':visible:not(.filter-hidden)')) {
-          $node.debugEnhance();
-        }
-        if (!$node.is('.m_group')) {
-          // don't remove from ourself
-          // console.warn('remove empty from parent groups', $node[0])
-          $node.parents('.m_group').removeClass('empty');
-        }
-      }
-    } catch (err) {
-      console.warn(err);
-      console.log('logEntry', logEntry);
-      /*
-      processEntry({
-        method: 'error',
-        args: [
-          '%cDebugWampClient: %cerror processing %c' + method + '()',
-          'font-weight:bold;',
-          '',
-          'font-family:monospace;'
-        ],
-        meta: meta
-      })
-      */
-    }
   }
 
   function addChannel (info, meta) {
@@ -3194,6 +3210,154 @@
       }
     }
     return false
+  }
+
+  function Xdebug(pubSub) {
+  	var self = this;
+  	console.warn('Xdebug init');
+  	this.pubSub = pubSub;
+  	$('body').on('click', '.xdebug-commands .btn[data-cmd]', function () {
+  		var cmd = $(this).data('cmd');
+  		console.warn('clicked', cmd);
+  		self.pubSub.publish('wamp', 'publish', 'bdk.debug.xdebug', [cmd]);
+      $(this).blur();
+  	});
+    $('body').on('shown.bs.collapse', '.card-body', function (e) {
+      var $menuBar = $(this).find('.xdebug-menu-bar');
+      self.positionToolbar($menuBar);
+    });
+  }
+
+  Xdebug.prototype.positionToolbar = function($menuBar) {
+    console.warn('positionToolbar', $menuBar);
+    var $card = $menuBar.closest('.card');
+    console.warn({
+      navbarHeight: $('nav.navbar').outerHeight(),
+      cardHeaderOuterHeight: $card.find('> .card-header').outerHeight(),
+      debugMenuBarOuterHeight: $card.find('> .card-body > .debug-menu-bar').outerHeight()
+    });
+    $menuBar.css('top',
+      (
+        $('nav.navbar').outerHeight() +
+        $card.find('> .card-header').outerHeight() +
+        $card.find('> .card-body > .debug-menu-bar').outerHeight()
+      ) + 'px'
+    );
+  };
+
+  Xdebug.prototype.processEntry = function (logEntry) {
+    console.log('Xdebug.processEntry', JSON.parse(JSON.stringify(logEntry)));
+    var info = this.getNodeInfo();
+    var method = logEntry.method;
+    var meta = logEntry.meta;
+    var $node;
+    try {
+  	  if (methods[method]) {
+  	    $node = methods[method](logEntry, info);
+  	  } else {
+  	    $node = methods.default(logEntry, info);
+  	  }
+      if (!$node) {
+        return
+      }
+      if (meta.detectFiles) {
+        // using attr so can find via css selector
+        $node.attr('data-detect-files', meta.detectFiles);
+        $node.attr('data-found-files', meta.foundFiles ? meta.foundFiles : []);
+      }
+      info.$node.append($node);
+    } catch (err) {
+      console.warn('Xdebug.processEntry error', err);
+      console.log('logEntry', logEntry);
+    }
+  };
+
+  Xdebug.prototype.getNodeInfo = function () {
+    var id = 'xdebug';
+    // var $container = $('#' + id)
+    var $container = $('#debug-cards .card.working').filter(function () {
+      var data = $(this).data();
+      console.warn('data', data);
+      return true
+    }).last();
+    var info = {};
+    var channelNameRoot = 'general';
+    var $xdebug;
+    var $menuBar;
+    /*
+      Step 1: find or create primary container (card)
+    */
+    if ($container.length === 0) {
+      $container = $('' +
+        '<div class="card mb-3 sticky" id="' + id + '">' +
+          '<div class="card-header" data-toggle="collapse" data-target="#' + id + ' &gt; .collapse">' +
+            '<i class="fa fa-chevron-right"></i>' +
+            '<i class="fa fa-times float-right btn-remove-session"></i>' +
+            '<div class="card-header-body">' +
+              '<h3 class="card-title">xdebug</h3>' +
+              // '<i class="fa fa-spinner fa-pulse fa-lg"></i>' +
+            '</div>' +
+          '</div>' +
+          '<div class="bg-white card-body collapse debug debug-enhanced-ui">' +
+            '<header class="debug-bar debug-menu-bar">' +
+          	/*
+              '<nav role="tablist">' +
+                '<a class="active nav-link" data-target=".' + nameToClassname(channelNameRoot) + '" data-toggle="tab" role="tab"><i class="fa fa-list-ul"></i>Log</a>' +
+              '</nav>' +
+            */
+            '</header>' +
+            '<div class="tab-panes">' +
+              '<div class="active ' + nameToClassname$1(channelNameRoot) + ' tab-pane tab-primary" role="tabpanel">' +
+                '<div class="sidebar-trigger"></div>' +
+                '<div class="tab-body">' +
+                  '<ul class="debug-log-summary group-body"></ul>' +
+                  '<ul class="debug-log group-body"></ul>' +
+                '</div>' +
+              '</div>' +
+            '</div>' +
+            // '<i class="fa fa-spinner fa-pulse"></i>' +
+          '</div>' +
+        '</div>'
+      );
+  	  $('#debug-cards').append($container);
+    }
+    /*
+      Step 2: find or create xdebug area
+    */
+    $xdebug = $container.find('.xdebug');
+    if ($xdebug.length === 0) {
+      $menuBar = $('' +
+        '<header class="debug-bar xdebug-menu-bar">' +
+          '<div class="btn-group xdebug-commands" role="group" aria-label="Xdebug Commands">' +
+            '<button type="button" class="btn btn-secondary" data-cmd="run" title="Run"><i class="fa fa-play"></i></button>' +
+            '<button type="button" class="btn btn-secondary" data-cmd="step_into" title="Step Into"><img src="?action=img&amp;src=icon/step_into.svg" style="width:18px; height:18px;" /></button>' +
+            '<button type="button" class="btn btn-secondary" data-cmd="step_over" title="Step Over"><img src="?action=img&amp;src=icon/step_over.svg" style="width:18px; height:18px;" /></button>' +
+            '<button type="button" class="btn btn-secondary" data-cmd="step_out" title="Step Out"><img src="?action=img&amp;src=icon/step_out.svg" style="width:18px; height:18px;" /></button>' +
+            '<button type="button" class="btn btn-secondary" data-cmd="stop" title="Stop Script"><i class="fa fa-stop"></i></button>' +
+            '<button type="button" class="btn btn-secondary" data-cmd="detatch" title="Stop Debugging"><i class="fa fa-sign-out"></i></button>' +
+          '</div>' +
+        '</header>'
+      );
+      $xdebug = $('<ul class="xdebug group-body"></ul>');
+      $container.find('.debug > header').after($menuBar);
+      $container.find('.tab-primary .tab-body').append($xdebug);
+      this.positionToolbar($menuBar);
+    }
+
+    info = {
+      $container: $container,
+      $node: $xdebug
+      // $tabPane: null,
+      // channelName: channelName,
+      // channelNameRoot: channelNameRoot,
+      // channelNameTop: channelSplit.shift(), // ie channelName of tab
+      // channels: []
+    };
+    return info
+  };
+
+  function nameToClassname$1 (name) {
+    return 'debug-tab-' + name.toLowerCase().replace(/\W+/g, '-')
   }
 
   /**
@@ -4008,6 +4172,8 @@
     this.connection = null;
     this.hasMsgQueue = false;
     this.msgQueue = new Queue();
+    this.session = null;
+
     pubSub.subscribe('wamp', function (cmd) {
       // console.info('socketWorker: wamp', cmd)
       // var workerResult = 'Result: ' + (e.data[0] * e.data[1])
@@ -4029,6 +4195,9 @@
           return
         }
         pubSub.publish('wamp', 'msg', msg);
+      } else if (cmd === 'publish') {
+        // topic, arguments
+        self.session.publish(arguments[1], arguments[2]);
       }
     });
   }
@@ -4040,24 +4209,16 @@
     });
     var self = this;
     connection.onopen = function (session, details) {
-      // console.info('Connection opened')
+      console.info('Wamp connection opened', details);
+
+      self.session = session;
+
       // postMessage('connectionOpened')
       self.pubSub.publish('wamp', 'connectionOpened');
       // var myWorker = new Worker('socketWorker.js')
       // SUBSCRIBE to a topic and receive events
 
-      // session.publish('bdk.debug.xdebug', ['does this work'])
-
-      session.subscribe('bdk.debug', function (msg) {
-        // console.log('recvd args', Object.keys(row[1][1]))
-        if (!self.hasMsgQueue) {
-          self.hasMsgQueue = true;
-          // postMessage(['msg', row])
-          self.pubSub.publish('wamp', 'msg', msg);
-        } else {
-          self.msgQueue.push(msg);
-        }
-      }).then(
+      session.subscribe('bdk.debug', self.onMsgFactory('bdk.debug')).then(
         function (sub) {
           // console.log('subscribed to topic')
         },
@@ -4065,6 +4226,16 @@
           console.warn('failed to subscribe to topic', err);
         }
       );
+
+      session.subscribe('bdk.debug.xdebug', self.onMsgFactory('bdk.debug.xdebug')).then(
+        function (sub) {
+          // console.log('subscribed to topic')
+        },
+        function (err) {
+          console.warn('failed to subscribe to topic', err);
+        }
+      );
+      // end onopen callback
     };
     connection.onclose = function (reason, details) {
       // console.warn('Connection closed: ' + reason)
@@ -4074,6 +4245,23 @@
     connection.open();
     // console.log('connection', connection)
     return connection
+  };
+
+  SocketWorker.prototype.onMsgFactory = function (topic) {
+    var self = this;
+    return function (msg) {
+      // console.log('recvd args', Object.keys(row[1][1]))
+      if (!self.hasMsgQueue) {
+        self.hasMsgQueue = true;
+        // postMessage(['msg', row])
+        self.pubSub.publish('wamp', 'msg', {
+          topic: topic,
+          msg: msg
+        });
+      } else {
+        self.msgQueue.push(msg);
+      }
+    }
   };
 
   var config = new Config(
@@ -4088,6 +4276,7 @@
   );
 
   initWamp();
+  var xdebug = initXdebug();
 
   $(function () {
     var hasConnected = false;
@@ -4102,17 +4291,23 @@
     });
 
     PubSub.subscribe('wamp', function (cmd, data) {
+      var logEntry = {};
       if (cmd === 'msg') {
-        processEntry({
-          method: data[0],
-          args: data[1],
-          meta: data[2]
-        });
-        if (data[0] === 'meta' && data[2].linkFilesTemplateDefault) {
-          config.setDefault({
-            linkFiles: true,
-            linkFilesTemplate: data[2].linkFilesTemplateDefault
-          });
+        logEntry = {
+          method: data.msg[0],
+          args: data.msg[1],
+          meta: data.msg[2]
+        };
+        if (data.topic == 'bdk.debug') {
+          processEntry(logEntry);
+          if (logEntry.method === 'meta' && logEntry.meta.linkFilesTemplateDefault) {
+            config.setDefault({
+              linkFiles: true,
+              linkFilesTemplate: logEntry.meta.linkFilesTemplateDefault
+            });
+          }
+        } else if (data.topic === 'bdk.debug.xdebug') {
+          xdebug.processEntry(logEntry);
         }
         // myWorker.postMessage('getMsg') // request next msg
         PubSub.publish('wamp', 'getMsg');
@@ -4151,6 +4346,10 @@
 
   function initWamp () {
     return new SocketWorker(PubSub, config)
+  }
+
+  function initXdebug () {
+    return new Xdebug(PubSub)
   }
 
 }(window.jQuery));

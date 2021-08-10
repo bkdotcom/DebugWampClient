@@ -127,7 +127,8 @@ Dump.prototype.dumpAbstraction = function (abs) {
     'null',
     'string'
   ]
-  dumpOpts.attribs = abs.attribs || { }
+  var value
+  dumpOpts.attribs = abs.attribs || {}
   if (dumpOpts.attribs.class === undefined) {
     dumpOpts.attribs.class = []
   }
@@ -140,8 +141,18 @@ Dump.prototype.dumpAbstraction = function (abs) {
     $.extend(dumpOpts, abs.options)
   }
   if (simpleTypes.indexOf(abs.type) > -1) {
+    value = abs.value
+    if (abs.type === 'array') {
+      // remove value so not setting as dumpOpt or passing redundently to dumpXxxx in 2nd param
+      delete abs.value
+    }
+    for (k in abs) {
+      if (dumpOpts[k] === undefined) {
+        dumpOpts[k] = abs[k]
+      }
+    }
     dumpOpts.typeMore = abs.typeMore // likely null
-    return this[method](abs.value, abs)
+    return this[method](value, abs)
   }
   return this[method](abs)
 }
@@ -155,7 +166,7 @@ Dump.prototype.dumpArray = function (array) {
   var dumpOpts = $.extend({
     asFileTree: false,
     expand: null,
-    maxDepth: false,
+    isMaxDepth: false,
     showListKeys: true
   }, this.getDumpOpts())
   /*
@@ -170,10 +181,10 @@ Dump.prototype.dumpArray = function (array) {
   if (dumpOpts.asFileTree) {
     dumpOpts.attribs.class.push('array-file-tree')
   }
-  if (dumpOpts.maxDepth) {
+  if (dumpOpts.isMaxDepth) {
     dumpOpts.attribs.class.push('max-depth')
   }
-  if (length === 0 && dumpOpts.maxDepth === false) {
+  if (length === 0 && dumpOpts.isMaxDepth === false) {
     return '<span class="t_keyword">array</span>' +
         '<span class="t_punct">(</span>\n' +
         '<span class="t_punct">)</span>'
@@ -240,7 +251,7 @@ Dump.prototype.dumpObject = function (abs) {
   dumpOpts.attribs['data-accessible'] = abs.scopeClass === abs.className
     ? 'private'
     : 'public'
-  return this.objectDumper.dumpObject(abs)
+  return this.objectDumper.dump(abs)
 }
 
 Dump.prototype.dumpRecursion = function () {
