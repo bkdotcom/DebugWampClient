@@ -61,25 +61,13 @@ export function processEntry (logEntry) {
       $node.attr('data-detect-files', meta.detectFiles)
       $node.attr('data-found-files', meta.foundFiles ? meta.foundFiles : [])
     }
+    $node.closest('.m_group.empty').removeClass('empty').trigger('updated.debug.group')
     if ($node.is(':visible:not(.filter-hidden)')) {
       $node.debugEnhance()
     }
-    $node.closest('.m_group').removeClass('empty')
   } catch (err) {
     console.warn('Logger.processEntry error', err)
     console.log('logEntry', logEntry)
-    /*
-    processEntry({
-      method: 'error',
-      args: [
-        '%cDebugWampClient: %cerror processing %c' + method + '()',
-        'font-weight:bold;',
-        '',
-        'font-family:monospace;'
-      ],
-      meta: meta
-    })
-    */
   }
 }
 

@@ -118,6 +118,7 @@ export var methods = {
         $container.addClass('bg-danger')
       }
     }
+    $container.trigger('endOutput')
   },
   errorNotConsoled: function (logEntry, info) {
     var $container = info.$container
@@ -370,27 +371,25 @@ export var methods = {
     }
     $node = buildEntryNode(logEntry)
     $node.attr(attribs)
-    if (method === 'error') {
-      if (meta.trace && meta.trace.length > 1) {
-        $node.append(
-          $('<ul>', { class: 'list-unstyled no-indent' }).append(
-            methods.trace({
-              method: 'trace',
-              args: [meta.trace],
-              meta: meta
-            }).attr('data-detect-files', 'true')
-          )
+    if (meta.trace && meta.trace.length > 1) {
+      $node.append(
+        $('<ul>', { class: 'list-unstyled no-indent' }).append(
+          methods.trace({
+            method: 'trace',
+            args: [meta.trace],
+            meta: meta
+          }).attr('data-detect-files', 'true')
         )
-        $node.find('.m_trace').debugEnhance()
-        if ($node.is('.error-fatal')) {
-          this.endOutput(logEntry, info)
-        }
-      } else if (meta.context) {
-        console.log('context', meta.context)
-        $node.append(
-          buildContext(meta.context, meta.line)
-        )
+      )
+      $node.find('.m_trace').debugEnhance()
+      if ($node.is('.error-fatal')) {
+        this.endOutput(logEntry, info)
       }
+    } else if (meta.context) {
+      console.log('context', meta.context)
+      $node.append(
+        buildContext(meta.context, meta.line)
+      )
     }
     return $node
   }
