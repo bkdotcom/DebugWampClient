@@ -8,14 +8,15 @@
   ],
   "main": "index.js",
   "scripts": {
-    "build": "npx npm-run-all --parallel build:*",
-    "build:css": "scss -t compact --sourcemap=none ./src/scss/WampClient.scss ./src/css/WampClient.css",
+    "build": "npm run nra -- --parallel build:*",
+    "build:css": "npx node-sass --output-style compressed ./src/scss/WampClient.scss ./src/css/WampClient.css",
     "build:js": "npx rollup -c",
-    "cs": "npx npm-run-all --continue-on-error cs:*",
+    "cs": "npm run nra -- --continue-on-error cs:*",
     "cs:css": "npx stylelint ./src/scss",
     "cs:js": "npx eslint ./src/js_src/*",
+    "nra": "node node_modules/npm-run-all/bin/npm-run-all",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "watch": "npx npm-run-all --parallel watch:*",
+    "watch": "npm run nra -- --parallel watch:*",
     "watch:js": "NODE_ENV=watch npx nodemon --watch js_src/ --ext js --exec \"npm run build:js\"",
     "watch:scss": "npx nodemon --watch ./src/scss/ --ext scss --exec \"npm run build:css\""
   },
@@ -37,7 +38,9 @@
     "rollup-plugin-commonjs": "^9.2.2",
     "rollup-plugin-legacy": "^1.0.0",
     "rollup-plugin-node-resolve": "^4.0.1",
-    "rollup-plugin-uglify": "^6.0.4"
+    "rollup-plugin-uglify": "^6.0.4",
+    "stylelint": "^14.1.0",
+    "stylelint-config-standard-scss": "^3.0.0"
   },
   "dependencies": {}
 }

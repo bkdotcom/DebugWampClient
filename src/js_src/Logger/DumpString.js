@@ -11,8 +11,7 @@ export function DumpString (dump) {
 DumpString.prototype.dump = function (val, abs) {
   var dumpOpts = this.dumper.getDumpOpts()
   if ($.isNumeric(val)) {
-    dumpOpts.attribs.class.push('numeric')
-    this.dumper.checkTimestamp(val)
+    this.dumper.checkTimestamp(val, abs)
   }
   if (!dumpOpts.addQuotes) {
     dumpOpts.attribs.class.push('no-quotes')

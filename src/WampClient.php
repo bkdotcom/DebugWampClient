@@ -22,7 +22,6 @@ use bdk\Debug\Plugin\Highlight;
  */
 class WampClient
 {
-
     protected $cfg = array();
     protected $debug;
     protected $request;

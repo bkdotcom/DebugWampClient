@@ -161,7 +161,7 @@ function addChannel (info, meta) {
     return false
   }
   /*
-  console.warn('adding channel', {
+  console.info('adding channel', {
     name: info.channelName,
     icon: meta.channelIcon,
     show: meta.channelShow

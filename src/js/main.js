@@ -704,6 +704,10 @@
     $.each(abs.constants, function (key, info) {
       $dd = $('<dd class="constant ' + info.visibility + '">' +
         '<span class="t_modifier_' + info.visibility + '">' + info.visibility + '</span> ' +
+        (info.isFinal
+          ? '<span class="t_modifier_final">final</span> '
+          : ''
+       ) +
         '<span class="t_identifier"' + (outPhpDoc && info.desc ? ' title="' + info.desc.escapeHtml() + '"' : '') + '>' + key + '</span> ' +
         '<span class="t_operator">=</span> ' +
         self.dumper.dump(info.value) +
@@ -787,28 +791,25 @@
       // console.info('property info', info)
       var $dd;
       var isPrivateAncestor = $.inArray('private', info.visibility) >= 0 && info.inheritedFrom;
-      var modifiers = '';
       var classes = {
-        'debuginfo-value': info.valueFrom === 'debugInfo',
         'debug-value': info.valueFrom === 'debug',
-        excluded: info.isExcluded,
+        'debuginfo-excluded': info.debugInfoExcluded,
+        'debuginfo-value': info.valueFrom === 'debugInfo',
         forceShow: info.forceShow,
         inherited: typeof info.inheritedFrom === 'string',
-        'private-ancestor': info.isPrivateAncestor
+        isPromoted: info.isPromoted,
+        isReadOnly: info.isReadOnly,
+        isStatic: info.isStatic,
+        'private-ancestor': info.isPrivateAncestor,
+        property: true
       };
       name = name.replace('debug.', '');
       if (typeof info.visibility !== 'object') {
         info.visibility = [info.visibility];
       }
       classes[info.visibility.join(' ')] = $.inArray('debug', info.visibility) < 0;
-      $.each(info.visibility, function (i, vis) {
-        modifiers += '<span class="t_modifier_' + vis + '">' + vis + '</span> ';
-      });
-      if (info.isStatic) {
-        modifiers += '<span class="t_modifier_static">static</span> ';
-      }
-      $dd = $('<dd class="property">' +
-        modifiers +
+      $dd = $('<dd>' +
+        self.dumpPropertyModifiers(info) +
         (isPrivateAncestor
           ? ' (<i>' + info.inheritedFrom + '</i>)'
           : ''
@@ -842,6 +843,21 @@
         }
       });
       html += $dd[0].outerHTML;
+    });
+    return html
+  };
+
+  DumpObject.prototype.dumpPropertyModifiers = function (info) {
+    var html = '';
+    var modifiers = JSON.parse(JSON.stringify(info.visibility));
+    if (info.isReadOnly) {
+      modifiers.push('readonly');
+    }
+    if (info.isStatic) {
+      modifiers.push('static');
+    }
+    $.each(modifiers, function (i, modifier) {
+      html += '<span class="t_modifier_' + modifier + '">' + modifier + '</span> ';
     });
     return html
   };
@@ -1637,8 +1653,7 @@
   DumpString.prototype.dump = function (val, abs) {
     var dumpOpts = this.dumper.getDumpOpts();
     if ($.isNumeric(val)) {
-      dumpOpts.attribs.class.push('numeric');
-      this.dumper.checkTimestamp(val);
+      this.dumper.checkTimestamp(val, abs);
     }
     if (!dumpOpts.addQuotes) {
       dumpOpts.attribs.class.push('no-quotes');
@@ -1837,23 +1852,29 @@
     this.TYPE_FLOAT_NAN = '\x00nan\x00'.parseHex();
   };
 
-  Dump.prototype.checkTimestamp = function (val) {
-    var secs = 86400 * 90; // 90 days worth o seconds
-    var tsNow = Date.now() / 1000;
+  Dump.prototype.checkTimestamp = function (val, abs) {
     var date;
     var dumpOpts;
-    val = parseFloat(val, 10);
-    if (val > tsNow - secs && val < tsNow + secs) {
-      date = (new Date(val * 1000)).toString();
-      dumpOpts = this.getDumpOpts();
-      dumpOpts.postDump = function (val, dumpOpts) {
-        return $('<span />', {
-          class: 'timestamp value-container',
-          'data-type': dumpOpts.type,
-          title: date
-        }).html(val)
-      };
+    if (typeof abs === 'undefined' || abs.typeMore !== 'timestamp') {
+      return;
     }
+    date = (new Date(val * 1000)).toString();
+    dumpOpts = this.getDumpOpts();
+    dumpOpts.postDump = function (dumped, opts) {
+      if (opts.tagName === 'td') {
+        opts.attribs.class = 't_' + opts.type;
+        return $('<td />', {
+          class: 'timestamp value-container',
+          title: date,
+          html: $('<span />', opts.attribs).html(val)
+        })
+      }
+      return $('<span />', {
+        class: 'timestamp value-container',
+        title: date,
+        html: dumped
+      })
+    };
   };
 
   Dump.prototype.dump = function (val, opts) {
@@ -2034,8 +2055,8 @@
     return this.markupIdentifier(abs.name)
   };
 
-  Dump.prototype.dumpFloat = function (val) {
-    this.checkTimestamp(val);
+  Dump.prototype.dumpFloat = function (val, abs) {
+    this.checkTimestamp(val, abs);
     if (val === this.TYPE_FLOAT_INF) {
       return 'INF'
     }
@@ -2045,8 +2066,8 @@
     return val
   };
 
-  Dump.prototype.dumpInt = function (val) {
-    return this.dumpFloat(val)
+  Dump.prototype.dumpInt = function (val, abs) {
+    return this.dumpFloat(val, abs)
   };
 
   Dump.prototype.dumpNotInspected = function () {
@@ -2980,7 +3001,7 @@
       return false
     }
     /*
-    console.warn('adding channel', {
+    console.info('adding channel', {
       name: info.channelName,
       icon: meta.channelIcon,
       show: meta.channelShow

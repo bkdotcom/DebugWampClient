@@ -1,17 +1,17 @@
 body {
-	padding-top: 50px;
-	font-size: 14px;
+  padding-top: 50px;
+  font-size: 14px;
 }
 
 kbd {
-	background-color: #ccc;
-	color: #000;
+  background-color: #ccc;
+  color: #000;
 }
 
 .alert {
-	padding: 10px;
-	margin-bottom: 10px;
-	border: 1px solid transparent;
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid transparent;
   &.alert-dismissible {
     padding-right: 35px;
     .close {
@@ -20,11 +20,73 @@ kbd {
   }
 }
 
+.debug {
+  transform: none;
+  &.debug-enhanced-ui {
+    .debug-bar {
+      border-top: 0;
+      nav {
+        margin-left: 0;
+      }
+    }
+  }
+  .debug-sidebar + .tab-body {
+    margin-left: 0;
+    padding-left: 0;
+  }
+  .debug-sidebar.show + .tab-body {
+    margin-left: 0;
+  }
+  .debug-tabs {
+    position: relative;
+  }
+}
+
 .card {
 
   .card-header {
     background-color: #f7f7f7;
+    border-bottom-width: 0;
+    cursor: pointer;
+    &[data-interface="cli"] {
+      border-left: solid 2px rgba(0, 0, 0, 50%);
+    }
+    &[data-interface="http ajax"] {
+      border-left: solid 2px rgba(80, 80, 200, 50%);
+    }
+    * {
+      font-size: inherit;
+    }
+    > i {
+      float: left;
+      line-height: 1.5em;
+    }
+    .btn-remove-session {
+      margin-left: 0.75em;
+      margin-top: -2px;
+    }
+    .label {
+      // .label used for reponse code
+      padding: 0.1em 0.6em 0.2em;
+    }
+    .http-host {
+      opacity: 0.6;
+    }
+    .card-header-body {
+      margin-left: 2em;
+      .fa-spinner {
+        margin-left: 0.75em;
+      }
+    }
+    .card-title {
+      display: inline;
+    }
+    > .debug {
+      margin-left: -1.25rem;
+      margin-right: -1.25rem;
+    }
   }
+
   &.bg-danger,
   &.bg-danger > .card-header {
     background-color: #f2dede !important;
@@ -56,14 +118,12 @@ kbd {
     }
   }
 
-  //
-	// Serves as mouseenter trigger area
-  //
-	.sidebar-trigger {
-		position: absolute;
-		width: 12px;
-		height: 100%;
-	}
+  // Serves as mouseenter trigger area
+  .sidebar-trigger {
+    position: absolute;
+    width: 12px;
+    height: 100%;
+  }
 
   .debug-sidebar {
     // position: absolute;
@@ -85,7 +145,7 @@ kbd {
       border-left: 0;
       border-right: #ddd solid 1px;
       border-bottom: #ddd solid 1px;
-      border-bottom-right-radius: .5em;
+      border-bottom-right-radius: 0.5em;
       color: #333;
       i.fa {
         margin-right: 0;
@@ -93,49 +153,7 @@ kbd {
     }
   }
   .filter-active .debug-sidebar .sidebar-toggle {
-    background-color: #CCC;
-  }
-}
-
-.card-header {
-	border-bottom-width: 0;
-	cursor: pointer;
-	&[data-interface="cli"] {
-		border-left: solid 2px rgba(0, 0, 0, 0.5);
-	}
-	&[data-interface="http ajax"] {
-		border-left: solid 2px rgba(80, 80, 200, 0.5);
-	}
-	* {
-		font-size: inherit;
-	}
-	> i {
-		float: left;
-		line-height: 1.5em;
-	}
-  .btn-remove-session {
-    margin-left: .75em;
-    margin-top: -2px;
-  }
-	.label {
-    // .label used for reponse code
-		padding: .1em .6em .2em;
-	}
-	.http-host {
-		opacity: 0.6;
-	}
-	.card-header-body {
-		margin-left: 2em;
-		.fa-spinner {
-			margin-left: .75em;
-		}
-	}
-  .card-title {
-    display: inline;
-  }
-  > .debug {
-    margin-left: -1.25rem;
-    margin-right: -1.25rem;
+    background-color: #ccc;
   }
 }
 
@@ -157,47 +175,24 @@ kbd {
 }
 
 .navbar {
-	padding: 0 1rem;
-	border-bottom-style: solid;
-	border-bottom-width: 1px;
-	.navbar-brand {
-		padding: 0;
-	}
-	&.navbar-light {
-		background-color: #f8f8f8;
-		border-color: #e7e7e7;
-		color: #777;
-		.navbar-brand {
-			color: #777;
-		}
-	}
-	.btn,
-	a {
-		color: inherit;
-	}
-}
-
-.debug {
-	transform: none;
-  &.debug-enhanced-ui {
-    .debug-bar {
-      border-top: 0;
-      nav {
-        margin-left: 0;
-      }
+  padding: 0 1rem;
+  border-bottom-style: solid;
+  border-bottom-width: 1px;
+  .navbar-brand {
+    padding: 0;
+  }
+  &.navbar-light {
+    background-color: #f8f8f8;
+    border-color: #e7e7e7;
+    color: #777;
+    .navbar-brand {
+      color: #777;
     }
   }
-  .debug-sidebar + .tab-body {
-    margin-left: 0;
-    padding-left: 0;
+  .btn,
+  a {
+    color: inherit;
   }
-  .debug-sidebar.show + .tab-body  {
-    margin-left: 0;
-  }
-}
-
-.debug-tabs {
-  position: relative;
 }
 
 #modal-settings {
@@ -211,8 +206,7 @@ kbd {
     text-align: right;
   }
   .label-default {
-    background-color: rgba(119, 119, 119, 0.3);
+    background-color: rgba(119, 119, 119, 30%);
     color: inherit;
   }
 }
-

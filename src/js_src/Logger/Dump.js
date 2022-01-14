@@ -26,22 +26,28 @@ export var Dump = function () {
   this.TYPE_FLOAT_NAN = '\x00nan\x00'.parseHex()
 }
 
-Dump.prototype.checkTimestamp = function (val) {
-  var secs = 86400 * 90 // 90 days worth o seconds
-  var tsNow = Date.now() / 1000
+Dump.prototype.checkTimestamp = function (val, abs) {
   var date
   var dumpOpts
-  val = parseFloat(val, 10)
-  if (val > tsNow - secs && val < tsNow + secs) {
-    date = (new Date(val * 1000)).toString()
-    dumpOpts = this.getDumpOpts()
-    dumpOpts.postDump = function (val, dumpOpts) {
-      return $('<span />', {
+  if (typeof abs === 'undefined' || abs.typeMore !== 'timestamp') {
+    return;
+  }
+  date = (new Date(val * 1000)).toString()
+  dumpOpts = this.getDumpOpts()
+  dumpOpts.postDump = function (dumped, opts) {
+    if (opts.tagName === 'td') {
+      opts.attribs.class = 't_' + opts.type
+      return $('<td />', {
         class: 'timestamp value-container',
-        'data-type': dumpOpts.type,
-        title: date
-      }).html(val)
+        title: date,
+        html: $('<span />', opts.attribs).html(val)
+      })
     }
+    return $('<span />', {
+      class: 'timestamp value-container',
+      title: date,
+      html: dumped
+    })
   }
 }
 
@@ -223,8 +229,8 @@ Dump.prototype.dumpConst = function (abs) {
   return this.markupIdentifier(abs.name)
 }
 
-Dump.prototype.dumpFloat = function (val) {
-  this.checkTimestamp(val)
+Dump.prototype.dumpFloat = function (val, abs) {
+  this.checkTimestamp(val, abs)
   if (val === this.TYPE_FLOAT_INF) {
     return 'INF'
   }
@@ -234,8 +240,8 @@ Dump.prototype.dumpFloat = function (val) {
   return val
 }
 
-Dump.prototype.dumpInt = function (val) {
-  return this.dumpFloat(val)
+Dump.prototype.dumpInt = function (val, abs) {
+  return this.dumpFloat(val, abs)
 }
 
 Dump.prototype.dumpNotInspected = function () {

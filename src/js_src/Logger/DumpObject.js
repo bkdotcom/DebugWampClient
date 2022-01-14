@@ -156,6 +156,10 @@ DumpObject.prototype.dumpConstants = function (abs) {
   $.each(abs.constants, function (key, info) {
     $dd = $('<dd class="constant ' + info.visibility + '">' +
       '<span class="t_modifier_' + info.visibility + '">' + info.visibility + '</span> ' +
+      (info.isFinal
+        ? '<span class="t_modifier_final">final</span> '
+        : ''
+     ) +
       '<span class="t_identifier"' + (outPhpDoc && info.desc ? ' title="' + info.desc.escapeHtml() + '"' : '') + '>' + key + '</span> ' +
       '<span class="t_operator">=</span> ' +
       self.dumper.dump(info.value) +
@@ -239,28 +243,25 @@ DumpObject.prototype.dumpProperties = function (abs, meta) {
     // console.info('property info', info)
     var $dd
     var isPrivateAncestor = $.inArray('private', info.visibility) >= 0 && info.inheritedFrom
-    var modifiers = ''
     var classes = {
-      'debuginfo-value': info.valueFrom === 'debugInfo',
       'debug-value': info.valueFrom === 'debug',
-      excluded: info.isExcluded,
+      'debuginfo-excluded': info.debugInfoExcluded,
+      'debuginfo-value': info.valueFrom === 'debugInfo',
       forceShow: info.forceShow,
       inherited: typeof info.inheritedFrom === 'string',
-      'private-ancestor': info.isPrivateAncestor
+      isPromoted: info.isPromoted,
+      isReadOnly: info.isReadOnly,
+      isStatic: info.isStatic,
+      'private-ancestor': info.isPrivateAncestor,
+      property: true
     }
     name = name.replace('debug.', '')
     if (typeof info.visibility !== 'object') {
       info.visibility = [info.visibility]
     }
     classes[info.visibility.join(' ')] = $.inArray('debug', info.visibility) < 0
-    $.each(info.visibility, function (i, vis) {
-      modifiers += '<span class="t_modifier_' + vis + '">' + vis + '</span> '
-    })
-    if (info.isStatic) {
-      modifiers += '<span class="t_modifier_static">static</span> '
-    }
-    $dd = $('<dd class="property">' +
-      modifiers +
+    $dd = $('<dd>' +
+      self.dumpPropertyModifiers(info) +
       (isPrivateAncestor
         ? ' (<i>' + info.inheritedFrom + '</i>)'
         : ''
@@ -294,6 +295,21 @@ DumpObject.prototype.dumpProperties = function (abs, meta) {
       }
     })
     html += $dd[0].outerHTML
+  })
+  return html
+}
+
+DumpObject.prototype.dumpPropertyModifiers = function (info) {
+  var html = ''
+  var modifiers = JSON.parse(JSON.stringify(info.visibility));
+  if (info.isReadOnly) {
+    modifiers.push('readonly')
+  }
+  if (info.isStatic) {
+    modifiers.push('static')
+  }
+  $.each(modifiers, function (i, modifier) {
+    html += '<span class="t_modifier_' + modifier + '">' + modifier + '</span> '
   })
   return html
 }
