@@ -44,6 +44,9 @@ export function processEntry (logEntry) {
         $node.addClass(meta.attribs.class)
         delete meta.attribs.class
       }
+      if (meta.attribs.id) {
+        meta.attribs.id = buildId(meta)
+      }
       $node.attr(meta.attribs)
     }
     if (meta.icon) {
@@ -76,7 +79,7 @@ function getNodeInfo (meta) {
   var $debug
   var $node
   var $tabPane
-  var channelNameRoot = $container.find('.debug').data('channelNameRoot') || 'general'
+  var channelNameRoot = $container.find('.debug').data('channelNameRoot') || meta.channelNameRoot || 'general'
   var channelName = meta.channel || channelNameRoot
   var channelSplit = channelName.split('.')
   var info = {
@@ -91,6 +94,9 @@ function getNodeInfo (meta) {
   if ($container.length) {
     $tabPane = getTabPane(info, meta)
     $node = $tabPane.data('nodes').slice(-1)[0] || $tabPane.find('> .debug-log')
+    if (meta.appendGroup) {
+      $node = $tabPane.find('#' + buildId(meta, meta.appendGroup) + ' > .group-body')
+    }
   } else {
     // create
     //   header and card are separate so we can sticky the header
@@ -378,4 +384,13 @@ function haveChannel (channelName, channels) {
     }
   }
   return false
+}
+
+function buildId(meta, id) {
+  id = id || meta.attribs.id
+  id = id.replace(/\W+/g, '-')
+  if (id.indexOf(meta.requestId) !== 0) {
+    id = meta.requestId + '_' + id
+  }
+  return id
 }

@@ -126,14 +126,14 @@ export var methods = {
     var $node = $tabPane.find('.alert.error-summary')
     if (!$node.length) {
       $node = $('<div class="alert alert-error error-summary">' +
-        '<h3><i class="fa fa-lg fa-times-circle"></i> Error(s)</h3>' +
+        '<h3><i class="fa fa-lg fa-times-circle"></i> Error(s) not consoled</h3>' +
         '<ul class="list-unstyled">' +
         '</ul>' +
         '</div>')
       $tabPane.prepend($node)
     }
     $node = $node.find('ul')
-    $node.append($('<li></li>').text(logEntry.args[0]))
+    $node.append(buildEntryNode(logEntry))
     if (logEntry.meta.class === 'error') {
       $container
         .addClass('bg-danger')

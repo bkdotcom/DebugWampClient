@@ -2340,14 +2340,14 @@
       var $node = $tabPane.find('.alert.error-summary');
       if (!$node.length) {
         $node = $('<div class="alert alert-error error-summary">' +
-          '<h3><i class="fa fa-lg fa-times-circle"></i> Error(s)</h3>' +
+          '<h3><i class="fa fa-lg fa-times-circle"></i> Error(s) not consoled</h3>' +
           '<ul class="list-unstyled">' +
           '</ul>' +
           '</div>');
         $tabPane.prepend($node);
       }
       $node = $node.find('ul');
-      $node.append($('<li></li>').text(logEntry.args[0]));
+      $node.append(buildEntryNode(logEntry));
       if (logEntry.meta.class === 'error') {
         $container
           .addClass('bg-danger')
@@ -2884,6 +2884,9 @@
           $node.addClass(meta.attribs.class);
           delete meta.attribs.class;
         }
+        if (meta.attribs.id) {
+          meta.attribs.id = buildId(meta);
+        }
         $node.attr(meta.attribs);
       }
       if (meta.icon) {
@@ -2916,7 +2919,7 @@
     var $debug;
     var $node;
     var $tabPane;
-    var channelNameRoot = $container.find('.debug').data('channelNameRoot') || 'general';
+    var channelNameRoot = $container.find('.debug').data('channelNameRoot') || meta.channelNameRoot || 'general';
     var channelName = meta.channel || channelNameRoot;
     var channelSplit = channelName.split('.');
     var info = {
@@ -2931,6 +2934,9 @@
     if ($container.length) {
       $tabPane = getTabPane(info, meta);
       $node = $tabPane.data('nodes').slice(-1)[0] || $tabPane.find('> .debug-log');
+      if (meta.appendGroup) {
+        $node = $tabPane.find('#' + buildId(meta, meta.appendGroup) + ' > .group-body');
+      }
     } else {
       // create
       //   header and card are separate so we can sticky the header
@@ -3218,6 +3224,15 @@
       }
     }
     return false
+  }
+
+  function buildId(meta, id) {
+    id = id || meta.attribs.id;
+    id = id.replace(/\W+/g, '-');
+    if (id.indexOf(meta.requestId) !== 0) {
+      id = meta.requestId + '_' + id;
+    }
+    return id
   }
 
   function Xdebug(pubSub) {
