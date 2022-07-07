@@ -35,7 +35,7 @@ class WampClient
     public function __construct(Debug $debug, $cfg = array())
     {
         $this->debug = $debug;
-        $this->request = $debug->request;
+        $this->request = $debug->serverRequest;
         $this->cfg = \array_merge(array(
             'jquery' => '//ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js',
             'bootstrapJs' => '//stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js',
