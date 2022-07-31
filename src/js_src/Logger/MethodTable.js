@@ -146,7 +146,7 @@ Table.prototype.buildFooter = function (tableInfo) {
     if (colHasTotal) {
       info.total = parseFloat(info.total.toFixed(6), 10)
       cells.push(this.dump.dump(info.total, { tagName: 'td' }))
-      continue;
+      continue
     }
     cells.push('<td></td>')
   }

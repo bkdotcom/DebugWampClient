@@ -32,7 +32,7 @@ export function processEntry (logEntry) {
     }
     updateSidebar(logEntry, info, $node !== false)
     if (!$node) {
-      return;
+      return
     }
     if (meta.attribs && meta.attribs.class && meta.attribs.class === 'php-shutdown') {
       info.$node = info.$container.find('> .debug > .tab-panes > .tab-primary > .tab-body > .debug-log.group-body')
@@ -64,7 +64,7 @@ export function processEntry (logEntry) {
       $node.attr('data-detect-files', meta.detectFiles)
       $node.attr('data-found-files', meta.foundFiles ? meta.foundFiles : [])
     }
-    $node.closest('.m_group.empty').removeClass('empty').trigger('updated.debug.group')
+    $node.parent().closest('.m_group.empty').removeClass('empty').trigger('updated.debug.group')
     if ($node.is(':visible:not(.filter-hidden)')) {
       $node.debugEnhance()
     }
@@ -386,7 +386,7 @@ function haveChannel (channelName, channels) {
   return false
 }
 
-function buildId(meta, id) {
+function buildId (meta, id) {
   id = id || meta.attribs.id
   id = id.replace(/\W+/g, '-')
   if (id.indexOf(meta.requestId) !== 0) {

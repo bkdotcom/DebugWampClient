@@ -30,7 +30,7 @@ Dump.prototype.checkTimestamp = function (val, abs) {
   var date
   var dumpOpts
   if (typeof abs === 'undefined' || abs.typeMore !== 'timestamp') {
-    return;
+    return
   }
   date = (new Date(val * 1000)).toString()
   dumpOpts = this.getDumpOpts()
@@ -68,20 +68,6 @@ Dump.prototype.dump = function (val, opts) {
   var tagName
   var type // = this.getType(val)
   var method // = 'dump' + type[0].ucfirst()
-  /*
-  var optsDefault = {
-    addQuotes: true,
-    sanitize: true,
-    visualWhiteSpace: true
-  }
-  // console.warn('dump', type, JSON.stringify(val))
-  if (opts === undefined) {
-    opts = {}
-  }
-  if (tagName === undefined) {
-    tagName =
-  }
-  */
   if (dumpOpts.type === null) {
     type = this.getType(val)
     dumpOpts.type = type[0]
@@ -276,6 +262,10 @@ Dump.prototype.dumpUndefined = function () {
   return ''
 }
 
+Dump.prototype.dumpUnknown = function () {
+  return '<span class="t_unknown">unknown type</span>'
+}
+
 Dump.prototype.getDumpOpts = function () {
   return dumpOptStack[dumpOptStack.length - 1]
 }
@@ -320,6 +310,7 @@ Dump.prototype.getType = function (val) {
 }
 
 Dump.prototype.markupIdentifier = function (val, attribs, tag) {
+  // console.warn('markupIdentifier', val)
   var classname = ''
   var identifier = ''
   var matches = [] // str.match()

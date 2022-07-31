@@ -512,7 +512,7 @@
       if (colHasTotal) {
         info.total = parseFloat(info.total.toFixed(6), 10);
         cells.push(this.dump.dump(info.total, { tagName: 'td' }));
-        continue;
+        continue
       }
       cells.push('<td></td>');
     }
@@ -550,45 +550,57 @@
 
   function DumpObject (dump) {
     this.dumper = dump;
-    this.COLLECT_METHODS = 2;
-    this.OUTPUT_CONSTANTS = 4;
-    this.OUTPUT_METHODS = 8;
-    this.OUTPUT_METHOD_DESC = 16;
-    this.OUTPUT_ATTRIBUTES_OBJ = 64;
-    this.OUTPUT_ATTRIBUTES_CONST = 256;
-    this.OUTPUT_ATTRIBUTES_PROP = 1024;
-    this.OUTPUT_ATTRIBUTES_METHOD = 4096;
-    this.OUTPUT_ATTRIBUTES_PARAM = 16384;
-    this.OUTPUT_PHPDOC = 65536;
+
+    // GENERAL
+    this.PHPDOC_OUTPUT = 2;
+    this.OBJ_ATTRIBUTE_OUTPUT = 8;
+    this.BRIEF = 4194304;
+
+    // CONSTANTS
+    this.CONST_COLLECT = 32;
+    this.CONST_OUTPUT = 64;
+    this.CONST_ATTRIBUTE_OUTPUT = 256;
+
+    // CASE
+    this.CASE_COLLECT = 512;
+    this.CASE_OUTPUT = 1024;
+    this.CASE_ATTRIBUTE_OUTPUT = 4096;
+
+    // PROPERTIES
+    this.PROP_ATTRIBUTE_OUTPUT = 16384;
+
+    // METHODS
+    this.METHOD_COLLECT = 32768;
+    this.METHOD_OUTPUT = 65536;
+    this.METHOD_ATTRIBUTE_OUTPUT = 262144;
+    this.METHOD_DESC_OUTPUT = 524288;
+    this.PARAM_ATTRIBUTE_OUTPUT = 2097152;
   }
 
   DumpObject.prototype.dump = function (abs) {
     // console.info('dumpObject', abs)
     var html = '';
-    var outPhpDoc = true;
-    var phpDoc = abs.phpDoc || {};
-    var strClassName = '';
-    var title = ((phpDoc.summary || '') + '\n\n' + (phpDoc.desc || '')).trim();
+    var strClassname = '';
     if (typeof abs.cfgFlags === 'undefined') {
-      abs.cfgFlags = 0x1FFFF;
+      abs.cfgFlags = 0x3FFFFF;  // 21 bits
     }
-    outPhpDoc = abs.cfgFlags & this.OUTPUT_PHPDOC;
-    strClassName = this.dumper.markupIdentifier(abs.className, {
-      title: outPhpDoc && title.length ? title : null
-    });
+    strClassname = this.dumpClassname(abs);
     if (abs.isMaxDepth) {
       this.dumper.getDumpOpts().attribs.class.push('max-depth');
     }
     if (abs.isRecursion) {
-      return strClassName +
+      return strClassname +
         ' <span class="t_recursion">*RECURSION*</span>'
     } else if (abs.isExcluded) {
-      return strClassName +
+      return strClassname +
         ' <span class="excluded">(not inspected)</span>'
+    } else if (abs.cfgFlags & this.BRIEF && abs.implements.indexOf('UnitEnum') > -1) {
+      return strClassname
     }
     try {
+      // console.log('obj abs', abs)
       html = this.dumpToString(abs) +
-        strClassName +
+        strClassname +
         '<dl class="object-inner">' +
           (abs.isFinal
             ? '<dt class="t_modifier_final">final</dt>'
@@ -606,6 +618,7 @@
           ) +
           this.dumpAttributes(abs) +
           this.dumpConstants(abs) +
+          this.dumpCases(abs) +
           this.dumpProperties(abs, { viaDebugInfo: abs.viaDebugInfo }) +
           this.dumpMethods(abs) +
           this.dumpPhpDoc(abs) +
@@ -614,6 +627,28 @@
       console.warn('e', e);
     }
     return html
+  };
+
+  DumpObject.prototype.dumpClassname = function (abs) {
+    var phpDoc = abs.phpDoc || {};
+    var strClassname = abs.className;
+    var title = ((phpDoc.summary || '') + '\n\n' + (phpDoc.desc || '')).trim();
+    var phpDocOut = abs.cfgFlags & this.PHPDOC_OUTPUT;
+    var $span;
+    if (abs.implements.indexOf('UnitEnum') > -1) {
+      // strClassname += '::' + abs.properties.name.value
+      $span = $('<span />', {
+        class: 't_const',
+        html: this.dumper.markupIdentifier(strClassname + '::' + abs.properties.name.value)
+      });
+      if (title && title.length) {
+        $span.attr('title', title);
+      }
+      return $span[0].outerHTML
+    }
+    return this.dumper.markupIdentifier(strClassname, {
+      title: phpDocOut && title.length ? title : null
+    })
   };
 
   DumpObject.prototype.dumpToString = function (abs) {
@@ -661,7 +696,7 @@
     if (abs.attributes === undefined) {
       return ''
     }
-    if ((abs.cfgFlags & this.OUTPUT_ATTRIBUTES_OBJ) !== this.OUTPUT_ATTRIBUTES_OBJ) {
+    if ((abs.cfgFlags & this.OBJ_ATTRIBUTE_OUTPUT) !== this.OBJ_ATTRIBUTE_OUTPUT) {
       return ''
     }
     // var $dd
@@ -689,30 +724,81 @@
       : ''
   };
 
-  DumpObject.prototype.dumpConstants = function (abs) {
-    var html = abs.constants && Object.keys(abs.constants).length
-      ? '<dt class="constants">constants</dt>'
-      : '';
+  DumpObject.prototype.dumpCases = function (abs) {
+    var html = '';
     var self = this;
     var $dd;
-    var outAttributes = abs.cfgFlags & this.OUTPUT_ATTRIBUTES_CONST;
-    var outConstants = abs.cfgFlags & this.OUTPUT_CONSTANTS;
-    var outPhpDoc = abs.cfgFlags & this.OUTPUT_PHPDOC;
-    if (!abs.constants || !outConstants) {
+    var attributeOut = abs.cfgFlags & this.CASE_ATTRIBUTE_OUTPUT;
+    var caseCollect = abs.cfgFlags & this.CASE_COLLECT;
+    var caseOut = abs.cfgFlags & this.CASE_OUTPUT;
+    var phpDocOut = abs.cfgFlags & this.PHPDOC_OUTPUT;
+    if (abs.implements.indexOf('UnitEnum') < 0) {
       return ''
     }
+    if (!caseOut) {
+      return ''
+    }
+    if (!caseCollect) {
+      return '<dt class="cases">cases <i>not collected</i></dt>'
+    }
+    if (abs.cases.length === 0) {
+      return '<dt class="cases"><i>no cases!</i></dt>'
+    }
+    html = '<dt class="cases">cases</dt>';
+    $.each(abs.cases, function (key, info) {
+      var title = phpDocOut
+        ? info.desc
+        : null;
+      $dd = $('<dd class="case">' +
+        '<span class="t_identifier">' + key + '</span>' +
+        (info.value !== null
+          ? ' <span class="t_operator">=</span> ' +
+            self.dumper.dump(info.value)
+          : ''
+        ) +
+        '</dd>'
+      );
+      if (title && title.length) {
+        $dd.find('.t_identifier').attr('title', title);
+      }
+      if (attributeOut && info.attributes && info.attributes.length) {
+        $dd.attr('data-attributes', JSON.stringify(info.attributes));
+      }
+      html += $dd[0].outerHTML;
+    });
+    return html
+  };
+
+  DumpObject.prototype.dumpConstants = function (abs) {
+    var html = '';
+    var self = this;
+    var $dd;
+    var constCollect = abs.cfgFlags & this.CONST_COLLECT;
+    var attributeOut = abs.cfgFlags & this.CONST_ATTRIBUTE_OUTPUT;
+    var constOut = abs.cfgFlags & this.CONST_OUTPUT;
+    var phpDocOut = abs.cfgFlags & this.PHPDOC_OUTPUT;
+    if (!constOut) {
+      return ''
+    }
+    if (!constCollect) {
+      return '<dt class="constants">constants <i>not collected</i></dt>'
+    }
+    if (!abs.constants) {
+      return ''
+    }
+    html = '<dt class="constants">constants</dt>';
     $.each(abs.constants, function (key, info) {
       $dd = $('<dd class="constant ' + info.visibility + '">' +
         '<span class="t_modifier_' + info.visibility + '">' + info.visibility + '</span> ' +
         (info.isFinal
           ? '<span class="t_modifier_final">final</span> '
           : ''
-       ) +
-        '<span class="t_identifier"' + (outPhpDoc && info.desc ? ' title="' + info.desc.escapeHtml() + '"' : '') + '>' + key + '</span> ' +
+        ) +
+        '<span class="t_identifier"' + (phpDocOut && info.desc ? ' title="' + info.desc.escapeHtml() + '"' : '') + '>' + key + '</span> ' +
         '<span class="t_operator">=</span> ' +
         self.dumper.dump(info.value) +
         '</dd>');
-      if (outAttributes && info.attributes && info.attributes.length) {
+      if (attributeOut && info.attributes && info.attributes.length) {
         $dd.attr('data-attributes', JSON.stringify(info.attributes));
       }
       html += $dd[0].outerHTML;
@@ -779,8 +865,8 @@
     var label = Object.keys(properties).length
       ? 'properties'
       : 'no properties';
-    var outPhpDoc = abs.cfgFlags & this.OUTPUT_PHPDOC;
-    var outAttributes = abs.cfgFlags & this.OUTPUT_ATTRIBUTES_PROP;
+    var phpDocOut = abs.cfgFlags & this.PHPDOC_OUTPUT;
+    var attributeOut = abs.cfgFlags & this.PROP_ATTRIBUTE_OUTPUT;
     var self = this;
     if (meta.viaDebugInfo) {
       label += ' <span class="text-muted">(via __debugInfo)</span>';
@@ -819,7 +905,7 @@
           : ''
         ) +
         ' <span class="t_identifier"' +
-          (outPhpDoc && info.desc
+          (phpDocOut && info.desc
             ? ' title="' + info.desc.escapeHtml() + '"'
             : ''
           ) +
@@ -831,7 +917,7 @@
         ) +
         '</dd>'
       );
-      if (outAttributes && info.attributes && info.attributes.length) {
+      if (attributeOut && info.attributes && info.attributes.length) {
         $dd.attr('data-attributes', JSON.stringify(info.attributes));
       }
       if (info.inheritedFrom) {
@@ -868,15 +954,15 @@
     var label = Object.keys(abs.methods).length
       ? 'methods'
       : 'no methods';
-    var collectMethods = abs.cfgFlags & this.COLLECT_METHODS;
-    var outAttributes = abs.cfgFlags & this.OUTPUT_ATTRIBUTES_METHOD;
-    var outAttributesParam = abs.cfgFlags & this.OUTPUT_ATTRIBUTES_PARAM;
-    var outMethods = abs.cfgFlags & this.OUTPUT_METHODS;
-    var outPhpDoc = abs.cfgFlags & this.OUTPUT_PHPDOC;
-    if (!outMethods) {
+    var methodCollect = abs.cfgFlags & this.METHOD_COLLECT;
+    var attributeOut = abs.cfgFlags & this.METHOD_ATTRIBUTE_OUTPUT;
+    var paramAttributeOut = abs.cfgFlags & this.PARAM_ATTRIBUTE_OUTPUT;
+    var methodOut = abs.cfgFlags & this.METHOD_OUTPUT;
+    var phpDocOut = abs.cfgFlags & this.PHPDOC_OUTPUT;
+    if (!methodOut) {
       return ''
     }
-    if (!collectMethods) {
+    if (!methodCollect) {
       return '<dt class="methdos">methods not collected</dt>'
     }
     html = '<dt class="methods">' + label + '</dt>';
@@ -885,8 +971,8 @@
       var $dd = $('<dd class="method"></dd>').addClass(info.visibility);
       var modifiers = [];
       var paramStr = self.dumpMethodParams(info.params, {
-        outAttributes: outAttributesParam,
-        outPhpDoc: outPhpDoc
+        attributeOut: paramAttributeOut,
+        phpDocOut: phpDocOut
       });
       var returnType = '';
       if (info.isFinal) {
@@ -899,7 +985,7 @@
       }
       if (info.return && info.return.type) {
         returnType = ' <span class="t_type"' +
-          (outPhpDoc && info.return.desc !== null
+          (phpDocOut && info.return.desc !== null
             ? ' title="' + info.return.desc.escapeHtml() + '"'
             : ''
           ) +
@@ -909,7 +995,7 @@
         modifiers.join(' ') +
         returnType +
         ' <span class="t_identifier"' +
-          (outPhpDoc && info.phpDoc && info.phpDoc.summary !== null
+          (phpDocOut && info.phpDoc && info.phpDoc.summary !== null
             ? ' title="' + info.phpDoc.summary.escapeHtml() + '"'
             : ''
           ) +
@@ -922,7 +1008,7 @@
         '</dd>'
       );
 
-      if (outAttributes && info.attributes && info.attributes.length) {
+      if (attributeOut && info.attributes && info.attributes.length) {
         $dd.attr('data-attributes', JSON.stringify(info.attributes));
       }
       if (info.implements && info.implements.length) {
@@ -960,14 +1046,14 @@
       if (info.isPromoted) {
         $param.addClass('isPromoted');
       }
-      if (opts.outAttributes && info.attributes && info.attributes.length) {
+      if (opts.attributeOut && info.attributes && info.attributes.length) {
         $param.attr('data-attributes', JSON.stringify(info.attributes));
       }
       if (typeof info.type === 'string') {
         $param.append('<span class="t_type">' + info.type + '</span> ');
       }
       $param.append('<span class="t_parameter-name"' +
-        (opts.outPhpDoc && info.desc !== null
+        (opts.phpDocOut && info.desc !== null
           ? ' title="' + info.desc.escapeHtml().replace('\n', ' ') + '"'
           : ''
         ) + '>' + info.name.escapeHtml() + '</span>');
@@ -1720,30 +1806,41 @@
 
   DumpString.prototype.dumpBinary = function (abs) {
     var dumpOpts = this.dumper.getDumpOpts();
-    var lis = [];
+    var tagName = dumpOpts.tagName;
     var val = abs.value
       ? this.helper(abs.value)
       : '';
     var strLenDiff = abs.strlen - abs.strlenValue;
+    dumpOpts.tagName = null;
     // console.warn('dumpBinary', abs)
     if (val.length && strLenDiff) {
       val += '<span class="maxlen">&hellip; ' + strLenDiff + ' more bytes (not logged)</span>';
     }
-    if (abs.contentType) {
-      lis.push('<li>mime type = <span class="t_string">' + abs.contentType + '</span></li>');
+    if (abs.brief) {
+      return abs.contentType
+        ? '<span class="t_keyword">string</span>' +
+            '<span class="text-muted">(' + abs.contentType + ')</span><span class="t_punct colon">:</span> '
+            // + $this->debug->utility->getBytes($abs['strlen'])
+        : val
     }
-    lis.push('<li>size = <span class="t_int">' + abs.strlen + '</span></li>');
-    lis.push(abs.value.length
-      ? '<li class="t_string"><span class="binary">' + val + '</span></li>'
-      : '<li>Binary data not collected</li>');
-    val = '<span class="t_type">binary string</span>' +
-      '<ul class="list-unstyled value-container" data-type="' + abs.type + '">' +
-         lis.join('') +
-      '</ul>';
-    if (dumpOpts.tagName === 'td') {
-      val = '<td>' + val + '</td>';
-    }
-    dumpOpts.tagName = null;
+    dumpOpts.postDump = function (val, dumpOpts) {
+      var lis = [];
+      if (abs.contentType) {
+        lis.push('<li>mime type = <span class="t_string">' + abs.contentType + '</span></li>');
+      }
+      lis.push('<li>size = <span class="t_int">' + abs.strlen + '</span></li>');
+      lis.push(abs.value.length
+        ? '<li class="t_string"><span class="binary">' + val + '</span></li>'
+        : '<li>Binary data not collected</li>');
+      val = '<span class="t_keyword">string</span><span class="text-muted">(binary)</span>' +
+        '<ul class="list-unstyled value-container" data-type="' + abs.type + '" data-type-more="binary">' +
+           lis.join('\n') +
+        '</ul>';
+      if (tagName === 'td') {
+        val = '<td>' + val + '</td>';
+      }
+      return val
+    };
     return val
   };
 
@@ -1754,36 +1851,28 @@
       : dumpOpts.tagName;
     var $tag = $('<' + tagName + '>', {
       class: 'string-encoded tabs-container',
-      'data-type': abs.typeMore
-    }).html(
+      // 'data-type': abs.type,
+      'data-type-more': abs.typeMore
+    }).html('\n' +
       '<nav role="tablist">' +
         '<a class="nav-link" data-target=".string-raw" data-toggle="tab" role="tab"></a>' +
-        '<a class="active nav-link" data-target=".string-decoded" data-toggle="tab" role="tab">decoded</a>' +
+        '<a class="active nav-link" data-target=".string-decoded" data-toggle="tab" role="tab"></a>' +
       '</nav>' +
       '<div class="string-raw tab-pane" role="tabpanel"></div>' +
       '<div class="active string-decoded tab-pane" role="tabpanel"></div>'
     );
-    // console.warn('dumpEncoded', val, abs.typeMore, tagName)
-    dumpOpts.tagName = null;
-    if (abs.typeMore === 'base64') {
-      $tag.find('.nav-link').eq(0).html('base64');
-      if (val.length && abs.strlen) {
-        val += '<span class="maxlen">&hellip; ' + (abs.strlen - val.length) + ' more bytes (not logged)</span>';
-      }
-      val = $('<span />', dumpOpts.attribs).addClass('t_string').html(val)[0].outerHTML;
-    } else if (abs.typeMore === 'json') {
-      $tag.find('.nav-link').eq(0).html('json');
-      if (abs.prettified || abs.strlen) {
-        abs.typeMore = null; // unset typeMore to prevent loop
-        val = this.dumper.dump(abs);
-      }
-    } else if (abs.typeMore === 'serialized') {
-      $tag.find('.nav-link').eq(0).html('serialized');
-      $tag.find('.nav-link').eq(1).html('unserialized');
+    var vals = encodedInitVals(val, abs, dumpOpts);
+    vals = encodedUpdateVals(vals, abs, this.dumper);
+    if (abs.brief) {
+      return vals.valRaw
     }
-    $tag.find('.string-raw').html(val);
-    $tag.find('.string-decoded').html(this.dumper.dump(abs.valueDecoded));
-    // console.groupEnd()
+
+    vals.valDecoded = this.dumper.dump(abs.valueDecoded);
+    dumpOpts.tagName = null;
+    $tag.find('.nav-link').eq(0).html(vals.labelRaw);
+    $tag.find('.nav-link').eq(1).html(vals.labelDecoded);
+    $tag.find('.string-raw').html(vals.valRaw);
+    $tag.find('.string-decoded').html(vals.valDecoded); // this.dumper.dump(abs.valueDecoded)
     return $tag[0].outerHTML
   };
 
@@ -1800,6 +1889,50 @@
     }
     return val
   };
+
+  function encodedInitVals (val, abs, dumpOpts) {
+    var attribs = JSON.parse(JSON.stringify(dumpOpts.attribs));
+    attribs.class.push('no-quotes');
+    attribs.class.push('t_' + abs.type);
+    attribs.class = attribs.class.join(' ');
+    if (abs.typeMore === 'base64' && abs.brief) {
+      dumpOpts.postDump = function (val) {
+        return '<span class="t_keyword">string</span><span class="text-muted">(base64)</span><span class="t_punct colon">:</span> ' + val
+      };
+    }
+    return {
+      labelDecoded: 'Decoded',
+      labelRaw: 'Raw',
+      valDecoded: null,
+      valRaw: $('<span />', attribs).html(val)[0].outerHTML
+    }
+  }
+
+  function encodedUpdateVals (vals, abs, dumper) {
+    switch (abs.typeMore) {
+      case 'base64':
+        vals.labelDecoded = 'decoded';
+        vals.labelRaw = 'base64';
+        if (abs.strlen) {
+          vals.valRaw += '<span class="maxlen">&hellip; ' + (abs.strlen - abs.value.length) + ' more bytes (not logged)</span>';
+        }
+        break
+      case 'json':
+        vals.labelDecoded = 'decoded';
+        vals.labelRaw = 'json';
+        if (abs.prettified || abs.strlen) {
+          abs.typeMore = null; // unset typeMore to prevent loop
+          vals.valRaw = dumper.dump(abs);
+          abs.typeMore = 'json';
+        }
+        break
+      case 'serialized':
+        vals.labelDecoded = 'unserialized';
+        vals.labelRaw = 'serialized';
+        break
+    }
+    return vals
+  }
 
   /**
    * Add whitespace markup
@@ -1856,7 +1989,7 @@
     var date;
     var dumpOpts;
     if (typeof abs === 'undefined' || abs.typeMore !== 'timestamp') {
-      return;
+      return
     }
     date = (new Date(val * 1000)).toString();
     dumpOpts = this.getDumpOpts();
@@ -1894,20 +2027,6 @@
     var tagName;
     var type; // = this.getType(val)
     var method; // = 'dump' + type[0].ucfirst()
-    /*
-    var optsDefault = {
-      addQuotes: true,
-      sanitize: true,
-      visualWhiteSpace: true
-    }
-    // console.warn('dump', type, JSON.stringify(val))
-    if (opts === undefined) {
-      opts = {}
-    }
-    if (tagName === undefined) {
-      tagName =
-    }
-    */
     if (dumpOpts.type === null) {
       type = this.getType(val);
       dumpOpts.type = type[0];
@@ -2102,6 +2221,10 @@
     return ''
   };
 
+  Dump.prototype.dumpUnknown = function () {
+    return '<span class="t_unknown">unknown type</span>'
+  };
+
   Dump.prototype.getDumpOpts = function () {
     return dumpOptStack[dumpOptStack.length - 1]
   };
@@ -2146,6 +2269,7 @@
   };
 
   Dump.prototype.markupIdentifier = function (val, attribs, tag) {
+    // console.warn('markupIdentifier', val)
     var classname = '';
     var identifier = '';
     var matches = []; // str.match()
@@ -2872,7 +2996,7 @@
       }
       updateSidebar(logEntry, info, $node !== false);
       if (!$node) {
-        return;
+        return
       }
       if (meta.attribs && meta.attribs.class && meta.attribs.class === 'php-shutdown') {
         info.$node = info.$container.find('> .debug > .tab-panes > .tab-primary > .tab-body > .debug-log.group-body');
@@ -2904,7 +3028,7 @@
         $node.attr('data-detect-files', meta.detectFiles);
         $node.attr('data-found-files', meta.foundFiles ? meta.foundFiles : []);
       }
-      $node.closest('.m_group.empty').removeClass('empty').trigger('updated.debug.group');
+      $node.parent().closest('.m_group.empty').removeClass('empty').trigger('updated.debug.group');
       if ($node.is(':visible:not(.filter-hidden)')) {
         $node.debugEnhance();
       }
@@ -3226,7 +3350,7 @@
     return false
   }
 
-  function buildId(meta, id) {
+  function buildId (meta, id) {
     id = id || meta.attribs.id;
     id = id.replace(/\W+/g, '-');
     if (id.indexOf(meta.requestId) !== 0) {
@@ -4423,7 +4547,7 @@
           args: data.msg[1],
           meta: data.msg[2]
         };
-        if (data.topic == 'bdk.debug') {
+        if (data.topic === 'bdk.debug') {
           processEntry(logEntry);
           if (logEntry.method === 'meta' && logEntry.meta.linkFilesTemplateDefault) {
             config.setDefault({

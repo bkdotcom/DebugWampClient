@@ -78,30 +78,41 @@ DumpString.prototype.dumpAsSubstitution = function (val) {
 
 DumpString.prototype.dumpBinary = function (abs) {
   var dumpOpts = this.dumper.getDumpOpts()
-  var lis = []
+  var tagName = dumpOpts.tagName
   var val = abs.value
     ? this.helper(abs.value)
     : ''
   var strLenDiff = abs.strlen - abs.strlenValue
+  dumpOpts.tagName = null
   // console.warn('dumpBinary', abs)
   if (val.length && strLenDiff) {
     val += '<span class="maxlen">&hellip; ' + strLenDiff + ' more bytes (not logged)</span>'
   }
-  if (abs.contentType) {
-    lis.push('<li>mime type = <span class="t_string">' + abs.contentType + '</span></li>')
+  if (abs.brief) {
+    return abs.contentType
+      ? '<span class="t_keyword">string</span>' +
+          '<span class="text-muted">(' + abs.contentType + ')</span><span class="t_punct colon">:</span> '
+          // + $this->debug->utility->getBytes($abs['strlen'])
+      : val
   }
-  lis.push('<li>size = <span class="t_int">' + abs.strlen + '</span></li>')
-  lis.push(abs.value.length
-    ? '<li class="t_string"><span class="binary">' + val + '</span></li>'
-    : '<li>Binary data not collected</li>')
-  val = '<span class="t_type">binary string</span>' +
-    '<ul class="list-unstyled value-container" data-type="' + abs.type + '">' +
-       lis.join('') +
-    '</ul>'
-  if (dumpOpts.tagName === 'td') {
-    val = '<td>' + val + '</td>'
+  dumpOpts.postDump = function (val, dumpOpts) {
+    var lis = []
+    if (abs.contentType) {
+      lis.push('<li>mime type = <span class="t_string">' + abs.contentType + '</span></li>')
+    }
+    lis.push('<li>size = <span class="t_int">' + abs.strlen + '</span></li>')
+    lis.push(abs.value.length
+      ? '<li class="t_string"><span class="binary">' + val + '</span></li>'
+      : '<li>Binary data not collected</li>')
+    val = '<span class="t_keyword">string</span><span class="text-muted">(binary)</span>' +
+      '<ul class="list-unstyled value-container" data-type="' + abs.type + '" data-type-more="binary">' +
+         lis.join('\n') +
+      '</ul>'
+    if (tagName === 'td') {
+      val = '<td>' + val + '</td>'
+    }
+    return val
   }
-  dumpOpts.tagName = null
   return val
 }
 
@@ -112,36 +123,28 @@ DumpString.prototype.dumpEncoded = function (val, abs) {
     : dumpOpts.tagName
   var $tag = $('<' + tagName + '>', {
     class: 'string-encoded tabs-container',
-    'data-type': abs.typeMore
-  }).html(
+    // 'data-type': abs.type,
+    'data-type-more': abs.typeMore
+  }).html('\n' +
     '<nav role="tablist">' +
       '<a class="nav-link" data-target=".string-raw" data-toggle="tab" role="tab"></a>' +
-      '<a class="active nav-link" data-target=".string-decoded" data-toggle="tab" role="tab">decoded</a>' +
+      '<a class="active nav-link" data-target=".string-decoded" data-toggle="tab" role="tab"></a>' +
     '</nav>' +
     '<div class="string-raw tab-pane" role="tabpanel"></div>' +
     '<div class="active string-decoded tab-pane" role="tabpanel"></div>'
   )
-  // console.warn('dumpEncoded', val, abs.typeMore, tagName)
-  dumpOpts.tagName = null
-  if (abs.typeMore === 'base64') {
-    $tag.find('.nav-link').eq(0).html('base64')
-    if (val.length && abs.strlen) {
-      val += '<span class="maxlen">&hellip; ' + (abs.strlen - val.length) + ' more bytes (not logged)</span>'
-    }
-    val = $('<span />', dumpOpts.attribs).addClass('t_string').html(val)[0].outerHTML
-  } else if (abs.typeMore === 'json') {
-    $tag.find('.nav-link').eq(0).html('json')
-    if (abs.prettified || abs.strlen) {
-      abs.typeMore = null // unset typeMore to prevent loop
-      val = this.dumper.dump(abs)
-    }
-  } else if (abs.typeMore === 'serialized') {
-    $tag.find('.nav-link').eq(0).html('serialized')
-    $tag.find('.nav-link').eq(1).html('unserialized')
+  var vals = encodedInitVals(val, abs, dumpOpts)
+  vals = encodedUpdateVals(vals, abs, this.dumper)
+  if (abs.brief) {
+    return vals.valRaw
   }
-  $tag.find('.string-raw').html(val)
-  $tag.find('.string-decoded').html(this.dumper.dump(abs.valueDecoded))
-  // console.groupEnd()
+
+  vals.valDecoded = this.dumper.dump(abs.valueDecoded)
+  dumpOpts.tagName = null
+  $tag.find('.nav-link').eq(0).html(vals.labelRaw)
+  $tag.find('.nav-link').eq(1).html(vals.labelDecoded)
+  $tag.find('.string-raw').html(vals.valRaw)
+  $tag.find('.string-decoded').html(vals.valDecoded) // this.dumper.dump(abs.valueDecoded)
   return $tag[0].outerHTML
 }
 
@@ -157,6 +160,50 @@ DumpString.prototype.helper = function (val) {
     val = visualWhiteSpace(val)
   }
   return val
+}
+
+function encodedInitVals (val, abs, dumpOpts) {
+  var attribs = JSON.parse(JSON.stringify(dumpOpts.attribs))
+  attribs.class.push('no-quotes')
+  attribs.class.push('t_' + abs.type)
+  attribs.class = attribs.class.join(' ')
+  if (abs.typeMore === 'base64' && abs.brief) {
+    dumpOpts.postDump = function (val) {
+      return '<span class="t_keyword">string</span><span class="text-muted">(base64)</span><span class="t_punct colon">:</span> ' + val
+    }
+  }
+  return {
+    labelDecoded: 'Decoded',
+    labelRaw: 'Raw',
+    valDecoded: null,
+    valRaw: $('<span />', attribs).html(val)[0].outerHTML
+  }
+}
+
+function encodedUpdateVals (vals, abs, dumper) {
+  switch (abs.typeMore) {
+    case 'base64':
+      vals.labelDecoded = 'decoded'
+      vals.labelRaw = 'base64'
+      if (abs.strlen) {
+        vals.valRaw += '<span class="maxlen">&hellip; ' + (abs.strlen - abs.value.length) + ' more bytes (not logged)</span>'
+      }
+      break
+    case 'json':
+      vals.labelDecoded = 'decoded'
+      vals.labelRaw = 'json'
+      if (abs.prettified || abs.strlen) {
+        abs.typeMore = null // unset typeMore to prevent loop
+        vals.valRaw = dumper.dump(abs)
+        abs.typeMore = 'json'
+      }
+      break
+    case 'serialized':
+      vals.labelDecoded = 'unserialized'
+      vals.labelRaw = 'serialized'
+      break
+  }
+  return vals
 }
 
 /**

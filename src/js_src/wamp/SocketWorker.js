@@ -47,7 +47,7 @@ SocketWorker.prototype.getConnection = function () {
   connection.onopen = function (session, details) {
     console.info('Wamp connection opened', details)
 
-    self.session = session;
+    self.session = session
 
     // postMessage('connectionOpened')
     self.pubSub.publish('wamp', 'connectionOpened')

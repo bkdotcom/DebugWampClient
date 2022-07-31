@@ -41,7 +41,7 @@ $(function () {
         args: data.msg[1],
         meta: data.msg[2]
       }
-      if (data.topic == 'bdk.debug') {
+      if (data.topic === 'bdk.debug') {
         logger.processEntry(logEntry)
         if (logEntry.method === 'meta' && logEntry.meta.linkFilesTemplateDefault) {
           config.setDefault({
