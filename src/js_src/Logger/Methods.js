@@ -167,9 +167,6 @@ export var methods = {
       .append($groupHeader)
       .append($groupBody)
     nodes.push($groupBody)
-    if ($group.is(':visible')) {
-      $group.debugEnhance()
-    }
     return $group
   },
   groupCollapsed: function (logEntry, info) {
@@ -219,32 +216,30 @@ export var methods = {
     if (nodes.length > 1) {
       nodes.pop()
     }
-    if (!isSummaryRoot) {
-      $toggle = info.$node.prev()
-      $group = $toggle.parent()
-      if ($group.hasClass('empty') && $group.hasClass('hide-if-empty')) {
-        // console.log('remove', $group)
-        // $toggle.remove()
-        // info.$currentNode.remove()
-        $group.remove()
-      } else if ($group.hasClass('ungroup')) {
-        var $children = $group.find('> ul.group-body > li')
-        var $groupLabel = $group.find('> .group-header > .group-label')
-        var $li = $('<li></li>').data($group.data())
-        if ($children.length === 0) {
-          $group.replaceWith(
-            $li.html($groupLabel.html())
-          )
-        } else if ($children.length === 1 && $children.filter('.m_group').length === 0) {
-          $group.replaceWith($children)
-        }
-      } else if (!$group.is(':visible')) {
-        // console.log('not vis')
-        // return
-      } else {
-        // console.log('enhance')
-        $group.debugEnhance()
+    if (isSummaryRoot) {
+      return
+    }
+    $toggle = info.$node.prev()
+    $group = $toggle.parent()
+    if ($group.hasClass('empty') && $group.hasClass('hide-if-empty')) {
+      // console.log('remove', $group)
+      // $toggle.remove()
+      // info.$currentNode.remove()
+      $group.remove()
+    } else if ($group.hasClass('ungroup')) {
+      var $children = $group.find('> ul.group-body > li')
+      var $groupLabel = $group.find('> .group-header > .group-label')
+      var $li = $('<li></li>').data($group.data())
+      if ($children.length === 0) {
+        $group.replaceWith(
+          $li.html($groupLabel.html())
+        )
+      } else if ($children.length === 1 && $children.filter('.m_group').length === 0) {
+        $group.replaceWith($children)
       }
+    } else if ($group.hasClass('filter-hidden') === false && $group.is(':visible')) {
+      // console.log('enhance')
+      $group.debugEnhance()
     }
   },
   groupUncollapse: function (logEntry, info) {

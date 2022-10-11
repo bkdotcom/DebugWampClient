@@ -151,16 +151,25 @@ Dump.prototype.dumpAbstraction = function (abs) {
 
 Dump.prototype.dumpArray = function (array) {
   var html = ''
+  var i
+  var key
   var keys = array.__debug_key_order__ || Object.keys(array)
   var length = keys.length
-  var key
-  var i
   var dumpOpts = $.extend({
     asFileTree: false,
     expand: null,
     isMaxDepth: false,
     showListKeys: true
   }, this.getDumpOpts())
+  var isList = (function () {
+    for (i = 0; i < length; i++) {
+      if (parseInt(keys[i], 10) !== i) {
+        return false
+      }
+    }
+    return true
+  })()
+  var showKeys = dumpOpts.showListKeys || !isList
   /*
   console.warn('dumpArray', {
     array: JSON.parse(JSON.stringify(array)),
@@ -187,15 +196,21 @@ Dump.prototype.dumpArray = function (array) {
     '<ul class="array-inner list-unstyled">\n'
   for (i = 0; i < length; i++) {
     key = keys[i]
-    html += '\t<li>' +
-        '<span class="t_key' + (/^\d+$/.test(key) ? ' t_int' : '') + '">' + key + '</span>' +
-        '<span class="t_operator">=&gt;</span>' +
-        this.dump(array[key]) +
-      '</li>\n'
+    html += this.dumpArrayValue(key, array[key], showKeys)
   }
   html += '</ul>' +
     '<span class="t_punct">)</span>'
   return html
+}
+
+Dump.prototype.dumpArrayValue = function (key, val, withKey) {
+  return withKey
+    ? '\t<li>' +
+        '<span class="t_key' + (/^\d+$/.test(key) ? ' t_int' : '') + '">' + key + '</span>' +
+        '<span class="t_operator">=&gt;</span>' +
+        this.dump(val) +
+      '</li>\n'
+    : '\t' + this.dump(val, { tagName: 'li' }) + '\n'
 }
 
 Dump.prototype.dumpBool = function (val) {

@@ -34,7 +34,7 @@ DumpObject.prototype.dump = function (abs) {
   var html = ''
   var strClassname = ''
   if (typeof abs.cfgFlags === 'undefined') {
-    abs.cfgFlags = 0x3FFFFF  // 21 bits
+    abs.cfgFlags = 0x3FFFFF // 21 bits
   }
   strClassname = this.dumpClassname(abs)
   if (abs.isMaxDepth) {

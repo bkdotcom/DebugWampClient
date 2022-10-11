@@ -194,7 +194,9 @@
     );
 
     $('.navbar .clear').on('click', function () {
-      $('#debug-cards > .card').not('.working').trigger('removed.debug.card').remove();
+      console.time('clear');
+      $('#debug-cards > .card').not('.working').trigger('removed.debug.card');
+      console.timeEnd('clear');
     });
 
     $('#debug-cards').on('added.debug.card', function (e) {
@@ -203,8 +205,13 @@
     });
     $('#debug-cards').on('removed.debug.card', function (e) {
       // console.warn('card removed', e.target, e)
+      var $card = $(e.target);
       io.unobserve(e.target);
       $cardsInViewport = $cardsInViewport.not(e.target);
+      if ($card.hasClass('working')) {
+        console.warn('removed working session:' + $card.prop('id'));
+      }
+      $card.remove();
     });
 
     $('body').on('mouseup', function (e) {
@@ -220,10 +227,7 @@
       timeoutHandler = setTimeout(function () {
         // has been long pressed (3 seconds)
         // clear all (incl working)
-        $('#debug-cards > .card.working').each(function () {
-          console.warn('removed working session:' + $(this).prop('id'));
-        });
-        $('#debug-cards > .card').trigger('removed.debug.card').remove();
+        $('#debug-cards > .card').trigger('removed.debug.card');
       }, 2000);
     });
 
@@ -246,11 +250,7 @@
 
     // close btn on card-header clicked
     $('body').on('click', '.btn-remove-session', function (e) {
-      var $card = $(this).closest('.card');
-      if ($card.hasClass('working')) {
-        console.warn('removed working session:' + $card.prop('id'));
-      }
-      $card.trigger('removed.debug.card').remove();
+      $(this).closest('.card').trigger('removed.debug.card');
     });
 
     $(window).on('scroll', debounce(function () {
@@ -582,7 +582,7 @@
     var html = '';
     var strClassname = '';
     if (typeof abs.cfgFlags === 'undefined') {
-      abs.cfgFlags = 0x3FFFFF;  // 21 bits
+      abs.cfgFlags = 0x3FFFFF; // 21 bits
     }
     strClassname = this.dumpClassname(abs);
     if (abs.isMaxDepth) {
@@ -1817,10 +1817,10 @@
       val += '<span class="maxlen">&hellip; ' + strLenDiff + ' more bytes (not logged)</span>';
     }
     if (abs.brief) {
+      // @todo display bytes
       return abs.contentType
         ? '<span class="t_keyword">string</span>' +
             '<span class="text-muted">(' + abs.contentType + ')</span><span class="t_punct colon">:</span> '
-            // + $this->debug->utility->getBytes($abs['strlen'])
         : val
     }
     dumpOpts.postDump = function (val, dumpOpts) {
@@ -2110,16 +2110,25 @@
 
   Dump.prototype.dumpArray = function (array) {
     var html = '';
+    var i;
+    var key;
     var keys = array.__debug_key_order__ || Object.keys(array);
     var length = keys.length;
-    var key;
-    var i;
     var dumpOpts = $.extend({
       asFileTree: false,
       expand: null,
       isMaxDepth: false,
       showListKeys: true
     }, this.getDumpOpts());
+    var isList = (function () {
+      for (i = 0; i < length; i++) {
+        if (parseInt(keys[i], 10) !== i) {
+          return false
+        }
+      }
+      return true
+    })();
+    var showKeys = dumpOpts.showListKeys || !isList;
     /*
     console.warn('dumpArray', {
       array: JSON.parse(JSON.stringify(array)),
@@ -2146,15 +2155,21 @@
       '<ul class="array-inner list-unstyled">\n';
     for (i = 0; i < length; i++) {
       key = keys[i];
-      html += '\t<li>' +
-          '<span class="t_key' + (/^\d+$/.test(key) ? ' t_int' : '') + '">' + key + '</span>' +
-          '<span class="t_operator">=&gt;</span>' +
-          this.dump(array[key]) +
-        '</li>\n';
+      html += this.dumpArrayValue(key, array[key], showKeys);
     }
     html += '</ul>' +
       '<span class="t_punct">)</span>';
     return html
+  };
+
+  Dump.prototype.dumpArrayValue = function (key, val, withKey) {
+    return withKey
+      ? '\t<li>' +
+          '<span class="t_key' + (/^\d+$/.test(key) ? ' t_int' : '') + '">' + key + '</span>' +
+          '<span class="t_operator">=&gt;</span>' +
+          this.dump(val) +
+        '</li>\n'
+      : '\t' + this.dump(val, { tagName: 'li' }) + '\n'
   };
 
   Dump.prototype.dumpBool = function (val) {
@@ -2505,9 +2520,6 @@
         .append($groupHeader)
         .append($groupBody);
       nodes.push($groupBody);
-      if ($group.is(':visible')) {
-        $group.debugEnhance();
-      }
       return $group
     },
     groupCollapsed: function (logEntry, info) {
@@ -2557,29 +2569,30 @@
       if (nodes.length > 1) {
         nodes.pop();
       }
-      if (!isSummaryRoot) {
-        $toggle = info.$node.prev();
-        $group = $toggle.parent();
-        if ($group.hasClass('empty') && $group.hasClass('hide-if-empty')) {
-          // console.log('remove', $group)
-          // $toggle.remove()
-          // info.$currentNode.remove()
-          $group.remove();
-        } else if ($group.hasClass('ungroup')) {
-          var $children = $group.find('> ul.group-body > li');
-          var $groupLabel = $group.find('> .group-header > .group-label');
-          var $li = $('<li></li>').data($group.data());
-          if ($children.length === 0) {
-            $group.replaceWith(
-              $li.html($groupLabel.html())
-            );
-          } else if ($children.length === 1 && $children.filter('.m_group').length === 0) {
-            $group.replaceWith($children);
-          }
-        } else if (!$group.is(':visible')) ; else {
-          // console.log('enhance')
-          $group.debugEnhance();
+      if (isSummaryRoot) {
+        return
+      }
+      $toggle = info.$node.prev();
+      $group = $toggle.parent();
+      if ($group.hasClass('empty') && $group.hasClass('hide-if-empty')) {
+        // console.log('remove', $group)
+        // $toggle.remove()
+        // info.$currentNode.remove()
+        $group.remove();
+      } else if ($group.hasClass('ungroup')) {
+        var $children = $group.find('> ul.group-body > li');
+        var $groupLabel = $group.find('> .group-header > .group-label');
+        var $li = $('<li></li>').data($group.data());
+        if ($children.length === 0) {
+          $group.replaceWith(
+            $li.html($groupLabel.html())
+          );
+        } else if ($children.length === 1 && $children.filter('.m_group').length === 0) {
+          $group.replaceWith($children);
         }
+      } else if ($group.hasClass('filter-hidden') === false && $group.is(':visible')) {
+        // console.log('enhance')
+        $group.debugEnhance();
       }
     },
     groupUncollapse: function (logEntry, info) {
@@ -2967,9 +2980,7 @@
 
   function processEntry (logEntry) {
     // console.log(JSON.parse(JSON.stringify(logEntry)));
-    var method = logEntry.method;
     var meta = logEntry.meta;
-    var i;
     var info = getNodeInfo(meta);
     var channelsTab = info.channels.filter(function (channelInfo) {
       return channelInfo.name === info.channelNameTop || channelInfo.name.indexOf(info.channelNameTop + '.') === 0
@@ -2977,23 +2988,7 @@
     var $node;
 
     try {
-      if (meta.format === 'html') {
-        if (typeof logEntry.args === 'object') {
-          $node = $('<li />', { class: 'm_' + method });
-          for (i = 0; i < logEntry.args.length; i++) {
-            $node.append(logEntry.args[i]);
-          }
-        } else {
-          $node = $(logEntry.args);
-          if (!$node.is('.m_' + method)) {
-            $node = $('<li />', { class: 'm_' + method }).html(logEntry.args);
-          }
-        }
-      } else if (methods[method]) {
-        $node = methods[method](logEntry, info);
-      } else {
-        $node = methods.default(logEntry, info);
-      }
+      $node = buildLogEntryNode(logEntry, info);
       updateSidebar(logEntry, info, $node !== false);
       if (!$node) {
         return
@@ -3029,13 +3024,37 @@
         $node.attr('data-found-files', meta.foundFiles ? meta.foundFiles : []);
       }
       $node.parent().closest('.m_group.empty').removeClass('empty').trigger('updated.debug.group');
-      if ($node.is(':visible:not(.filter-hidden)')) {
+      if ($node.hasClass('filter-hidden') === false && $node.is(':visible')) {
         $node.debugEnhance();
       }
     } catch (err) {
       console.warn('Logger.processEntry error', err);
       console.log('logEntry', logEntry);
     }
+  }
+
+  function buildLogEntryNode (logEntry, info) {
+    var method = logEntry.method;
+    var $node;
+    var i;
+    if (logEntry.meta.format === 'html') {
+      if (typeof logEntry.args === 'object') {
+        $node = $('<li />', { class: 'm_' + method });
+        for (i = 0; i < logEntry.args.length; i++) {
+          $node.append(logEntry.args[i]);
+        }
+        return $node
+      }
+      $node = $(logEntry.args);
+      if (!$node.is('.m_' + method)) {
+        $node = $('<li />', { class: 'm_' + method }).html(logEntry.args);
+      }
+      return $node
+    }
+    if (methods[method]) {
+      return methods[method](logEntry, info)
+    }
+    return methods.default(logEntry, info)
   }
 
   function getNodeInfo (meta) {

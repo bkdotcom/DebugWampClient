@@ -34,7 +34,9 @@ export function init (config) {
   )
 
   $('.navbar .clear').on('click', function () {
-    $('#debug-cards > .card').not('.working').trigger('removed.debug.card').remove()
+    console.time('clear')
+    $('#debug-cards > .card').not('.working').trigger('removed.debug.card')
+    console.timeEnd('clear')
   })
 
   $('#debug-cards').on('added.debug.card', function (e) {
@@ -43,8 +45,13 @@ export function init (config) {
   })
   $('#debug-cards').on('removed.debug.card', function (e) {
     // console.warn('card removed', e.target, e)
+    var $card = $(e.target)
     io.unobserve(e.target)
     $cardsInViewport = $cardsInViewport.not(e.target)
+    if ($card.hasClass('working')) {
+      console.warn('removed working session:' + $card.prop('id'))
+    }
+    $card.remove()
   })
 
   $('body').on('mouseup', function (e) {
@@ -60,10 +67,7 @@ export function init (config) {
     timeoutHandler = setTimeout(function () {
       // has been long pressed (3 seconds)
       // clear all (incl working)
-      $('#debug-cards > .card.working').each(function () {
-        console.warn('removed working session:' + $(this).prop('id'))
-      })
-      $('#debug-cards > .card').trigger('removed.debug.card').remove()
+      $('#debug-cards > .card').trigger('removed.debug.card')
     }, 2000)
   })
 
@@ -86,11 +90,7 @@ export function init (config) {
 
   // close btn on card-header clicked
   $('body').on('click', '.btn-remove-session', function (e) {
-    var $card = $(this).closest('.card')
-    if ($card.hasClass('working')) {
-      console.warn('removed working session:' + $card.prop('id'))
-    }
-    $card.trigger('removed.debug.card').remove()
+    $(this).closest('.card').trigger('removed.debug.card')
   })
 
   $(window).on('scroll', debounce(function () {

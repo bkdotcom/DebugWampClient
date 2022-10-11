@@ -3,9 +3,7 @@ import * as methods from './Methods.js'
 
 export function processEntry (logEntry) {
   // console.log(JSON.parse(JSON.stringify(logEntry)));
-  var method = logEntry.method
   var meta = logEntry.meta
-  var i
   var info = getNodeInfo(meta)
   var channelsTab = info.channels.filter(function (channelInfo) {
     return channelInfo.name === info.channelNameTop || channelInfo.name.indexOf(info.channelNameTop + '.') === 0
@@ -13,23 +11,7 @@ export function processEntry (logEntry) {
   var $node
 
   try {
-    if (meta.format === 'html') {
-      if (typeof logEntry.args === 'object') {
-        $node = $('<li />', { class: 'm_' + method })
-        for (i = 0; i < logEntry.args.length; i++) {
-          $node.append(logEntry.args[i])
-        }
-      } else {
-        $node = $(logEntry.args)
-        if (!$node.is('.m_' + method)) {
-          $node = $('<li />', { class: 'm_' + method }).html(logEntry.args)
-        }
-      }
-    } else if (methods.methods[method]) {
-      $node = methods.methods[method](logEntry, info)
-    } else {
-      $node = methods.methods.default(logEntry, info)
-    }
+    $node = buildLogEntryNode(logEntry, info)
     updateSidebar(logEntry, info, $node !== false)
     if (!$node) {
       return
@@ -65,13 +47,37 @@ export function processEntry (logEntry) {
       $node.attr('data-found-files', meta.foundFiles ? meta.foundFiles : [])
     }
     $node.parent().closest('.m_group.empty').removeClass('empty').trigger('updated.debug.group')
-    if ($node.is(':visible:not(.filter-hidden)')) {
+    if ($node.hasClass('filter-hidden') === false && $node.is(':visible')) {
       $node.debugEnhance()
     }
   } catch (err) {
     console.warn('Logger.processEntry error', err)
     console.log('logEntry', logEntry)
   }
+}
+
+function buildLogEntryNode (logEntry, info) {
+  var method = logEntry.method
+  var $node
+  var i
+  if (logEntry.meta.format === 'html') {
+    if (typeof logEntry.args === 'object') {
+      $node = $('<li />', { class: 'm_' + method })
+      for (i = 0; i < logEntry.args.length; i++) {
+        $node.append(logEntry.args[i])
+      }
+      return $node
+    }
+    $node = $(logEntry.args)
+    if (!$node.is('.m_' + method)) {
+      $node = $('<li />', { class: 'm_' + method }).html(logEntry.args)
+    }
+    return $node
+  }
+  if (methods.methods[method]) {
+    return methods.methods[method](logEntry, info)
+  }
+  return methods.methods.default(logEntry, info)
 }
 
 function getNodeInfo (meta) {

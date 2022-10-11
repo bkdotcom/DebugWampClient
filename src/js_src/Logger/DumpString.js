@@ -89,10 +89,10 @@ DumpString.prototype.dumpBinary = function (abs) {
     val += '<span class="maxlen">&hellip; ' + strLenDiff + ' more bytes (not logged)</span>'
   }
   if (abs.brief) {
+    // @todo display bytes
     return abs.contentType
       ? '<span class="t_keyword">string</span>' +
           '<span class="text-muted">(' + abs.contentType + ')</span><span class="t_punct colon">:</span> '
-          // + $this->debug->utility->getBytes($abs['strlen'])
       : val
   }
   dumpOpts.postDump = function (val, dumpOpts) {
