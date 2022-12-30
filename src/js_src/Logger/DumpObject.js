@@ -37,16 +37,19 @@ DumpObject.prototype.dump = function (abs) {
     abs.cfgFlags = 0x3FFFFF // 21 bits
   }
   strClassname = this.dumpClassname(abs)
-  if (abs.isMaxDepth) {
-    this.dumper.getDumpOpts().attribs.class.push('max-depth')
-  }
   if (abs.isRecursion) {
     return strClassname +
       ' <span class="t_recursion">*RECURSION*</span>'
-  } else if (abs.isExcluded) {
+  }
+  if (abs.isMaxDepth) {
+    return strClassname +
+      ' <span class="t_maxDepth">*MAX DEPTH*</span>'
+  }
+  if (abs.isExcluded) {
     return strClassname +
       ' <span class="excluded">(not inspected)</span>'
-  } else if (abs.cfgFlags & this.BRIEF && abs.implements.indexOf('UnitEnum') > -1) {
+  }
+  if (abs.cfgFlags & this.BRIEF && abs.implements.indexOf('UnitEnum') > -1) {
     return strClassname
   }
   try {
@@ -426,7 +429,6 @@ DumpObject.prototype.dumpMethods = function (abs) {
       attributeOut: paramAttributeOut,
       phpDocOut: phpDocOut
     })
-    var returnType = ''
     if (info.isFinal) {
       $dd.addClass('final')
       modifiers.push('<span class="t_modifier_final">final</span>')
@@ -435,17 +437,9 @@ DumpObject.prototype.dumpMethods = function (abs) {
     if (info.isStatic) {
       modifiers.push('<span class="t_modifier_static">static</span>')
     }
-    if (info.return && info.return.type) {
-      returnType = ' <span class="t_type"' +
-        (phpDocOut && info.return.desc !== null
-          ? ' title="' + info.return.desc.escapeHtml() + '"'
-          : ''
-        ) +
-        '>' + info.return.type + '</span>'
-    }
     $dd.html(
       modifiers.join(' ') +
-      returnType +
+      // returnType +
       ' <span class="t_identifier"' +
         (phpDocOut && info.phpDoc && info.phpDoc.summary !== null
           ? ' title="' + info.phpDoc.summary.escapeHtml() + '"'
@@ -453,6 +447,7 @@ DumpObject.prototype.dumpMethods = function (abs) {
         ) +
         '>' + k + '</span>' +
       '<span class="t_punct">(</span>' + paramStr + '<span class="t_punct">)</span>' +
+      self.dumpMethodReturn(info, { phpDocOut: phpDocOut }) +
       (k === '__toString'
         ? '<br />' + self.dumper.dump(info.returnValue)
         : ''
@@ -524,6 +519,20 @@ DumpObject.prototype.dumpMethodParams = function (params, opts) {
   return params
     ? params.join('<span class="t_punct">,</span> ')
     : ''
+}
+
+DumpObject.prototype.dumpMethodReturn = function (info, opts) {
+  var haveReturnType = info.return && info.return.type
+  if (haveReturnType === false) {
+    return ''
+  }
+  return '<span class="t_punct t_colon">:</span> ' +
+     ' <span class="t_type"' +
+    (opts.phpDocOut && info.return.desc !== null
+      ? ' title="' + info.return.desc.escapeHtml() + '"'
+      : ''
+    ) +
+    '>' + info.return.type + '</span>'
 }
 
 function magicMethodInfo (abs, methods) {

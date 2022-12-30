@@ -183,9 +183,10 @@ Dump.prototype.dumpArray = function (array) {
     dumpOpts.attribs.class.push('array-file-tree')
   }
   if (dumpOpts.isMaxDepth) {
-    dumpOpts.attribs.class.push('max-depth')
+    return '<span class="t_keyword">array</span>' +
+        ' <span class="t_maxDepth">*MAX DEPTH*</span>'
   }
-  if (length === 0 && dumpOpts.isMaxDepth === false) {
+  if (length === 0) {
     return '<span class="t_keyword">array</span>' +
         '<span class="t_punct">(</span>\n' +
         '<span class="t_punct">)</span>'

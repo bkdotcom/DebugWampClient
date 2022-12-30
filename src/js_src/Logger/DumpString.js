@@ -1,11 +1,13 @@
 import $ from 'jquery' // external global
 import base64 from 'base64-arraybuffer'
+import { DumpStringEncoded } from './DumpStringEncoded'
 import { StrDump } from './StrDump.js'
 
 var strDump = new StrDump()
 
 export function DumpString (dump) {
   this.dumper = dump
+  this.dumpEncoded = new DumpStringEncoded(this)
 }
 
 DumpString.prototype.dump = function (val, abs) {
@@ -34,8 +36,8 @@ DumpString.prototype.dumpAbs = function (abs) {
     return parsed.innerhtml
   }
   val = this.helper(abs.value)
-  if (['base64', 'json', 'serialized'].indexOf(abs.typeMore) > -1) {
-    return this.dumpEncoded(val, abs)
+  if (this.isEncoded(abs)) {
+    return this.dumpEncoded.dump(val, abs)
   }
   if (abs.typeMore === 'binary') {
     return this.dumpBinary(abs)
@@ -116,38 +118,6 @@ DumpString.prototype.dumpBinary = function (abs) {
   return val
 }
 
-DumpString.prototype.dumpEncoded = function (val, abs) {
-  var dumpOpts = this.dumper.getDumpOpts()
-  var tagName = dumpOpts.tagName === '__default__'
-    ? 'span'
-    : dumpOpts.tagName
-  var $tag = $('<' + tagName + '>', {
-    class: 'string-encoded tabs-container',
-    // 'data-type': abs.type,
-    'data-type-more': abs.typeMore
-  }).html('\n' +
-    '<nav role="tablist">' +
-      '<a class="nav-link" data-target=".string-raw" data-toggle="tab" role="tab"></a>' +
-      '<a class="active nav-link" data-target=".string-decoded" data-toggle="tab" role="tab"></a>' +
-    '</nav>' +
-    '<div class="string-raw tab-pane" role="tabpanel"></div>' +
-    '<div class="active string-decoded tab-pane" role="tabpanel"></div>'
-  )
-  var vals = encodedInitVals(val, abs, dumpOpts)
-  vals = encodedUpdateVals(vals, abs, this.dumper)
-  if (abs.brief) {
-    return vals.valRaw
-  }
-
-  vals.valDecoded = this.dumper.dump(abs.valueDecoded)
-  dumpOpts.tagName = null
-  $tag.find('.nav-link').eq(0).html(vals.labelRaw)
-  $tag.find('.nav-link').eq(1).html(vals.labelDecoded)
-  $tag.find('.string-raw').html(vals.valRaw)
-  $tag.find('.string-decoded').html(vals.valDecoded) // this.dumper.dump(abs.valueDecoded)
-  return $tag[0].outerHTML
-}
-
 DumpString.prototype.helper = function (val) {
   var bytes = val.substr(0, 6) === '_b64_:'
     ? new Uint8Array(base64.decode(val.substr(6)))
@@ -162,48 +132,8 @@ DumpString.prototype.helper = function (val) {
   return val
 }
 
-function encodedInitVals (val, abs, dumpOpts) {
-  var attribs = JSON.parse(JSON.stringify(dumpOpts.attribs))
-  attribs.class.push('no-quotes')
-  attribs.class.push('t_' + abs.type)
-  attribs.class = attribs.class.join(' ')
-  if (abs.typeMore === 'base64' && abs.brief) {
-    dumpOpts.postDump = function (val) {
-      return '<span class="t_keyword">string</span><span class="text-muted">(base64)</span><span class="t_punct colon">:</span> ' + val
-    }
-  }
-  return {
-    labelDecoded: 'Decoded',
-    labelRaw: 'Raw',
-    valDecoded: null,
-    valRaw: $('<span />', attribs).html(val)[0].outerHTML
-  }
-}
-
-function encodedUpdateVals (vals, abs, dumper) {
-  switch (abs.typeMore) {
-    case 'base64':
-      vals.labelDecoded = 'decoded'
-      vals.labelRaw = 'base64'
-      if (abs.strlen) {
-        vals.valRaw += '<span class="maxlen">&hellip; ' + (abs.strlen - abs.value.length) + ' more bytes (not logged)</span>'
-      }
-      break
-    case 'json':
-      vals.labelDecoded = 'decoded'
-      vals.labelRaw = 'json'
-      if (abs.prettified || abs.strlen) {
-        abs.typeMore = null // unset typeMore to prevent loop
-        vals.valRaw = dumper.dump(abs)
-        abs.typeMore = 'json'
-      }
-      break
-    case 'serialized':
-      vals.labelDecoded = 'unserialized'
-      vals.labelRaw = 'serialized'
-      break
-  }
-  return vals
+DumpString.prototype.isEncoded = function (val) {
+  return ['base64', 'json', 'serialized'].indexOf(val.typeMore) > -1
 }
 
 /**

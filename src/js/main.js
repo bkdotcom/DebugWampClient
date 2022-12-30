@@ -585,16 +585,19 @@
       abs.cfgFlags = 0x3FFFFF; // 21 bits
     }
     strClassname = this.dumpClassname(abs);
-    if (abs.isMaxDepth) {
-      this.dumper.getDumpOpts().attribs.class.push('max-depth');
-    }
     if (abs.isRecursion) {
       return strClassname +
         ' <span class="t_recursion">*RECURSION*</span>'
-    } else if (abs.isExcluded) {
+    }
+    if (abs.isMaxDepth) {
+      return strClassname +
+        ' <span class="t_maxDepth">*MAX DEPTH*</span>'
+    }
+    if (abs.isExcluded) {
       return strClassname +
         ' <span class="excluded">(not inspected)</span>'
-    } else if (abs.cfgFlags & this.BRIEF && abs.implements.indexOf('UnitEnum') > -1) {
+    }
+    if (abs.cfgFlags & this.BRIEF && abs.implements.indexOf('UnitEnum') > -1) {
       return strClassname
     }
     try {
@@ -974,7 +977,6 @@
         attributeOut: paramAttributeOut,
         phpDocOut: phpDocOut
       });
-      var returnType = '';
       if (info.isFinal) {
         $dd.addClass('final');
         modifiers.push('<span class="t_modifier_final">final</span>');
@@ -983,17 +985,9 @@
       if (info.isStatic) {
         modifiers.push('<span class="t_modifier_static">static</span>');
       }
-      if (info.return && info.return.type) {
-        returnType = ' <span class="t_type"' +
-          (phpDocOut && info.return.desc !== null
-            ? ' title="' + info.return.desc.escapeHtml() + '"'
-            : ''
-          ) +
-          '>' + info.return.type + '</span>';
-      }
       $dd.html(
         modifiers.join(' ') +
-        returnType +
+        // returnType +
         ' <span class="t_identifier"' +
           (phpDocOut && info.phpDoc && info.phpDoc.summary !== null
             ? ' title="' + info.phpDoc.summary.escapeHtml() + '"'
@@ -1001,6 +995,7 @@
           ) +
           '>' + k + '</span>' +
         '<span class="t_punct">(</span>' + paramStr + '<span class="t_punct">)</span>' +
+        self.dumpMethodReturn(info, { phpDocOut: phpDocOut }) +
         (k === '__toString'
           ? '<br />' + self.dumper.dump(info.returnValue)
           : ''
@@ -1072,6 +1067,20 @@
     return params
       ? params.join('<span class="t_punct">,</span> ')
       : ''
+  };
+
+  DumpObject.prototype.dumpMethodReturn = function (info, opts) {
+    var haveReturnType = info.return && info.return.type;
+    if (haveReturnType === false) {
+      return ''
+    }
+    return '<span class="t_punct t_colon">:</span> ' +
+       ' <span class="t_type"' +
+      (opts.phpDocOut && info.return.desc !== null
+        ? ' title="' + info.return.desc.escapeHtml() + '"'
+        : ''
+      ) +
+      '>' + info.return.type + '</span>'
   };
 
   function magicMethodInfo (abs, methods) {
@@ -1174,6 +1183,101 @@
   });
   var base64Arraybuffer_1 = base64Arraybuffer.encode;
   var base64Arraybuffer_2 = base64Arraybuffer.decode;
+
+  function DumpStringEncoded (dumpString) {
+    this.dumpString = dumpString;
+    this.dumper = dumpString.dumper;
+  }
+
+  DumpStringEncoded.prototype.dump = function (val, abs) {
+    var dumpOpts = this.dumper.getDumpOpts();
+    var tagName = dumpOpts.tagName === '__default__'
+      ? 'span'
+      : dumpOpts.tagName;
+    var tabs = {};
+
+    if (abs.brief) {
+      return tabValues(val, abs, this.dumper).valRaw
+    }
+
+    tabs = this.buildTabsAndPanes(val, abs);
+    dumpOpts.tagName = null;
+
+    return $('<' + tagName + '>', {
+      class: 'string-encoded tabs-container',
+      'data-type-more': abs.typeMore
+    }).html('\n' +
+      '<nav role="tablist">' +
+          tabs.tabs.join('') +
+      '</nav>' +
+      tabs.panes.join('')
+    )[0].outerHTML
+  };
+
+  DumpStringEncoded.prototype.buildTabsAndPanes = function (val, abs) {
+    var tabs = {
+      tabs: [],
+      panes: []
+    };
+    var index = 1;
+    var vals;
+    do {
+      vals = tabValues(val, abs, this.dumper);
+      tabs.tabs.push('<a class="nav-link" data-target=".tab-' + index + '" data-toggle="tab" role="tab">' + vals.labelRaw + '</a>');
+      tabs.panes.push('<div class="tab-' + index + ' tab-pane" role="tabpanel">' + vals.valRaw + '</div>');
+      index++;
+      val = abs.value;
+      abs = abs.valueDecoded;
+    } while (this.dumpString.isEncoded(abs))
+    tabs.tabs.push('<a class="active nav-link" data-target=".tab-' + index + '" data-toggle="tab" role="tab">' + vals.labelDecoded + '</a>');
+    tabs.panes.push('<div class="active tab-' + index + ' tab-pane" role="tabpanel">' + this.dumper.dump(abs) + '</div>');
+    return tabs
+  };
+
+  function tabValues (val, abs, dumper) {
+    var dumpOpts = dumper.getDumpOpts();
+    var attribs = JSON.parse(JSON.stringify(dumpOpts.attribs));
+    attribs.class.push('no-quotes');
+    attribs.class.push('t_' + abs.type);
+    attribs.class = attribs.class.join(' ');
+    if (abs.typeMore === 'base64' && abs.brief) {
+      dumpOpts.postDump = function (val) {
+        return '<span class="t_keyword">string</span><span class="text-muted">(base64)</span><span class="t_punct colon">:</span> ' + val
+      };
+    }
+    return tabValuesFinish({
+      labelDecoded: 'decoded',
+      labelRaw: 'raw',
+      valDecoded: null,
+      valRaw: $('<span />', attribs).html(val)[0].outerHTML
+    }, abs, dumper)
+  }
+
+  function tabValuesFinish (vals, abs, dumper) {
+    switch (abs.typeMore) {
+      case 'base64':
+        // vals.labelDecoded = 'decoded'
+        vals.labelRaw = 'base64';
+        if (abs.strlen) {
+          vals.valRaw += '<span class="maxlen">&hellip; ' + (abs.strlen - abs.value.length) + ' more bytes (not logged)</span>';
+        }
+        break
+      case 'json':
+        // vals.labelDecoded = 'decoded'
+        vals.labelRaw = 'json';
+        if (abs.prettified || abs.strlen) {
+          abs.typeMore = null; // unset typeMore to prevent loop
+          vals.valRaw = dumper.dump(abs);
+          abs.typeMore = 'json';
+        }
+        break
+      case 'serialized':
+        vals.labelDecoded = 'unserialized';
+        vals.labelRaw = 'serialized';
+        break
+    }
+    return vals
+  }
 
   /**
    * Nutshell:  working with strings in Javascript is a PITA
@@ -1734,6 +1838,7 @@
 
   function DumpString (dump) {
     this.dumper = dump;
+    this.dumpEncoded = new DumpStringEncoded(this);
   }
 
   DumpString.prototype.dump = function (val, abs) {
@@ -1762,8 +1867,8 @@
       return parsed.innerhtml
     }
     val = this.helper(abs.value);
-    if (['base64', 'json', 'serialized'].indexOf(abs.typeMore) > -1) {
-      return this.dumpEncoded(val, abs)
+    if (this.isEncoded(abs)) {
+      return this.dumpEncoded.dump(val, abs)
     }
     if (abs.typeMore === 'binary') {
       return this.dumpBinary(abs)
@@ -1844,38 +1949,6 @@
     return val
   };
 
-  DumpString.prototype.dumpEncoded = function (val, abs) {
-    var dumpOpts = this.dumper.getDumpOpts();
-    var tagName = dumpOpts.tagName === '__default__'
-      ? 'span'
-      : dumpOpts.tagName;
-    var $tag = $('<' + tagName + '>', {
-      class: 'string-encoded tabs-container',
-      // 'data-type': abs.type,
-      'data-type-more': abs.typeMore
-    }).html('\n' +
-      '<nav role="tablist">' +
-        '<a class="nav-link" data-target=".string-raw" data-toggle="tab" role="tab"></a>' +
-        '<a class="active nav-link" data-target=".string-decoded" data-toggle="tab" role="tab"></a>' +
-      '</nav>' +
-      '<div class="string-raw tab-pane" role="tabpanel"></div>' +
-      '<div class="active string-decoded tab-pane" role="tabpanel"></div>'
-    );
-    var vals = encodedInitVals(val, abs, dumpOpts);
-    vals = encodedUpdateVals(vals, abs, this.dumper);
-    if (abs.brief) {
-      return vals.valRaw
-    }
-
-    vals.valDecoded = this.dumper.dump(abs.valueDecoded);
-    dumpOpts.tagName = null;
-    $tag.find('.nav-link').eq(0).html(vals.labelRaw);
-    $tag.find('.nav-link').eq(1).html(vals.labelDecoded);
-    $tag.find('.string-raw').html(vals.valRaw);
-    $tag.find('.string-decoded').html(vals.valDecoded); // this.dumper.dump(abs.valueDecoded)
-    return $tag[0].outerHTML
-  };
-
   DumpString.prototype.helper = function (val) {
     var bytes = val.substr(0, 6) === '_b64_:'
       ? new Uint8Array(base64Arraybuffer.decode(val.substr(6)))
@@ -1890,49 +1963,9 @@
     return val
   };
 
-  function encodedInitVals (val, abs, dumpOpts) {
-    var attribs = JSON.parse(JSON.stringify(dumpOpts.attribs));
-    attribs.class.push('no-quotes');
-    attribs.class.push('t_' + abs.type);
-    attribs.class = attribs.class.join(' ');
-    if (abs.typeMore === 'base64' && abs.brief) {
-      dumpOpts.postDump = function (val) {
-        return '<span class="t_keyword">string</span><span class="text-muted">(base64)</span><span class="t_punct colon">:</span> ' + val
-      };
-    }
-    return {
-      labelDecoded: 'Decoded',
-      labelRaw: 'Raw',
-      valDecoded: null,
-      valRaw: $('<span />', attribs).html(val)[0].outerHTML
-    }
-  }
-
-  function encodedUpdateVals (vals, abs, dumper) {
-    switch (abs.typeMore) {
-      case 'base64':
-        vals.labelDecoded = 'decoded';
-        vals.labelRaw = 'base64';
-        if (abs.strlen) {
-          vals.valRaw += '<span class="maxlen">&hellip; ' + (abs.strlen - abs.value.length) + ' more bytes (not logged)</span>';
-        }
-        break
-      case 'json':
-        vals.labelDecoded = 'decoded';
-        vals.labelRaw = 'json';
-        if (abs.prettified || abs.strlen) {
-          abs.typeMore = null; // unset typeMore to prevent loop
-          vals.valRaw = dumper.dump(abs);
-          abs.typeMore = 'json';
-        }
-        break
-      case 'serialized':
-        vals.labelDecoded = 'unserialized';
-        vals.labelRaw = 'serialized';
-        break
-    }
-    return vals
-  }
+  DumpString.prototype.isEncoded = function (val) {
+    return ['base64', 'json', 'serialized'].indexOf(val.typeMore) > -1
+  };
 
   /**
    * Add whitespace markup
@@ -2142,9 +2175,10 @@
       dumpOpts.attribs.class.push('array-file-tree');
     }
     if (dumpOpts.isMaxDepth) {
-      dumpOpts.attribs.class.push('max-depth');
+      return '<span class="t_keyword">array</span>' +
+          ' <span class="t_maxDepth">*MAX DEPTH*</span>'
     }
-    if (length === 0 && dumpOpts.isMaxDepth === false) {
+    if (length === 0) {
       return '<span class="t_keyword">array</span>' +
           '<span class="t_punct">(</span>\n' +
           '<span class="t_punct">)</span>'
