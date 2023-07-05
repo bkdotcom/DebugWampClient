@@ -109,6 +109,7 @@ export var methods = {
   endOutput: function (logEntry, info) {
     var $container = info.$container
     var responseCode = logEntry.meta.responseCode
+    $container.removeData('classDefinitions')
     $container.removeClass('working')
     $container.find('.card-header .fa-spinner').remove()
     $container.find('.debug > .fa-spinner').remove()
@@ -133,7 +134,7 @@ export var methods = {
       $tabPane.prepend($node)
     }
     $node = $node.find('ul')
-    $node.append(buildEntryNode(logEntry))
+    $node.append(buildEntryNode(logEntry, info))
     if (logEntry.meta.class === 'error') {
       $container
         .addClass('bg-danger')
@@ -248,37 +249,47 @@ export var methods = {
   },
   meta: function (logEntry, info) {
     /*
-      The initial message/method
+      Information about request
     */
-    var $title = info.$container.find('.card-header .card-header-body .card-title').html('')
+    var $cardHeaderBody = info.$container.find('.card-header .card-header-body')
+    var $title = $cardHeaderBody.find('.card-title')
+    var date
+    var isInit = Object.keys(info.$container.data()).length === 0
     var metaVals = logEntry.args[0]
     var meta = logEntry.meta
-    // console.log('meta', meta)
-    info.$container.data('meta', metaVals)
-    info.$container.find('.debug').data('channelNameRoot', meta.channelNameRoot)
-    info.$container.data('options', {
-      drawer: meta.drawer
-    })
+    var title = buildTitle(metaVals)
+    var k
+    var classDefinition
+    if (isInit) {
+      info.$container.data('classDefinitions', {})
+      info.$container.data('meta', metaVals)
+    }
+    if (meta.channelNameRoot) {
+      info.$container.find('.debug').data('channelNameRoot', meta.channelNameRoot)
+    }
+    if (typeof meta.drawer === 'boolean') {
+      info.$container.data('options', {
+        drawer: meta.drawer
+      })
+    }
     if (meta.interface) {
       info.$container.find('.card-header').attr('data-interface', meta.interface)
     }
-    if (metaVals.HTTPS === 'on') {
-      $title.append('<i class="fa fa-lock fa-lg"></i> ')
+    if (title !== '') {
+      $title.html(title)
     }
-    if (metaVals.REQUEST_METHOD) {
-      $title.append(metaVals.REQUEST_METHOD + ' ')
-    }
-    if (metaVals.HTTP_HOST) {
-      $title.append('<span class="http-host">' + metaVals.HTTP_HOST + '</span>')
-    }
-    if (metaVals.REQUEST_URI) {
-      $title.append('<span class="request-uri">' + metaVals.REQUEST_URI + '</span>')
+    if (metaVals.classDefinitions) {
+      for (k in metaVals.classDefinitions) {
+        classDefinition = metaVals.classDefinitions[k]
+        if (k.substr(0, 6) === '_b64_:') {
+          k = atob(k.substr(6))
+        }
+        info.$container.data('classDefinitions')[k] = classDefinition
+      }
     }
     if (metaVals.REQUEST_TIME) {
-      var date = (new Date(metaVals.REQUEST_TIME * 1000)).toString().replace(/[A-Z]{3}-\d+/, '')
-      info.$container
-        .find('.card-header .card-header-body')
-        .prepend('<span class="float-right">' + date + '</span>')
+      date = (new Date(metaVals.REQUEST_TIME * 1000)).toString().replace(/[A-Z]{3}-\d+/, '')
+      $cardHeaderBody.prepend('<span class="float-right">' + date + '</span>')
     }
   },
   profileEnd: function (logEntry, info) {
@@ -364,7 +375,7 @@ export var methods = {
       }
       processSubstitutions(logEntry)
     }
-    $node = buildEntryNode(logEntry)
+    $node = buildEntryNode(logEntry, info)
     $node.attr(attribs)
     if (meta.trace && meta.trace.length > 1) {
       $node.append(
@@ -388,6 +399,23 @@ export var methods = {
     }
     return $node
   }
+}
+
+function buildTitle (metaVals) {
+  var title = ''
+  if (metaVals.HTTPS === 'on') {
+    title += '<i class="fa fa-lock fa-lg"></i> '
+  }
+  if (metaVals.REQUEST_METHOD) {
+    title += metaVals.REQUEST_METHOD + ' '
+  }
+  if (metaVals.HTTP_HOST) {
+    title += '<span class="http-host">' + metaVals.HTTP_HOST + '</span>'
+  }
+  if (metaVals.REQUEST_URI) {
+    title += '<span class="request-uri">' + metaVals.REQUEST_URI + '</span>'
+  }
+  return title
 }
 
 function buildContext (context, lineNumber) {
@@ -437,7 +465,7 @@ function tableAddContextRow ($tr, row, rowInfo, i) {
   ]
 }
 
-function buildEntryNode (logEntry) {
+function buildEntryNode (logEntry, requestInfo) {
   var i
   var glue = ', '
   var glueAfterFirst = true
@@ -468,6 +496,7 @@ function buildEntryNode (logEntry) {
       : (args[i].typeMore || null)
     args[i] = dump.dump(args[i], {
       addQuotes: i !== 0 || typeMore === 'numeric',
+      requestInfo: requestInfo,
       sanitize: i === 0
         ? meta.sanitizeFirst
         : meta.sanitize,
@@ -476,11 +505,9 @@ function buildEntryNode (logEntry) {
       visualWhiteSpace: i !== 0
     })
   }
-  if (!glueAfterFirst) {
-    return $('<li>').html(args[0] + ' ' + args.slice(1).join(glue))
-  } else {
-    return $('<li>').html(args.join(glue))
-  }
+  return glueAfterFirst
+    ? $('<li>').html(args.join(glue))
+    : $('<li>').html(args[0] + ' ' + args.slice(1).join(glue))
 }
 
 function getTab (info) {
@@ -572,7 +599,7 @@ function processSubstitutions (logEntry, opts) {
     } else if (type === 'f') {
       replacement = parseFloat(args[index], 10)
     } else if (type === 's') {
-      replacement = substitutionAsString(args[index], opts)
+      replacement = substitutionAsString(args[index])
     } else if (type === 'c') {
       replacement = ''
       if (typeCounts.c) {

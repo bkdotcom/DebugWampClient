@@ -1,4 +1,5 @@
 import $ from 'jquery' // external global
+import merge from 'lodash/merge'
 
 export function DumpObject (dump) {
   this.dumper = dump
@@ -29,31 +30,87 @@ export function DumpObject (dump) {
   this.PARAM_ATTRIBUTE_OUTPUT = 2097152
 }
 
+function sort(obj, sortBy) {
+  var count
+  var i
+  var name
+  var objNew = {}
+  var sortInfo = []
+  var sortVisOrder = ['public', 'magic', 'magic-read', 'magic-write', 'protected', 'private', 'debug']
+  for (name in obj) {
+    sortInfo.push({
+      name: name,
+      visibility: obj[name].visibility
+    })
+  }
+  sortInfo.sort(function (itemA, itemB) {
+    var ret = 0;
+    if (itemA.name === '__construct') {
+      return -1
+    } else if (itemB.name === '__construct') {
+      return 1
+    }
+    if (sortBy === 'visibility') {
+      if (sortVisOrder.indexOf(itemA.visibility) < sortVisOrder.indexOf(itemB.visibility)) {
+        ret = -1
+      } else if (sortVisOrder.indexOf(itemA.visibility) > sortVisOrder.indexOf(itemB.visibility)) {
+        ret = 1
+      }
+    }
+    if (ret === 0 && ['name', 'visibility'].indexOf(sortBy) > -1) {
+      ret = itemA.name.localeCompare(itemB.name)
+    }
+    return ret
+  })
+  for (i = 0, count = sortInfo.length; i < count; i++) {
+    name = sortInfo[i].name
+    objNew[name] = obj[name]
+  }
+  return objNew
+}
+
 DumpObject.prototype.dump = function (abs) {
   // console.info('dumpObject', abs)
+  var classDefinition
   var html = ''
+  var i = 0
+  var count
+  var self = this
   var strClassname = ''
-  if (typeof abs.cfgFlags === 'undefined') {
-    abs.cfgFlags = 0x3FFFFF // 21 bits
-  }
-  strClassname = this.dumpClassname(abs)
-  if (abs.isRecursion) {
-    return strClassname +
-      ' <span class="t_recursion">*RECURSION*</span>'
-  }
-  if (abs.isMaxDepth) {
-    return strClassname +
-      ' <span class="t_maxDepth">*MAX DEPTH*</span>'
-  }
-  if (abs.isExcluded) {
-    return strClassname +
-      ' <span class="excluded">(not inspected)</span>'
-  }
-  if (abs.cfgFlags & this.BRIEF && abs.implements.indexOf('UnitEnum') > -1) {
-    return strClassname
-  }
+  var noInherit = ['attributes', 'cases', 'constants', 'methods', 'properties']
   try {
-    // console.log('obj abs', abs)
+    classDefinition = this.dumper.getClassDefinition(abs.classDefinition)
+    if (abs.isRecursion || abs.isExcluded) {
+      for (i = 0; i < noInherit.length; i++) {
+        classDefinition[noInherit[i]] = {}
+      }
+    }
+    abs = JSON.parse(JSON.stringify(merge({}, classDefinition, abs)))
+    for (i = 0, count = noInherit.length; i < count; i++) {
+      if (Object.keys(abs[noInherit[i]]).length < 2) {
+        continue
+      }
+      abs[noInherit[i]] = sort(abs[noInherit[i]], abs.sort)
+    }
+    if (typeof abs.cfgFlags === 'undefined') {
+      abs.cfgFlags = 0x3FFFFF // 21 bits
+    }
+    strClassname = this.dumpClassname(abs)
+    if (abs.isRecursion) {
+      return strClassname +
+        ' <span class="t_recursion">*RECURSION*</span>'
+    }
+    if (abs.isMaxDepth) {
+      return strClassname +
+        ' <span class="t_maxDepth">*MAX DEPTH*</span>'
+    }
+    if (abs.isExcluded) {
+      return strClassname +
+        ' <span class="excluded">(not inspected)</span>'
+    }
+    if (abs.cfgFlags & this.BRIEF && abs.implements.indexOf('UnitEnum') > -1) {
+      return strClassname
+    }
     html = this.dumpToString(abs) +
       strClassname +
       '<dl class="object-inner">' +
@@ -63,7 +120,9 @@ DumpObject.prototype.dump = function (abs) {
         ) +
         (abs.extends && abs.extends.length
           ? '<dt>extends</dt>' +
-            '<dd class="extends">' + abs.extends.join('</dd><dd class="extends">') + '</dd>'
+            abs.extends.map(function (classname) {
+              return '<dd class="extends">' + self.dumper.markupIdentifier(classname) + '</dd>'
+            }).join('')
           : ''
         ) +
         (abs.implements && abs.implements.length
@@ -154,7 +213,6 @@ DumpObject.prototype.dumpAttributes = function (abs) {
   if ((abs.cfgFlags & this.OBJ_ATTRIBUTE_OUTPUT) !== this.OBJ_ATTRIBUTE_OUTPUT) {
     return ''
   }
-  // var $dd
   $.each(abs.attributes, function (key, attribute) {
     args = []
     html += '<dd class="attribute">'
@@ -227,11 +285,12 @@ DumpObject.prototype.dumpCases = function (abs) {
 DumpObject.prototype.dumpConstants = function (abs) {
   var html = ''
   var self = this
-  var $dd
   var constCollect = abs.cfgFlags & this.CONST_COLLECT
   var attributeOut = abs.cfgFlags & this.CONST_ATTRIBUTE_OUTPUT
   var constOut = abs.cfgFlags & this.CONST_OUTPUT
   var phpDocOut = abs.cfgFlags & this.PHPDOC_OUTPUT
+  var name
+  var info
   if (!constOut) {
     return ''
   }
@@ -242,21 +301,52 @@ DumpObject.prototype.dumpConstants = function (abs) {
     return ''
   }
   html = '<dt class="constants">constants</dt>'
-  $.each(abs.constants, function (key, info) {
-    $dd = $('<dd class="constant ' + info.visibility + '">' +
-      '<span class="t_modifier_' + info.visibility + '">' + info.visibility + '</span> ' +
-      (info.isFinal
-        ? '<span class="t_modifier_final">final</span> '
-        : ''
-      ) +
-      '<span class="t_identifier"' + (phpDocOut && info.desc ? ' title="' + info.desc.escapeHtml() + '"' : '') + '>' + key + '</span> ' +
+  for (name in abs.constants) {
+    info = abs.constants[name]
+    var $dd = $('<dd class="constant"></dd>').addClass(info.visibility)
+    var vis = typeof info.visibility === 'object'
+      ? info.visibility
+      : [info.visibility]
+    var isInherited = info.declaredLast && info.declaredLast !== abs.className
+    var isPrivateAncestor = $.inArray('private', vis) >= 0 && isInherited
+    var classes = {
+      inherited: isInherited && !isPrivateAncestor,
+      isFinal: info.isFinal,
+      'private-ancestor': isPrivateAncestor
+    }
+    $dd.html(
+      self.dumpConstantModifiers(info) +
+      '<span class="t_identifier"' + (phpDocOut && info.desc ? ' title="' + info.desc.escapeHtml() + '"' : '') + '>' + name + '</span> ' +
       '<span class="t_operator">=</span> ' +
-      self.dumper.dump(info.value) +
-      '</dd>')
+      self.dumper.dump(info.value)
+    )
+    $.each(classes, function (classname, useClass) {
+      if (useClass) {
+        $dd.addClass(classname)
+      }
+    })
     if (attributeOut && info.attributes && info.attributes.length) {
       $dd.attr('data-attributes', JSON.stringify(info.attributes))
     }
+    if (isInherited || isPrivateAncestor) {
+      $dd.attr('data-inherited-from', info.declaredLast)
+    }
     html += $dd[0].outerHTML
+  }
+  return html
+}
+
+DumpObject.prototype.dumpConstantModifiers = function (info) {
+  var html = ''
+  var vis = typeof info.visibility === 'object'
+    ? info.visibility
+    : [info.visibility]
+  var modifiers = JSON.parse(JSON.stringify(vis))
+  if (info.isFinal) {
+    modifiers.push('final')
+  }
+  $.each(modifiers, function (i, modifier) {
+    html += '<span class="t_modifier_' + modifier + '">' + modifier + '</span> '
   })
   return html
 }
@@ -316,45 +406,45 @@ DumpObject.prototype.dumpPhpDoc = function (abs) {
 
 DumpObject.prototype.dumpProperties = function (abs, meta) {
   var html = ''
-  var properties = abs.properties
-  var label = Object.keys(properties).length
+  var label = Object.keys(abs.properties).length
     ? 'properties'
     : 'no properties'
   var phpDocOut = abs.cfgFlags & this.PHPDOC_OUTPUT
   var attributeOut = abs.cfgFlags & this.PROP_ATTRIBUTE_OUTPUT
   var self = this
+  var name
+  var info
   if (meta.viaDebugInfo) {
     label += ' <span class="text-muted">(via __debugInfo)</span>'
   }
   html = '<dt class="properties">' + label + '</dt>'
   html += magicMethodInfo(abs, ['__get', '__set'])
-  $.each(properties, function (name, info) {
-    // console.info('property info', info)
-    var $dd
-    var isPrivateAncestor = $.inArray('private', info.visibility) >= 0 && info.inheritedFrom
+  for (name in abs.properties) {
+    info = abs.properties[name]
+    var $dd = $('<dd></dd>').addClass(info.visibility).removeClass('debug')
+    var vis = typeof info.visibility === 'object'
+      ? info.visibility
+      : [info.visibility]
+    var isInherited = info.declaredLast && info.declaredLast !== abs.className
+    var isPrivateAncestor = $.inArray('private', vis) >= 0 && isInherited
     var classes = {
       'debug-value': info.valueFrom === 'debug',
       'debuginfo-excluded': info.debugInfoExcluded,
       'debuginfo-value': info.valueFrom === 'debugInfo',
       forceShow: info.forceShow,
-      inherited: typeof info.inheritedFrom === 'string',
+      inherited: isInherited && !isPrivateAncestor,
+      isDynamic: info.declaredLast === null &&
+        info.valueFrom === 'value' &&
+        abs.className !== 'stdClass',
       isPromoted: info.isPromoted,
       isReadOnly: info.isReadOnly,
       isStatic: info.isStatic,
-      'private-ancestor': info.isPrivateAncestor,
+      'private-ancestor': isPrivateAncestor,
       property: true
     }
     name = name.replace('debug.', '')
-    if (typeof info.visibility !== 'object') {
-      info.visibility = [info.visibility]
-    }
-    classes[info.visibility.join(' ')] = $.inArray('debug', info.visibility) < 0
-    $dd = $('<dd>' +
+    $dd.html(
       self.dumpPropertyModifiers(info) +
-      (isPrivateAncestor
-        ? ' (<i>' + info.inheritedFrom + '</i>)'
-        : ''
-      ) +
       (info.type
         ? ' <span class="t_type">' + info.type + '</span>'
         : ''
@@ -369,28 +459,30 @@ DumpObject.prototype.dumpProperties = function (abs, meta) {
         ? ' <span class="t_operator">=</span> ' +
           self.dumper.dump(info.value)
         : ''
-      ) +
-      '</dd>'
+      )
     )
-    if (attributeOut && info.attributes && info.attributes.length) {
-      $dd.attr('data-attributes', JSON.stringify(info.attributes))
-    }
-    if (info.inheritedFrom) {
-      $dd.attr('data-inherited-from', info.inheritedFrom)
-    }
     $.each(classes, function (classname, useClass) {
       if (useClass) {
         $dd.addClass(classname)
       }
     })
+    if (attributeOut && info.attributes && info.attributes.length) {
+      $dd.attr('data-attributes', JSON.stringify(info.attributes))
+    }
+    if (isInherited || isPrivateAncestor) {
+      $dd.attr('data-inherited-from', info.declaredLast)
+    }
     html += $dd[0].outerHTML
-  })
+  }
   return html
 }
 
 DumpObject.prototype.dumpPropertyModifiers = function (info) {
   var html = ''
-  var modifiers = JSON.parse(JSON.stringify(info.visibility))
+  var vis = typeof info.visibility === 'object'
+    ? info.visibility
+    : [info.visibility]
+  var modifiers = JSON.parse(JSON.stringify(vis))
   if (info.isReadOnly) {
     modifiers.push('readonly')
   }
@@ -414,6 +506,8 @@ DumpObject.prototype.dumpMethods = function (abs) {
   var paramAttributeOut = abs.cfgFlags & this.PARAM_ATTRIBUTE_OUTPUT
   var methodOut = abs.cfgFlags & this.METHOD_OUTPUT
   var phpDocOut = abs.cfgFlags & this.PHPDOC_OUTPUT
+  var name
+  var info
   if (!methodOut) {
     return ''
   }
@@ -422,58 +516,72 @@ DumpObject.prototype.dumpMethods = function (abs) {
   }
   html = '<dt class="methods">' + label + '</dt>'
   html += magicMethodInfo(abs, ['__call', '__callStatic'])
-  $.each(abs.methods, function (k, info) {
+  for (name in abs.methods) {
+    info = abs.methods[name]
     var $dd = $('<dd class="method"></dd>').addClass(info.visibility)
-    var modifiers = []
+    var isInherited = info.declaredLast && info.declaredLast !== abs.className
     var paramStr = self.dumpMethodParams(info.params, {
       attributeOut: paramAttributeOut,
       phpDocOut: phpDocOut
     })
-    if (info.isFinal) {
-      $dd.addClass('final')
-      modifiers.push('<span class="t_modifier_final">final</span>')
+    var classes = {
+      inherited: isInherited,
+      isDeprecated: info.isDeprecated,
+      isFinal: info.isFinal,
+      isStatic: info.isStatic
     }
-    modifiers.push('<span class="t_modifier_' + info.visibility + '">' + info.visibility + '</span>')
-    if (info.isStatic) {
-      modifiers.push('<span class="t_modifier_static">static</span>')
-    }
+    $.each(classes, function (classname, useClass) {
+      if (useClass) {
+        $dd.addClass(classname)
+      }
+    })
     $dd.html(
-      modifiers.join(' ') +
-      // returnType +
+      self.dumpMethodModifiers(info) +
       ' <span class="t_identifier"' +
         (phpDocOut && info.phpDoc && info.phpDoc.summary !== null
           ? ' title="' + info.phpDoc.summary.escapeHtml() + '"'
           : ''
         ) +
-        '>' + k + '</span>' +
+        '>' + name + '</span>' +
       '<span class="t_punct">(</span>' + paramStr + '<span class="t_punct">)</span>' +
       self.dumpMethodReturn(info, { phpDocOut: phpDocOut }) +
-      (k === '__toString'
+      (name === '__toString'
         ? '<br />' + self.dumper.dump(info.returnValue)
         : ''
       ) +
       '</dd>'
     )
-
     if (attributeOut && info.attributes && info.attributes.length) {
       $dd.attr('data-attributes', JSON.stringify(info.attributes))
     }
     if (info.implements && info.implements.length) {
       $dd.attr('data-implements', info.implements)
     }
-    if (info.inheritedFrom) {
-      $dd.attr('data-inherited-from', info.inheritedFrom)
+    if (isInherited) {
+      $dd.attr('data-inherited-from', info.declaredLast)
     }
     if (info.phpDoc && info.phpDoc.deprecated) {
       $dd.attr('data-deprecated-desc', info.phpDoc.deprecated[0].desc)
     }
-    if (info.inheritedFrom) {
-      $dd.addClass('inherited')
-    }
-    if (info.isDeprecated) {
-      $dd.addClass('deprecated')
-    }
     html += $dd[0].outerHTML
+  }
+  return html
+}
+
+DumpObject.prototype.dumpMethodModifiers = function (info) {
+  var html = ''
+  var vis = typeof info.visibility === 'object'
+    ? info.visibility
+    : [info.visibility]
+  var modifiers = JSON.parse(JSON.stringify(vis))
+  if (info.isFinal) {
+    modifiers.push('final')
+  }
+  if (info.isStatic) {
+    modifiers.push('static')
+  }
+  $.each(modifiers, function (i, modifier) {
+    html += '<span class="t_modifier_' + modifier + '">' + modifier + '</span> '
   })
   return html
 }
@@ -522,8 +630,8 @@ DumpObject.prototype.dumpMethodParams = function (params, opts) {
 }
 
 DumpObject.prototype.dumpMethodReturn = function (info, opts) {
-  var haveReturnType = info.return && info.return.type
-  if (haveReturnType === false) {
+  var returnType = info.return && info.return.type
+  if (!returnType) {
     return ''
   }
   return '<span class="t_punct t_colon">:</span> ' +
@@ -532,7 +640,7 @@ DumpObject.prototype.dumpMethodReturn = function (info, opts) {
       ? ' title="' + info.return.desc.escapeHtml() + '"'
       : ''
     ) +
-    '>' + info.return.type + '</span>'
+    '>' + returnType + '</span>'
 }
 
 function magicMethodInfo (abs, methods) {
