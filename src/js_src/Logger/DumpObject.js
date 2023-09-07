@@ -1,5 +1,5 @@
 import $ from 'jquery' // external global
-import merge from 'lodash/merge'
+import mergeWith from 'lodash/mergeWith'
 
 export function DumpObject (dump) {
   this.dumper = dump
@@ -85,7 +85,14 @@ DumpObject.prototype.dump = function (abs) {
         classDefinition[noInherit[i]] = {}
       }
     }
-    abs = JSON.parse(JSON.stringify(merge({}, classDefinition, abs)))
+    abs = JSON.parse(JSON.stringify(mergeWith({}, classDefinition, abs, function (objValue, srcValue) {
+      if (objValue === null || srcValue === null) {
+        return
+      }
+      if (typeof objValue === 'object' && Object.keys(objValue).length === 0 && typeof srcValue === 'object') {
+        return srcValue
+      }
+    })))
     for (i = 0, count = noInherit.length; i < count; i++) {
       if (Object.keys(abs[noInherit[i]]).length < 2) {
         continue
@@ -449,12 +456,15 @@ DumpObject.prototype.dumpProperties = function (abs, meta) {
         ? ' <span class="t_type">' + info.type + '</span>'
         : ''
       ) +
-      ' <span class="t_identifier"' +
-        (phpDocOut && info.desc
-          ? ' title="' + info.desc.escapeHtml() + '"'
-          : ''
-        ) +
-        '>' + name + '</span>' +
+      ' ' + self.dumper.dump(name, {
+        addQuotes: /[\s\r\n]/.test(name) || name === '',
+        attribs: {
+          class: ['t_identifier'],
+          title: phpDocOut && info.desc
+            ? info.desc
+            : null
+        }
+      }) +
       (info.value !== self.dumper.UNDEFINED
         ? ' <span class="t_operator">=</span> ' +
           self.dumper.dump(info.value)

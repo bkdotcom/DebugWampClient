@@ -210,9 +210,17 @@ Dump.prototype.dumpArray = function (array) {
 }
 
 Dump.prototype.dumpArrayValue = function (key, val, withKey) {
+  var classes = ['t_key']
+  if (/^\d+$/.test(key)) {
+    classes.push('t_int');
+  }
   return withKey
     ? '\t<li>' +
-        '<span class="t_key' + (/^\d+$/.test(key) ? ' t_int' : '') + '">' + key + '</span>' +
+        this.dump(key, {
+          attribs : {
+            class: classes
+          }
+        }) +
         '<span class="t_operator">=&gt;</span>' +
         this.dump(val) +
       '</li>\n'

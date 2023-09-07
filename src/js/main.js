@@ -2821,41 +2821,41 @@
   var _createAssigner = createAssigner;
 
   /**
-   * This method is like `_.assign` except that it recursively merges own and
-   * inherited enumerable string keyed properties of source objects into the
-   * destination object. Source properties that resolve to `undefined` are
-   * skipped if a destination value exists. Array and plain object properties
-   * are merged recursively. Other objects and value types are overridden by
-   * assignment. Source objects are applied from left to right. Subsequent
-   * sources overwrite property assignments of previous sources.
+   * This method is like `_.merge` except that it accepts `customizer` which
+   * is invoked to produce the merged values of the destination and source
+   * properties. If `customizer` returns `undefined`, merging is handled by the
+   * method instead. The `customizer` is invoked with six arguments:
+   * (objValue, srcValue, key, object, source, stack).
    *
    * **Note:** This method mutates `object`.
    *
    * @static
    * @memberOf _
-   * @since 0.5.0
+   * @since 4.0.0
    * @category Object
    * @param {Object} object The destination object.
-   * @param {...Object} [sources] The source objects.
+   * @param {...Object} sources The source objects.
+   * @param {Function} customizer The function to customize assigned values.
    * @returns {Object} Returns `object`.
    * @example
    *
-   * var object = {
-   *   'a': [{ 'b': 2 }, { 'd': 4 }]
-   * };
+   * function customizer(objValue, srcValue) {
+   *   if (_.isArray(objValue)) {
+   *     return objValue.concat(srcValue);
+   *   }
+   * }
    *
-   * var other = {
-   *   'a': [{ 'c': 3 }, { 'e': 5 }]
-   * };
+   * var object = { 'a': [1], 'b': [2] };
+   * var other = { 'a': [3], 'b': [4] };
    *
-   * _.merge(object, other);
-   * // => { 'a': [{ 'b': 2, 'c': 3 }, { 'd': 4, 'e': 5 }] }
+   * _.mergeWith(object, other, customizer);
+   * // => { 'a': [1, 3], 'b': [2, 4] }
    */
-  var merge = _createAssigner(function(object, source, srcIndex) {
-    _baseMerge(object, source, srcIndex);
+  var mergeWith = _createAssigner(function(object, source, srcIndex, customizer) {
+    _baseMerge(object, source, srcIndex, customizer);
   });
 
-  var merge_1 = merge;
+  var mergeWith_1 = mergeWith;
 
   function DumpObject (dump) {
     this.dumper = dump;
@@ -2941,7 +2941,14 @@
           classDefinition[noInherit[i]] = {};
         }
       }
-      abs = JSON.parse(JSON.stringify(merge_1({}, classDefinition, abs)));
+      abs = JSON.parse(JSON.stringify(mergeWith_1({}, classDefinition, abs, function (objValue, srcValue) {
+        if (objValue === null || srcValue === null) {
+          return
+        }
+        if (typeof objValue === 'object' && Object.keys(objValue).length === 0 && typeof srcValue === 'object') {
+          return srcValue
+        }
+      })));
       for (i = 0, count = noInherit.length; i < count; i++) {
         if (Object.keys(abs[noInherit[i]]).length < 2) {
           continue
@@ -3305,12 +3312,15 @@
           ? ' <span class="t_type">' + info.type + '</span>'
           : ''
         ) +
-        ' <span class="t_identifier"' +
-          (phpDocOut && info.desc
-            ? ' title="' + info.desc.escapeHtml() + '"'
-            : ''
-          ) +
-          '>' + name + '</span>' +
+        ' ' + self.dumper.dump(name, {
+          addQuotes: /[\s\r\n]/.test(name) || name === '',
+          attribs: {
+            class: ['t_identifier'],
+            title: phpDocOut && info.desc
+              ? info.desc
+              : null
+          }
+        }) +
         (info.value !== self.dumper.UNDEFINED
           ? ' <span class="t_operator">=</span> ' +
             self.dumper.dump(info.value)
@@ -4610,9 +4620,17 @@
   };
 
   Dump.prototype.dumpArrayValue = function (key, val, withKey) {
+    var classes = ['t_key'];
+    if (/^\d+$/.test(key)) {
+      classes.push('t_int');
+    }
     return withKey
       ? '\t<li>' +
-          '<span class="t_key' + (/^\d+$/.test(key) ? ' t_int' : '') + '">' + key + '</span>' +
+          this.dump(key, {
+            attribs : {
+              class: classes
+            }
+          }) +
           '<span class="t_operator">=&gt;</span>' +
           this.dump(val) +
         '</li>\n'
