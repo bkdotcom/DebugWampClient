@@ -309,23 +309,6 @@ export var methods = {
     return $('<li>', { class: 'm_' + logEntry.method }).append($table)
   },
   trace: function (logEntry, info) {
-    /*
-    var $table = table.build(
-      logEntry.args[0],
-      logEntry.meta,
-      // 'table-bordered',
-      logEntry.meta.inclContext
-        ? tableAddContextRow
-        : null
-    )
-    if (logEntry.meta.inclContext) {
-      $table.addClass('trace-context')
-    }
-    if (logEntry.meta.sortable) {
-      $table.addClass('sortable')
-    }
-    return $('<li class="m_trace"></li>').append($table)
-    */
     return this.table(logEntry, info)
   },
   default: function (logEntry, info) {

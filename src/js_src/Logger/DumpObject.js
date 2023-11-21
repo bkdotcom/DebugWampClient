@@ -121,10 +121,7 @@ DumpObject.prototype.dump = function (abs) {
     html = this.dumpToString(abs) +
       strClassname +
       '<dl class="object-inner">' +
-        (abs.isFinal
-          ? '<dt class="t_modifier_final">final</dt>'
-          : ''
-        ) +
+        this.dumpModifiers(abs) +
         (abs.extends && abs.extends.length
           ? '<dt>extends</dt>' +
             abs.extends.map(function (classname) {
@@ -147,6 +144,24 @@ DumpObject.prototype.dump = function (abs) {
   } catch (e) {
     console.warn('e', e)
   }
+  return html
+}
+
+DumpObject.prototype.dumpModifiers = function  (abs) {
+  var modifiers = []
+  var html = '<dt class="modifiers">modifiers</dt>';
+  if (abs.isFinal) {
+    modifiers.push('final')
+  }
+  if (abs.isReadOnly) {
+    modifiers.push('readonly')
+  }
+  if (modifiers.length === 0) {
+    return ''
+  }
+  $.each(modifiers, function (i, modifier) {
+    html += '<dd class="t_modifier_' + modifier + '">' + modifier + '</dt>'
+  })
   return html
 }
 

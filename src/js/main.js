@@ -401,38 +401,6 @@
     return $table
   };
 
-  /*
-  function unsafeKeys (rows) {
-    var k
-    var k2
-    var row
-    var rowNew
-    var rowsNew = {}
-    var val
-    for (k in rows) {
-      row = rows[k]
-      rowNew = {}
-      if (typeof row === 'object') {
-        for (k2 in row) {
-          val = row[k2]
-          console.log('k2', k2, val)
-          if (k2.substr(0, 6) === '_b64_:') {
-            k2 = base64.decode(k2.substr(6))
-          }
-          rowNew[k2] = val
-        }
-      } else {
-        rowNew = row
-      }
-      if (k.substr(0, 6) === '_b64_:') {
-        k = base64.decode(k.substr(6))
-      }
-      rowsNew[k] = rowNew
-    }
-    return rowsNew
-  }
-  */
-
   Table.prototype.buildBody = function (rows, tableInfo, onBuildRow) {
     var i;
     var length;
@@ -462,7 +430,7 @@
         rowKey = parseInt(rowKey, 10);
       }
       parsed = this.dump.parseTag(this.dump.dump(rowKey));
-      $tr = $('<tr></tr>')
+      $tr = $('<tr></tr>', rowInfo.attribs || {})
         .append(
           $('<th scope="row" class="t_key text-right"></th>')
             .addClass(/^\d+$/.test(rowKey) ? 't_int' : parsed.attribs.class.join(' '))
@@ -2977,10 +2945,7 @@
       html = this.dumpToString(abs) +
         strClassname +
         '<dl class="object-inner">' +
-          (abs.isFinal
-            ? '<dt class="t_modifier_final">final</dt>'
-            : ''
-          ) +
+          this.dumpModifiers(abs) +
           (abs.extends && abs.extends.length
             ? '<dt>extends</dt>' +
               abs.extends.map(function (classname) {
@@ -3003,6 +2968,24 @@
     } catch (e) {
       console.warn('e', e);
     }
+    return html
+  };
+
+  DumpObject.prototype.dumpModifiers = function  (abs) {
+    var modifiers = [];
+    var html = '<dt class="modifiers">modifiers</dt>';
+    if (abs.isFinal) {
+      modifiers.push('final');
+    }
+    if (abs.isReadOnly) {
+      modifiers.push('readonly');
+    }
+    if (modifiers.length === 0) {
+      return ''
+    }
+    $.each(modifiers, function (i, modifier) {
+      html += '<dd class="t_modifier_' + modifier + '">' + modifier + '</dt>';
+    });
     return html
   };
 
@@ -5137,23 +5120,6 @@
       return $('<li>', { class: 'm_' + logEntry.method }).append($table)
     },
     trace: function (logEntry, info) {
-      /*
-      var $table = table.build(
-        logEntry.args[0],
-        logEntry.meta,
-        // 'table-bordered',
-        logEntry.meta.inclContext
-          ? tableAddContextRow
-          : null
-      )
-      if (logEntry.meta.inclContext) {
-        $table.addClass('trace-context')
-      }
-      if (logEntry.meta.sortable) {
-        $table.addClass('sortable')
-      }
-      return $('<li class="m_trace"></li>').append($table)
-      */
       return this.table(logEntry, info)
     },
     default: function (logEntry, info) {
