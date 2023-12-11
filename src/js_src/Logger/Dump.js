@@ -74,6 +74,9 @@ Dump.prototype.dump = function (val, opts) {
     dumpOpts.type = type[0]
     dumpOpts.typeMore = type[1]
   }
+  if (typeof dumpOpts.attribs.class === 'string') {
+    dumpOpts.attribs.class = [dumpOpts.attribs.class]
+  }
   dumpOptStack.push(dumpOpts)
   method = 'dump' + dumpOpts.type.ucfirst()
   val = dumpOpts.typeMore === 'abstraction'
@@ -212,7 +215,7 @@ Dump.prototype.dumpArray = function (array) {
 Dump.prototype.dumpArrayValue = function (key, val, withKey) {
   var classes = ['t_key']
   if (/^\d+$/.test(key)) {
-    classes.push('t_int');
+    classes.push('t_int')
   }
   return withKey
     ? '\t<li>' +
