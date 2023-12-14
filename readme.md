@@ -85,15 +85,8 @@ require __DIR__.'/vendor/autoload.php'
 $debug = new \bdk\Debug(array(
     'collect' => true,
 ));
-$wampPublisher = new \bdk\WampPublisher(array(
-    'realm'=>'debug'
-));
-$outputWamp = new \bdk\Debug\Output\Wamp($debug, $wampPublisher);  // see note below
-$debug->addPlugin($outputWamp);   // or $debug->setCfg('outputAs', $outputWamp);  to prevent the default in-page html output
+$debug->addPlugin($debug->routeWamp);   // or $debug->setCfg('route', 'wamp'); to only output via the wamp plugin
 ```
-
-\* The wamp-plugin classname changed in PHPDebugConsole v2.1.  
-If you're using pre-2.1 use: `new \bdk\Debug\OutputWamp($debug, $wampPublisher);`
 
 ----
 #### Everything's setup and ready
