@@ -2,7 +2,7 @@ import $ from 'jquery' // external global
 import * as methods from './Methods.js'
 
 export function processEntry (logEntry) {
-  // console.log(JSON.parse(JSON.stringify(logEntry)));
+  // console.log(JSON.parse(JSON.stringify(logEntry)))
   var meta = logEntry.meta
   var info = getNodeInfo(meta)
   var channelsTab = info.channels.filter(function (channelInfo) {
@@ -297,7 +297,7 @@ function addTab (info, $link) {
 }
 
 function getTabPane (info, meta) {
-  // console.log('getTabPane', info.channelNameTop, info.$container.data('channelNameRoot'));
+  // console.log('getTabPane', info.channelNameTop, info.$container.data('channelNameRoot'))
   var classname = nameToClassname(info.channelNameTop)
   var $tabPanes = info.$container.find('> .debug > .tab-panes')
   var $tabPane = $tabPanes.find('> .' + classname)

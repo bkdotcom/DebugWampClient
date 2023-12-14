@@ -58,6 +58,7 @@ Dump.prototype.dump = function (val, opts) {
     attribs: {
       class: []
     },
+    requestInfo: null,
     postDump: null, // set to function
     sanitize: true,
     tagName: '__default__',
@@ -96,6 +97,10 @@ Dump.prototype.dump = function (val, opts) {
       .addClass(dumpOpts.attribs.class.join(' '))
     delete dumpOpts.attribs.class
     $wrap.attr(dumpOpts.attribs)
+    if (typeof dumpOpts.attribs.style !== 'undefined') {
+      // .attr() doesn't apply style when single object passed
+      $wrap.attr('style', dumpOpts.attribs.style)
+    }
     val = $wrap.html(val)[0].outerHTML
   }
   if (dumpOpts.postDump) {
@@ -205,9 +210,17 @@ Dump.prototype.dumpArray = function (array) {
 }
 
 Dump.prototype.dumpArrayValue = function (key, val, withKey) {
+  var classes = ['t_key']
+  if (/^\d+$/.test(key)) {
+    classes.push('t_int');
+  }
   return withKey
     ? '\t<li>' +
-        '<span class="t_key' + (/^\d+$/.test(key) ? ' t_int' : '') + '">' + key + '</span>' +
+        this.dump(key, {
+          attribs : {
+            class: classes
+          }
+        }) +
         '<span class="t_operator">=&gt;</span>' +
         this.dump(val) +
       '</li>\n'
@@ -280,6 +293,16 @@ Dump.prototype.dumpUndefined = function () {
 
 Dump.prototype.dumpUnknown = function () {
   return '<span class="t_unknown">unknown type</span>'
+}
+
+Dump.prototype.getClassDefinition = function (name) {
+  return JSON.parse(JSON.stringify(
+    this.getRequestInfo().$container.data('classDefinitions')[name]
+  ))
+}
+
+Dump.prototype.getRequestInfo = function () {
+  return dumpOptStack[0].requestInfo
 }
 
 Dump.prototype.getDumpOpts = function () {

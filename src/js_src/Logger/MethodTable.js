@@ -35,38 +35,6 @@ Table.prototype.build = function (rows, meta, onBuildRow) {
   return $table
 }
 
-/*
-function unsafeKeys (rows) {
-  var k
-  var k2
-  var row
-  var rowNew
-  var rowsNew = {}
-  var val
-  for (k in rows) {
-    row = rows[k]
-    rowNew = {}
-    if (typeof row === 'object') {
-      for (k2 in row) {
-        val = row[k2]
-        console.log('k2', k2, val)
-        if (k2.substr(0, 6) === '_b64_:') {
-          k2 = base64.decode(k2.substr(6))
-        }
-        rowNew[k2] = val
-      }
-    } else {
-      rowNew = row
-    }
-    if (k.substr(0, 6) === '_b64_:') {
-      k = base64.decode(k.substr(6))
-    }
-    rowsNew[k] = rowNew
-  }
-  return rowsNew
-}
-*/
-
 Table.prototype.buildBody = function (rows, tableInfo, onBuildRow) {
   var i
   var length
@@ -96,7 +64,7 @@ Table.prototype.buildBody = function (rows, tableInfo, onBuildRow) {
       rowKey = parseInt(rowKey, 10)
     }
     parsed = this.dump.parseTag(this.dump.dump(rowKey))
-    $tr = $('<tr></tr>')
+    $tr = $('<tr></tr>', rowInfo.attribs || {})
       .append(
         $('<th scope="row" class="t_key text-right"></th>')
           .addClass(/^\d+$/.test(rowKey) ? 't_int' : parsed.attribs.class.join(' '))

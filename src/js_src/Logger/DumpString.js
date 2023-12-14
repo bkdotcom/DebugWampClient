@@ -74,8 +74,10 @@ DumpString.prototype.dumpAsSubstitution = function (val) {
       return ret
     }
   }
-  // we do NOT wrap in <span>...  log('<a href="%s">link</a>', $url);
-  return this.dumper.dump(val, {}, null)
+  // we do NOT wrap in <span>...  log('<a href="%s">link</a>', $url)
+  return this.dumper.dump(val, {
+    tagName: null
+  })
 }
 
 DumpString.prototype.dumpBinary = function (abs) {

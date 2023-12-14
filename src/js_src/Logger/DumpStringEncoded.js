@@ -13,10 +13,10 @@ DumpStringEncoded.prototype.dump = function (val, abs) {
   var tabs = {}
 
   if (abs.brief) {
-    return tabValues(val, abs, this.dumper).valRaw
+    return tabValues(abs, this.dumper).valRaw
   }
 
-  tabs = this.buildTabsAndPanes(val, abs)
+  tabs = this.buildTabsAndPanes(abs)
   dumpOpts.tagName = null
 
   return $('<' + tagName + '>', {
@@ -30,7 +30,7 @@ DumpStringEncoded.prototype.dump = function (val, abs) {
   )[0].outerHTML
 }
 
-DumpStringEncoded.prototype.buildTabsAndPanes = function (val, abs) {
+DumpStringEncoded.prototype.buildTabsAndPanes = function (abs) {
   var tabs = {
     tabs: [],
     panes: []
@@ -38,11 +38,10 @@ DumpStringEncoded.prototype.buildTabsAndPanes = function (val, abs) {
   var index = 1
   var vals
   do {
-    vals = tabValues(val, abs, this.dumper)
+    vals = tabValues(abs, this.dumper)
     tabs.tabs.push('<a class="nav-link" data-target=".tab-' + index + '" data-toggle="tab" role="tab">' + vals.labelRaw + '</a>')
     tabs.panes.push('<div class="tab-' + index + ' tab-pane" role="tabpanel">' + vals.valRaw + '</div>')
     index++
-    val = abs.value
     abs = abs.valueDecoded
   } while (this.dumpString.isEncoded(abs))
   tabs.tabs.push('<a class="active nav-link" data-target=".tab-' + index + '" data-toggle="tab" role="tab">' + vals.labelDecoded + '</a>')
@@ -50,7 +49,7 @@ DumpStringEncoded.prototype.buildTabsAndPanes = function (val, abs) {
   return tabs
 }
 
-function tabValues (val, abs, dumper) {
+function tabValues (abs, dumper) {
   var dumpOpts = dumper.getDumpOpts()
   var attribs = JSON.parse(JSON.stringify(dumpOpts.attribs))
   attribs.class.push('no-quotes')
@@ -64,8 +63,9 @@ function tabValues (val, abs, dumper) {
   return tabValuesFinish({
     labelDecoded: 'decoded',
     labelRaw: 'raw',
-    valDecoded: null,
-    valRaw: $('<span />', attribs).html(val)[0].outerHTML
+    valRaw: $('<span />', attribs).html(
+      dumper.dump(abs.value, { tagName: null })
+    )[0].outerHTML
   }, abs, dumper)
 }
 
