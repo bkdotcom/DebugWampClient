@@ -19,11 +19,11 @@ Cases.prototype.addAttribs = function ($element, info, cfg) {
 Cases.prototype.dump = function (abs) {
   var self = this
   var cfg = {
-    attributeOutput : abs.cfgFlags & this.CASE_ATTRIBUTE_OUTPUT,
-    collect : abs.cfgFlags & this.CASE_COLLECT,
+    attributeOutput : abs.cfgFlags & this.valDumper.objectDumper.CASE_ATTRIBUTE_OUTPUT,
+    collect : abs.cfgFlags & this.valDumper.objectDumper.CASE_COLLECT,
     groupByInheritance : false,
-    output : abs.cfgFlags & this.CASE_OUTPUT,
-    phpDocOutput : abs.cfgFlags & this.PHPDOC_OUTPUT,
+    output : abs.cfgFlags & this.valDumper.objectDumper.CASE_OUTPUT,
+    phpDocOutput : abs.cfgFlags & this.valDumper.objectDumper.PHPDOC_OUTPUT,
   }
   if (abs.implementsList.indexOf('UnitEnum') < 0) {
     return ''
@@ -34,7 +34,7 @@ Cases.prototype.dump = function (abs) {
   if (!cfg.collect) {
     return '<dt class="cases">cases <i>not collected</i></dt>'
   }
-  if (abs.cases.length === 0) {
+  if (Object.keys(abs.cases).length < 1) {
     return '<dt class="cases"><i>no cases!</i></dt>'
   }
   return '<dt class="cases">cases</dt>' +
@@ -46,10 +46,10 @@ Cases.prototype.dumpInner = function (name, info, cfg) {
     ? info.desc
     : null
   var $element = $('<div></div>')
-    .html('<span class="t_identifier">' + key + '</span>' +
-      (info.value !== null
+    .html('<span class="t_identifier">' + name + '</span>' +
+      (info.value !== this.valDumper.UNDEFINED
         ? ' <span class="t_operator">=</span> ' +
-          self.dumper.dump(info.value)
+          this.valDumper.dump(info.value)
         : ''
       )
     )

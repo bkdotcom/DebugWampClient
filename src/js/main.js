@@ -2836,6 +2836,7 @@
         objClassName : abs.className,
         phpDocOutput : abs.cfgFlags & this.valDumper.objectDumper.PHPDOC_OUTPUT,
       }, cfg);
+      delete abs[what].__debug_key_order__;
       if (cfg.groupByInheritance === false) {
         return this.dumpItemsFiltered(abs[what], cfg)
       }
@@ -2931,11 +2932,11 @@
 
   Cases.prototype.dump = function (abs) {
     var cfg = {
-      attributeOutput : abs.cfgFlags & this.CASE_ATTRIBUTE_OUTPUT,
-      collect : abs.cfgFlags & this.CASE_COLLECT,
+      attributeOutput : abs.cfgFlags & this.valDumper.objectDumper.CASE_ATTRIBUTE_OUTPUT,
+      collect : abs.cfgFlags & this.valDumper.objectDumper.CASE_COLLECT,
       groupByInheritance : false,
-      output : abs.cfgFlags & this.CASE_OUTPUT,
-      phpDocOutput : abs.cfgFlags & this.PHPDOC_OUTPUT,
+      output : abs.cfgFlags & this.valDumper.objectDumper.CASE_OUTPUT,
+      phpDocOutput : abs.cfgFlags & this.valDumper.objectDumper.PHPDOC_OUTPUT,
     };
     if (abs.implementsList.indexOf('UnitEnum') < 0) {
       return ''
@@ -2946,7 +2947,7 @@
     if (!cfg.collect) {
       return '<dt class="cases">cases <i>not collected</i></dt>'
     }
-    if (abs.cases.length === 0) {
+    if (Object.keys(abs.cases).length < 1) {
       return '<dt class="cases"><i>no cases!</i></dt>'
     }
     return '<dt class="cases">cases</dt>' +
@@ -2958,10 +2959,10 @@
       ? info.desc
       : null;
     var $element = $$1('<div></div>')
-      .html('<span class="t_identifier">' + key + '</span>' +
-        (info.value !== null
+      .html('<span class="t_identifier">' + name + '</span>' +
+        (info.value !== this.valDumper.UNDEFINED
           ? ' <span class="t_operator">=</span> ' +
-            self.dumper.dump(info.value)
+            this.valDumper.dump(info.value)
           : ''
         )
       );
@@ -3011,7 +3012,7 @@
     if (!cfg.collect) {
       return '<dt class="constants">constants <i>not collected</i></dt>'
     }
-    if (!abs.constants.length) {
+    if (Object.keys(abs.constants).length < 1) {
       return ''
     }
     return '<dt class="constants">constants</dt>' +
@@ -3072,6 +3073,9 @@
     }
     if (info.phpDoc && info.phpDoc.deprecated) {
       $element.attr('data-deprecated-desc', info.phpDoc.deprecated[0].desc);
+    }
+    if (cfg.phpDocOutput && info.phpDoc && info.phpDoc.throws) {
+      $element.attr('data-throws', JSON.stringify(info.phpDoc.throws));
     }
   };
 
@@ -3134,15 +3138,15 @@
   };
 
   Methods.prototype.dumpName = function (name, info, cfg) {
-    var title = cfg.phpDocOutput
-       ? (info.phpDoc.summary +
-          (cfg.methodDescOutput
-            ? "\n\n" + info.phpDoc.desc
-            : ''
-          )).trim()
-      : '';
+    var titleParts = [
+      info.phpDoc.summary || '',
+      cfg.methodDescOutput
+        ? info.phpDoc.desc || ''
+        : '',
+    ];
+    var title = titleParts.join("\n\n").trim();
     return ' <span class="t_identifier"' +
-      (title !== ''
+      (cfg.phpDocOutput && title !== ''
         ? ' title="' + title.escapeHtml() + '"'
         : ''
       ) +
@@ -3215,7 +3219,7 @@
   Methods.prototype.dumpStaticVars = function (info, cfg) {
     var self = this;
     var html = '';
-    if (!cfg.staticVarOutput || info.staticVars.length < 0) {
+    if (!cfg.staticVarOutput || info.staticVars.length < 1) {
         return ''
     }
     html = '<h3>static variables</h3>';
@@ -3444,34 +3448,11 @@
 
   DumpObject.prototype.dump = function (abs) {
     // console.info('dumpObject', abs)
-    var classDefinition;
     var html = '';
-    var i = 0;
-    var count;
     var strClassname = '';
-    var noInherit = ['attributes', 'cases', 'constants', 'methods', 'properties'];
     var dumpOpts = this.dumper.getDumpOpts();
     try {
-      classDefinition = this.dumper.getClassDefinition(abs.classDefinition);
-      if (abs.isRecursion || abs.isExcluded) {
-        for (i = 0; i < noInherit.length; i++) {
-          classDefinition[noInherit[i]] = {};
-        }
-      }
-      abs = JSON.parse(JSON.stringify(mergeWith_1({}, classDefinition, abs, function (objValue, srcValue) {
-        if (objValue === null || srcValue === null) {
-          return
-        }
-        if (typeof srcValue === 'object' && typeof objValue === 'object' && Object.keys(objValue).length === 0) {
-          return srcValue
-        }
-      })));
-      for (i = 0, count = noInherit.length; i < count; i++) {
-        if (Object.keys(abs[noInherit[i]]).length < 2) {
-          continue
-        }
-        abs[noInherit[i]] = sort(abs[noInherit[i]], abs.sort);
-      }
+      abs = this.mergeInherited(abs);
       if (typeof abs.cfgFlags === 'undefined') {
         abs.cfgFlags = 0x1FFFFFF & ~this.BRIEF;
       }
@@ -3774,6 +3755,37 @@
       type += '<span class="t_punct">' + '[]'.repeat(arrayCount) + '</span>';
     }
     return '<span class="t_type">' + type + '</span>'
+  };
+
+  DumpObject.prototype.mergeInherited = function (abs) {
+    var count;
+    var i = 0;
+    var inherited;
+    var noInherit = ['attributes', 'cases', 'constants', 'methods', 'properties'];
+    while (abs.inheritsFrom) {
+      inherited = this.dumper.getClassDefinition(abs.inheritsFrom);
+      if (abs.isRecursion || abs.isExcluded) {
+        for (i = 0, count = noInherit.length; i < count; i++) {
+          inherited[noInherit[i]] = {};
+        }
+      }
+      abs = JSON.parse(JSON.stringify(mergeWith_1({}, inherited, abs, function (objValue, srcValue) {
+        if (objValue === null || srcValue === null) {
+          return
+        }
+        if (typeof srcValue === 'object' && typeof objValue === 'object' && Object.keys(objValue).length === 0) {
+          return srcValue
+        }
+      })));
+      abs.inheritsFrom = inherited.inheritsFrom;
+    }
+    for (i = 0, count = noInherit.length; i < count; i++) {
+      if (Object.keys(abs[noInherit[i]]).length < 2) {
+        continue
+      }
+      abs[noInherit[i]] = sort(abs[noInherit[i]], abs.sort);
+    }
+    return abs
   };
 
   var base64Arraybuffer = createCommonjsModule(function (module, exports) {

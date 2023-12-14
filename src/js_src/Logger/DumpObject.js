@@ -111,35 +111,12 @@ function sort(obj, sortBy) {
 
 DumpObject.prototype.dump = function (abs) {
   // console.info('dumpObject', abs)
-  var classDefinition
   var html = ''
-  var i = 0
-  var count
   var self = this
   var strClassname = ''
-  var noInherit = ['attributes', 'cases', 'constants', 'methods', 'properties']
   var dumpOpts = this.dumper.getDumpOpts()
   try {
-    classDefinition = this.dumper.getClassDefinition(abs.classDefinition)
-    if (abs.isRecursion || abs.isExcluded) {
-      for (i = 0; i < noInherit.length; i++) {
-        classDefinition[noInherit[i]] = {}
-      }
-    }
-    abs = JSON.parse(JSON.stringify(mergeWith({}, classDefinition, abs, function (objValue, srcValue) {
-      if (objValue === null || srcValue === null) {
-        return
-      }
-      if (typeof srcValue === 'object' && typeof objValue === 'object' && Object.keys(objValue).length === 0) {
-        return srcValue
-      }
-    })))
-    for (i = 0, count = noInherit.length; i < count; i++) {
-      if (Object.keys(abs[noInherit[i]]).length < 2) {
-        continue
-      }
-      abs[noInherit[i]] = sort(abs[noInherit[i]], abs.sort)
-    }
+    abs = this.mergeInherited(abs)
     if (typeof abs.cfgFlags === 'undefined') {
       abs.cfgFlags = 0x1FFFFFF & ~this.BRIEF
     }
@@ -442,4 +419,35 @@ DumpObject.prototype.markupTypePart = function (type) {
     type += '<span class="t_punct">' + '[]'.repeat(arrayCount) + '</span>'
   }
   return '<span class="t_type">' + type + '</span>'
+}
+
+DumpObject.prototype.mergeInherited = function (abs) {
+  var count
+  var i = 0
+  var inherited
+  var noInherit = ['attributes', 'cases', 'constants', 'methods', 'properties']
+  while (abs.inheritsFrom) {
+    inherited = this.dumper.getClassDefinition(abs.inheritsFrom)
+    if (abs.isRecursion || abs.isExcluded) {
+      for (i = 0, count = noInherit.length; i < count; i++) {
+        inherited[noInherit[i]] = {}
+      }
+    }
+    abs = JSON.parse(JSON.stringify(mergeWith({}, inherited, abs, function (objValue, srcValue) {
+      if (objValue === null || srcValue === null) {
+        return
+      }
+      if (typeof srcValue === 'object' && typeof objValue === 'object' && Object.keys(objValue).length === 0) {
+        return srcValue
+      }
+    })))
+    abs.inheritsFrom = inherited.inheritsFrom
+  }
+  for (i = 0, count = noInherit.length; i < count; i++) {
+    if (Object.keys(abs[noInherit[i]]).length < 2) {
+      continue
+    }
+    abs[noInherit[i]] = sort(abs[noInherit[i]], abs.sort)
+  }
+  return abs
 }

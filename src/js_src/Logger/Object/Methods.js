@@ -34,6 +34,9 @@ Methods.prototype.addAttribs = function ($element, info, cfg) {
   if (info.phpDoc && info.phpDoc.deprecated) {
     $element.attr('data-deprecated-desc', info.phpDoc.deprecated[0].desc)
   }
+  if (cfg.phpDocOutput && info.phpDoc && info.phpDoc.throws) {
+    $element.attr('data-throws', JSON.stringify(info.phpDoc.throws))
+  }
 }
 
 Methods.prototype.dump = function (abs) {
@@ -95,15 +98,15 @@ Methods.prototype.dumpModifiers = function (info) {
 }
 
 Methods.prototype.dumpName = function (name, info, cfg) {
-  var title = cfg.phpDocOutput
-     ? (info.phpDoc.summary +
-        (cfg.methodDescOutput
-          ? "\n\n" + info.phpDoc.desc
-          : ''
-        )).trim()
-    : ''
+  var titleParts = [
+    info.phpDoc.summary || '',
+    cfg.methodDescOutput
+      ? info.phpDoc.desc || ''
+      : '',
+  ]
+  var title = titleParts.join("\n\n").trim()
   return ' <span class="t_identifier"' +
-    (title !== ''
+    (cfg.phpDocOutput && title !== ''
       ? ' title="' + title.escapeHtml() + '"'
       : ''
     ) +
@@ -176,7 +179,7 @@ Methods.prototype.dumpReturn = function (info, cfg) {
 Methods.prototype.dumpStaticVars = function (info, cfg) {
   var self = this
   var html = ''
-  if (!cfg.staticVarOutput || info.staticVars.length < 0) {
+  if (!cfg.staticVarOutput || info.staticVars.length < 1) {
       return ''
   }
   html = '<h3>static variables</h3>'

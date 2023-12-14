@@ -41,7 +41,7 @@ Constants.prototype.dump = function (abs) {
   if (!cfg.collect) {
     return '<dt class="constants">constants <i>not collected</i></dt>'
   }
-  if (!abs.constants.length) {
+  if (Object.keys(abs.constants).length < 1) {
     return ''
   }
   return '<dt class="constants">constants</dt>' +

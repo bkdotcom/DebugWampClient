@@ -9,6 +9,7 @@ export var sectionPrototype = {
       objClassName : abs.className,
       phpDocOutput : abs.cfgFlags & this.valDumper.objectDumper.PHPDOC_OUTPUT,
     }, cfg)
+    delete abs[what].__debug_key_order__
     if (cfg.groupByInheritance === false) {
       return this.dumpItemsFiltered(abs[what], cfg)
     }
