@@ -22,14 +22,9 @@ Methods.prototype.addAttribs = function ($element, info, cfg) {
       $element.addClass(classname)
     }
   })
-  if (cfg.attributeOutput && info.attributes && info.attributes.length) {
-    $element.attr('data-attributes', JSON.stringify(info.attributes))
-  }
+  sectionPrototype.addAttribs($element, info, cfg)
   if (info.implements && info.implements.length) {
     $element.attr('data-implements', info.implements)
-  }
-  if (info.isInherited) {
-    $element.attr('data-inherited-from', info.declaredLast)
   }
   if (info.phpDoc && info.phpDoc.deprecated) {
     $element.attr('data-deprecated-desc', info.phpDoc.deprecated[0].desc)
@@ -53,7 +48,7 @@ Methods.prototype.dump = function (abs) {
     return ''
   }
   if (!cfg.collect) {
-    return html
+    return ''
   }
   return '<dt class="methods">' + this.getLabel(abs) + '</dt>' +
     this.magicMethodInfo(abs, ['__call', '__callStatic']) +
@@ -179,7 +174,7 @@ Methods.prototype.dumpReturn = function (info, cfg) {
 Methods.prototype.dumpStaticVars = function (info, cfg) {
   var self = this
   var html = ''
-  if (!cfg.staticVarOutput || info.staticVars.length < 1) {
+  if (!cfg.staticVarOutput || typeof info.staticVars === 'undefined' || info.staticVars.length < 1) {
       return ''
   }
   html = '<h3>static variables</h3>'

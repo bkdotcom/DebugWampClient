@@ -16,7 +16,7 @@
 		"psr-4": { "bdk\\Debug\\": "src/" }
 	},
 	"require": {
-		"bdk/debug": "dev-master"
+		"bdk/debug": "^3.2"
 	},
 	"scripts": {
 		"post-create-project-cmd": "php -r \"copy('src/index.php', 'index.php');\""

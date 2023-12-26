@@ -11,9 +11,7 @@ for (name in sectionPrototype) {
 
 Cases.prototype.addAttribs = function ($element, info, cfg) {
   $element.addClass('case')
-  if (cfg.attributeOutput && info.attributes && info.attributes.length) {
-    $element.attr('data-attributes', JSON.stringify(info.attributes))
-  }
+  sectionPrototype.addAttribs($element, info, cfg)
 }
 
 Cases.prototype.dump = function (abs) {

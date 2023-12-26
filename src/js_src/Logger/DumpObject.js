@@ -4,6 +4,7 @@ import { Cases } from './Object/Cases.js'
 import { Constants } from './Object/Constants.js'
 import { Methods } from './Object/Methods.js'
 import { Properties } from './Object/Properties.js'
+import { versionCompare } from './../versionCompare.js'
 
 export function DumpObject (dump) {
   this.dumper = dump
@@ -68,6 +69,7 @@ function sort(obj, sortBy) {
   var objNew = {}
   var sortInfo = []
   var sortVisOrder = ['public', 'magic', 'magic-read', 'magic-write', 'protected', 'private', 'debug']
+  var vis
   for (name in obj) {
     if (name === '__construct') {
       sortInfo.push({
@@ -77,10 +79,13 @@ function sort(obj, sortBy) {
       })
       continue
     }
+    vis = Array.isArray(obj[name].visibility)
+      ? obj[name].visibility[0]
+      : obj[name].visibility
     sortInfo.push({
       name: name,
       nameSort: name,
-      vis: sortVisOrder.indexOf(obj[name].visibility),
+      vis: sortVisOrder.indexOf(vis),
     })
   }
   sortBy = sortBy.split(/[,\s]+/)
@@ -115,10 +120,23 @@ DumpObject.prototype.dump = function (abs) {
   var self = this
   var strClassname = ''
   var dumpOpts = this.dumper.getDumpOpts()
+  var debugVersion
   try {
-    abs = this.mergeInherited(abs)
+    if (typeof abs.sort === 'undefined') {
+      abs.sort = 'vis name'
+    } else if (abs.sort === 'visibility') {
+      debugVersion = this.dumper.getRequestInfo().$container.data('meta').debugVersion
+      if (versionCompare(debugVersion, '3.2') === -1) {
+        abs.sort = 'vis name'
+      }
+    }
     if (typeof abs.cfgFlags === 'undefined') {
       abs.cfgFlags = 0x1FFFFFF & ~this.BRIEF
+    }
+    abs = this.mergeInherited(abs)
+    if (typeof abs.implementsList === 'undefined') {
+      // PhpDebugConsole < 3.1
+      abs.implementsList = abs.implements
     }
     strClassname = this.dumpClassname(abs)
     if (abs.isRecursion) {
@@ -220,13 +238,21 @@ DumpObject.prototype.dumpImplements = function (abs) {
   if (!abs.implementsList.length) {
     return ''
   }
-  return '<dt class="constants">implements</dt>' +
+  if (typeof abs.interfacesCollapse === 'undefined') {
+    // PhpDebugConsole < 3.2
+    abs.interfacesCollapse = ['ArrayAccess', 'BackedEnum', 'Countable', 'Iterator', 'IteratorAggregate', 'UnitEnum']
+  }
+  return '<dt>implements</dt>' +
     '<dd>' + this.buildImplementsTree(abs.implements, abs.interfacesCollapse) + '</dd>'
 }
 
 DumpObject.prototype.dumpInner = function  (abs) {
   var self = this
   var html = this.dumpModifiers(abs)
+  if (typeof abs.sectionOrder === 'undefined') {
+    // PhpDebugConsole < 3.2
+    abs.sectionOrder = ['attributes', 'extends', 'implements', 'constants', 'cases', 'properties', 'methods', 'phpDoc']
+  }
   abs.sectionOrder.forEach(function (sectionName) {
     html += self.sectionDumpers[sectionName](abs)
   })
@@ -426,6 +452,10 @@ DumpObject.prototype.mergeInherited = function (abs) {
   var i = 0
   var inherited
   var noInherit = ['attributes', 'cases', 'constants', 'methods', 'properties']
+  if (abs.classDefinition) {
+    // PhpDebugConsole < 3.2
+    abs.inheritsFrom = abs.classDefinition
+  }
   while (abs.inheritsFrom) {
     inherited = this.dumper.getClassDefinition(abs.inheritsFrom)
     if (abs.isRecursion || abs.isExcluded) {
@@ -444,8 +474,8 @@ DumpObject.prototype.mergeInherited = function (abs) {
     abs.inheritsFrom = inherited.inheritsFrom
   }
   for (i = 0, count = noInherit.length; i < count; i++) {
-    if (Object.keys(abs[noInherit[i]]).length < 2) {
-      continue
+    if (typeof abs[noInherit[i]] === 'undefined') {
+      abs[noInherit[i]] = {}
     }
     abs[noInherit[i]] = sort(abs[noInherit[i]], abs.sort)
   }

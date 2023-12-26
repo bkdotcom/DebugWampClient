@@ -38,15 +38,24 @@ export var sectionPrototype = {
     var info = {}
     var vis = []
     for (name in items) {
+      info = items[name]
+      if (typeof info.inheritedFrom !== 'undefined') {
+        info.declaredLast = info.inheritedFrom // note that only populated if inherited...
+                                               //    we don't know where it was declared
+        delete info.inheritedFrom
+      }
+      if (typeof info.overrides !== 'undefined') {
+        info.declaredPrev = info.overrides
+        delete info.overrides
+      }
       info = $.extend({
         declaredLast : null,
         declaredPrev : null,
-        objClassName : cfg.objClassName,  // used by Properties to determine "isDynamic"
-      }, items[name])
+      }, info)
       vis = typeof info.visibility === 'object'
         ? info.visibility
         : [info.visibility]
-      info.isInherited = info.declaredLast && info.declaredLast !== info.objClassName
+      info.isInherited = info.declaredLast && info.declaredLast !== cfg.objClassName
       info.isPrivateAncestor = $.inArray('private', vis) >= 0 && info.isInherited
       if (info.isPrivateAncestor) {
           info.isInherited = false
@@ -64,7 +73,15 @@ export var sectionPrototype = {
   },
 
   addAttribs: function ($element, info, cfg) {
-
+    if (cfg.attributeOutput && info.attributes && info.attributes.length) {
+      $element.attr('data-attributes', JSON.stringify(info.attributes))
+    }
+    if (!info.isInherited && info.declaredPrev) {
+      $element.attr('data-declared-prev', info.declaredPrev)
+    }
+    if (info.isInherited && info.declaredLast) {
+      $element.attr('data-inherited-from', info.declaredLast)
+    }
   },
 
   magicMethodInfo: function (abs, methods) {

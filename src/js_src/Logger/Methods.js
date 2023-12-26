@@ -262,7 +262,10 @@ export var methods = {
     var classDefinition
     if (isInit) {
       info.$container.data('classDefinitions', {})
-      info.$container.data('meta', metaVals)
+      info.$container.data('meta', $.extend({
+        debugVersion: meta.debugVersion,
+        requestId: meta.requestId,
+      }, metaVals))
     }
     if (meta.channelNameRoot) {
       info.$container.find('.debug').data('channelNameRoot', meta.channelNameRoot)

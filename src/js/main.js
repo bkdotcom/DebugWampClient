@@ -2865,15 +2865,24 @@
       var info = {};
       var vis = [];
       for (name in items) {
+        info = items[name];
+        if (typeof info.inheritedFrom !== 'undefined') {
+          info.declaredLast = info.inheritedFrom; // note that only populated if inherited...
+                                                 //    we don't know where it was declared
+          delete info.inheritedFrom;
+        }
+        if (typeof info.overrides !== 'undefined') {
+          info.declaredPrev = info.overrides;
+          delete info.overrides;
+        }
         info = $.extend({
           declaredLast : null,
           declaredPrev : null,
-          objClassName : cfg.objClassName,  // used by Properties to determine "isDynamic"
-        }, items[name]);
+        }, info);
         vis = typeof info.visibility === 'object'
           ? info.visibility
           : [info.visibility];
-        info.isInherited = info.declaredLast && info.declaredLast !== info.objClassName;
+        info.isInherited = info.declaredLast && info.declaredLast !== cfg.objClassName;
         info.isPrivateAncestor = $.inArray('private', vis) >= 0 && info.isInherited;
         if (info.isPrivateAncestor) {
             info.isInherited = false;
@@ -2891,7 +2900,15 @@
     },
 
     addAttribs: function ($element, info, cfg) {
-
+      if (cfg.attributeOutput && info.attributes && info.attributes.length) {
+        $element.attr('data-attributes', JSON.stringify(info.attributes));
+      }
+      if (!info.isInherited && info.declaredPrev) {
+        $element.attr('data-declared-prev', info.declaredPrev);
+      }
+      if (info.isInherited && info.declaredLast) {
+        $element.attr('data-inherited-from', info.declaredLast);
+      }
     },
 
     magicMethodInfo: function (abs, methods) {
@@ -2925,9 +2942,7 @@
 
   Cases.prototype.addAttribs = function ($element, info, cfg) {
     $element.addClass('case');
-    if (cfg.attributeOutput && info.attributes && info.attributes.length) {
-      $element.attr('data-attributes', JSON.stringify(info.attributes));
-    }
+    sectionPrototype.addAttribs($element, info, cfg);
   };
 
   Cases.prototype.dump = function (abs) {
@@ -2992,12 +3007,7 @@
         $element.addClass(classname);
       }
     });
-    if (cfg.attributeOutput && info.attributes && info.attributes.length) {
-      $element.attr('data-attributes', JSON.stringify(info.attributes));
-    }
-    if (info.isInherited || info.isPrivateAncestor) {
-      $element.attr('data-inherited-from', info.declaredLast);
-    }
+    sectionPrototype.addAttribs($element, info, cfg);
   };
 
   Constants.prototype.dump = function (abs) {
@@ -3062,14 +3072,9 @@
         $element.addClass(classname);
       }
     });
-    if (cfg.attributeOutput && info.attributes && info.attributes.length) {
-      $element.attr('data-attributes', JSON.stringify(info.attributes));
-    }
+    sectionPrototype.addAttribs($element, info, cfg);
     if (info.implements && info.implements.length) {
       $element.attr('data-implements', info.implements);
-    }
-    if (info.isInherited) {
-      $element.attr('data-inherited-from', info.declaredLast);
     }
     if (info.phpDoc && info.phpDoc.deprecated) {
       $element.attr('data-deprecated-desc', info.phpDoc.deprecated[0].desc);
@@ -3093,7 +3098,7 @@
       return ''
     }
     if (!cfg.collect) {
-      return html
+      return ''
     }
     return '<dt class="methods">' + this.getLabel(abs) + '</dt>' +
       this.magicMethodInfo(abs, ['__call', '__callStatic']) +
@@ -3219,7 +3224,7 @@
   Methods.prototype.dumpStaticVars = function (info, cfg) {
     var self = this;
     var html = '';
-    if (!cfg.staticVarOutput || info.staticVars.length < 1) {
+    if (!cfg.staticVarOutput || typeof info.staticVars === 'undefined' || info.staticVars.length < 1) {
         return ''
     }
     html = '<h3>static variables</h3>';
@@ -3249,6 +3254,52 @@
     return label
   };
 
+  function versionCompare (v1, v2) {
+    var v1parts = v1.split('.');
+    var v2parts = v2.split('.');
+
+    function isValidPart(x) {
+      return (/^\d+$/).test(x)
+    }
+
+    if (!v1parts.every(isValidPart) || !v2parts.every(isValidPart)) {
+      return NaN
+    }
+
+    {
+      while (v1parts.length < v2parts.length) {
+        v1parts.push('0');
+      }
+      while (v2parts.length < v1parts.length) {
+        v2parts.push('0');
+      }
+    }
+
+    {
+      v1parts = v1parts.map(Number);
+      v2parts = v2parts.map(Number);
+    }
+
+    for (var i = 0; i < v1parts.length; ++i) {
+      if (v2parts.length === i) {
+        return 1
+      }
+      if (v1parts[i] === v2parts[i]) {
+        continue
+      } else if (v1parts[i] > v2parts[i]) {
+        return 1
+      } else {
+        return -1
+      }
+    }
+
+    if (v1parts.length != v2parts.length) {
+      return -1
+    }
+
+    return 0
+  }
+
   function Properties (valDumper) {
     this.valDumper = valDumper;
   }
@@ -3258,8 +3309,10 @@
   }
 
   Properties.prototype.dump = function (abs) {
+    var debugVersion = this.valDumper.getRequestInfo().$container.data('meta').debugVersion;
     var cfg = {
       attributeOutput : abs.cfgFlags & this.valDumper.objectDumper.PROP_ATTRIBUTE_OUTPUT,
+      isDynamicSupport : versionCompare(debugVersion, '3.1') >= 0
     };
     var label = Object.keys(abs.properties).length
       ? 'properties'
@@ -3280,7 +3333,8 @@
       forceShow: info.forceShow,
       isDynamic: info.declaredLast === null &&
         info.valueFrom === 'value' &&
-        info.objclassName !== 'stdClass',
+        cfg.objClassName !== 'stdClass' &&
+        cfg.isDynamicSupport,
       isPromoted: info.isPromoted,
       isReadOnly: info.isReadOnly,
       isStatic: info.isStatic,
@@ -3293,12 +3347,7 @@
         $element.addClass(classname);
       }
     });
-    if (cfg.attributeOutput && info.attributes && info.attributes.length) {
-      $element.attr('data-attributes', JSON.stringify(info.attributes));
-    }
-    if (info.isInherited || info.isPrivateAncestor) {
-      $element.attr('data-inherited-from', info.declaredLast);
-    }
+    sectionPrototype.addAttribs($element, info, cfg);
   };
 
   Properties.prototype.dumpInner = function (name, info, cfg) {
@@ -3405,6 +3454,7 @@
     var objNew = {};
     var sortInfo = [];
     var sortVisOrder = ['public', 'magic', 'magic-read', 'magic-write', 'protected', 'private', 'debug'];
+    var vis;
     for (name in obj) {
       if (name === '__construct') {
         sortInfo.push({
@@ -3414,10 +3464,13 @@
         });
         continue
       }
+      vis = Array.isArray(obj[name].visibility)
+        ? obj[name].visibility[0]
+        : obj[name].visibility;
       sortInfo.push({
         name: name,
         nameSort: name,
-        vis: sortVisOrder.indexOf(obj[name].visibility),
+        vis: sortVisOrder.indexOf(vis),
       });
     }
     sortBy = sortBy.split(/[,\s]+/);
@@ -3451,10 +3504,23 @@
     var html = '';
     var strClassname = '';
     var dumpOpts = this.dumper.getDumpOpts();
+    var debugVersion;
     try {
-      abs = this.mergeInherited(abs);
+      if (typeof abs.sort === 'undefined') {
+        abs.sort = 'vis name';
+      } else if (abs.sort === 'visibility') {
+        debugVersion = this.dumper.getRequestInfo().$container.data('meta').debugVersion;
+        if (versionCompare(debugVersion, '3.2') === -1) {
+          abs.sort = 'vis name';
+        }
+      }
       if (typeof abs.cfgFlags === 'undefined') {
         abs.cfgFlags = 0x1FFFFFF & ~this.BRIEF;
+      }
+      abs = this.mergeInherited(abs);
+      if (typeof abs.implementsList === 'undefined') {
+        // PhpDebugConsole < 3.1
+        abs.implementsList = abs.implements;
       }
       strClassname = this.dumpClassname(abs);
       if (abs.isRecursion) {
@@ -3556,13 +3622,21 @@
     if (!abs.implementsList.length) {
       return ''
     }
-    return '<dt class="constants">implements</dt>' +
+    if (typeof abs.interfacesCollapse === 'undefined') {
+      // PhpDebugConsole < 3.2
+      abs.interfacesCollapse = ['ArrayAccess', 'BackedEnum', 'Countable', 'Iterator', 'IteratorAggregate', 'UnitEnum'];
+    }
+    return '<dt>implements</dt>' +
       '<dd>' + this.buildImplementsTree(abs.implements, abs.interfacesCollapse) + '</dd>'
   };
 
   DumpObject.prototype.dumpInner = function  (abs) {
     var self = this;
     var html = this.dumpModifiers(abs);
+    if (typeof abs.sectionOrder === 'undefined') {
+      // PhpDebugConsole < 3.2
+      abs.sectionOrder = ['attributes', 'extends', 'implements', 'constants', 'cases', 'properties', 'methods', 'phpDoc'];
+    }
     abs.sectionOrder.forEach(function (sectionName) {
       html += self.sectionDumpers[sectionName](abs);
     });
@@ -3762,6 +3836,10 @@
     var i = 0;
     var inherited;
     var noInherit = ['attributes', 'cases', 'constants', 'methods', 'properties'];
+    if (abs.classDefinition) {
+      // PhpDebugConsole < 3.2
+      abs.inheritsFrom = abs.classDefinition;
+    }
     while (abs.inheritsFrom) {
       inherited = this.dumper.getClassDefinition(abs.inheritsFrom);
       if (abs.isRecursion || abs.isExcluded) {
@@ -3780,8 +3858,8 @@
       abs.inheritsFrom = inherited.inheritsFrom;
     }
     for (i = 0, count = noInherit.length; i < count; i++) {
-      if (Object.keys(abs[noInherit[i]]).length < 2) {
-        continue
+      if (typeof abs[noInherit[i]] === 'undefined') {
+        abs[noInherit[i]] = {};
       }
       abs[noInherit[i]] = sort(abs[noInherit[i]], abs.sort);
     }
@@ -4608,11 +4686,11 @@
     dumpOpts.postDump = function (val, dumpOpts) {
       var lis = [];
       if (abs.contentType) {
-        lis.push('<li>mime type = <span class="t_string">' + abs.contentType + '</span></li>');
+        lis.push('<li>mime type = <span class="content-type t_string">' + abs.contentType + '</span></li>');
       }
       lis.push('<li>size = <span class="t_int">' + abs.strlen + '</span></li>');
       lis.push(abs.value.length
-        ? '<li class="t_string"><span class="binary">' + val + '</span></li>'
+        ? '<li class="t_string">' + val + '</li>'
         : '<li>Binary data not collected</li>');
       val = '<span class="t_keyword">string</span><span class="text-muted">(binary)</span>' +
         '<ul class="list-unstyled value-container" data-type="' + abs.type + '" data-type-more="binary">' +
@@ -4762,7 +4840,7 @@
     }
     if (tagName) {
       dumpOpts.attribs.class.push('t_' + dumpOpts.type);
-      if (dumpOpts.typeMore) {
+      if (dumpOpts.typeMore && dumpOpts.typeMore !== 'abstraction') {
         dumpOpts.attribs['data-type-more'] = dumpOpts.typeMore.replace(/\0/g, '');
       }
       $wrap = $$1('<' + tagName + ' />')
@@ -4882,21 +4960,23 @@
   };
 
   Dump.prototype.dumpArrayValue = function (key, val, withKey) {
-    var classes = ['t_key'];
-    if (/^\d+$/.test(key)) {
-      classes.push('t_int');
+    var $key = $$1('<span></span>');
+    if (withKey === false) {
+      return this.dump(val, { tagName: 'li' })
     }
-    return withKey
-      ? '\t<li>' +
-          this.dump(key, {
-            attribs : {
-              class: classes
-            }
-          }) +
-          '<span class="t_operator">=&gt;</span>' +
-          this.dump(val) +
-        '</li>\n'
-      : '\t' + this.dump(val, { tagName: 'li' }) + '\n'
+    $key
+      .addClass('t_key')
+      .html(this.dump(key, {
+        tagName : null
+      }));
+    if (/^\d+$/.test(key)) {
+      $key.addClass('t_int');
+    }
+    return '<li>' +
+      $key[0].outerHTML +
+        '<span class="t_operator">=&gt;</span>' +
+        this.dump(val) +
+      '</li>'
   };
 
   Dump.prototype.dumpBool = function (val) {
@@ -5352,7 +5432,10 @@
       var classDefinition;
       if (isInit) {
         info.$container.data('classDefinitions', {});
-        info.$container.data('meta', metaVals);
+        info.$container.data('meta', $$1.extend({
+          debugVersion: meta.debugVersion,
+          requestId: meta.requestId,
+        }, metaVals));
       }
       if (meta.channelNameRoot) {
         info.$container.find('.debug').data('channelNameRoot', meta.channelNameRoot);

@@ -21,12 +21,7 @@ Constants.prototype.addAttribs = function ($element, info, cfg) {
       $element.addClass(classname)
     }
   })
-  if (cfg.attributeOutput && info.attributes && info.attributes.length) {
-    $element.attr('data-attributes', JSON.stringify(info.attributes))
-  }
-  if (info.isInherited || info.isPrivateAncestor) {
-    $element.attr('data-inherited-from', info.declaredLast)
-  }
+  sectionPrototype.addAttribs($element, info, cfg)
 }
 
 Constants.prototype.dump = function (abs) {

@@ -93,7 +93,7 @@ Dump.prototype.dump = function (val, opts) {
   }
   if (tagName) {
     dumpOpts.attribs.class.push('t_' + dumpOpts.type)
-    if (dumpOpts.typeMore) {
+    if (dumpOpts.typeMore && dumpOpts.typeMore !== 'abstraction') {
       dumpOpts.attribs['data-type-more'] = dumpOpts.typeMore.replace(/\0/g, '')
     }
     $wrap = $('<' + tagName + ' />')
@@ -213,21 +213,23 @@ Dump.prototype.dumpArray = function (array) {
 }
 
 Dump.prototype.dumpArrayValue = function (key, val, withKey) {
-  var classes = ['t_key']
-  if (/^\d+$/.test(key)) {
-    classes.push('t_int')
+  var $key = $('<span></span>')
+  if (withKey === false) {
+    return this.dump(val, { tagName: 'li' })
   }
-  return withKey
-    ? '\t<li>' +
-        this.dump(key, {
-          attribs : {
-            class: classes
-          }
-        }) +
-        '<span class="t_operator">=&gt;</span>' +
-        this.dump(val) +
-      '</li>\n'
-    : '\t' + this.dump(val, { tagName: 'li' }) + '\n'
+  $key
+    .addClass('t_key')
+    .html(this.dump(key, {
+      tagName : null
+    }))
+  if (/^\d+$/.test(key)) {
+    $key.addClass('t_int')
+  }
+  return '<li>' +
+    $key[0].outerHTML +
+      '<span class="t_operator">=&gt;</span>' +
+      this.dump(val) +
+    '</li>'
 }
 
 Dump.prototype.dumpBool = function (val) {
