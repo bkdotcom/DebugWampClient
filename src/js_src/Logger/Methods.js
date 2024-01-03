@@ -262,7 +262,10 @@ export var methods = {
     var classDefinition
     if (isInit) {
       info.$container.data('classDefinitions', {})
-      info.$container.data('meta', metaVals)
+      info.$container.data('meta', $.extend({
+        debugVersion: meta.debugVersion,
+        requestId: meta.requestId,
+      }, metaVals))
     }
     if (meta.channelNameRoot) {
       info.$container.find('.debug').data('channelNameRoot', meta.channelNameRoot)
@@ -281,6 +284,7 @@ export var methods = {
     if (metaVals.classDefinitions) {
       for (k in metaVals.classDefinitions) {
         classDefinition = metaVals.classDefinitions[k]
+        classDefinition.implementsList = buildImplementsList(classDefinition.implements)
         if (k.substr(0, 6) === '_b64_:') {
           k = atob(k.substr(6))
         }
@@ -382,6 +386,22 @@ export var methods = {
     }
     return $node
   }
+}
+
+function buildImplementsList(obj) {
+  var list = []
+  var key
+  var val
+  for (key in obj) {
+    val = obj[key]
+    if (typeof val === 'string') {
+      list.push(val)
+      continue
+    }
+    list.push(key)
+    list = list.concat(buildImplementsList(val))
+  }
+  return list
 }
 
 function buildTitle (metaVals) {

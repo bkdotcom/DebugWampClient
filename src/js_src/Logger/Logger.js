@@ -127,6 +127,7 @@ function getNodeInfo (meta) {
               '<div class="sidebar-trigger"></div>' +
               '<div class="tab-body">' +
                 '<ul class="debug-log-summary group-body"></ul>' +
+                '<hr />' +
                 '<ul class="debug-log group-body"></ul>' +
               '</div>' +
             '</div>' +
@@ -329,6 +330,7 @@ function getTabPane (info, meta) {
     .append($('<div>', {
       class: 'tab-body',
       html: '<ul class="debug-log-summary group-body"></ul>' +
+        '<hr />' +
         '<ul class="debug-log group-body"></ul>'
     }))
   $tabPane.data('nodes', [$tabPane.find('.debug-log')])

@@ -37,7 +37,7 @@ class WampClient
         $this->debug = $debug;
         $this->request = $debug->serverRequest;
         $this->cfg = \array_merge(array(
-            'jquery' => '//ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js',
+            'jquery' => '//ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js',
             'bootstrapJs' => '//stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js',
             'bootstrapCss' => '//stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css',
             'filepathScript' => __DIR__ . '/js/main.min.js',

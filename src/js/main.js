@@ -1,7 +1,7 @@
-(function ($) {
+(function ($$1) {
   'use strict';
 
-  $ = $ && $.hasOwnProperty('default') ? $['default'] : $;
+  $$1 = $$1 && $$1.hasOwnProperty('default') ? $$1['default'] : $$1;
 
   var PubSub = (function () {
     var topics = {};
@@ -129,36 +129,36 @@
   }
 
   function init (config) {
-    $('#link-files').on('change', function () {
-      var isChecked = $(this).prop('checked');
-      var $templateGroup = $('#link-files-template').closest('.form-group');
+    $$1('#link-files').on('change', function () {
+      var isChecked = $$1(this).prop('checked');
+      var $templateGroup = $$1('#link-files-template').closest('.form-group');
       isChecked
         ? $templateGroup.slideDown()
         : $templateGroup.slideUp();
     }).trigger('change');
 
-    $('#modal-settings').on('submit', function (e) {
+    $$1('#modal-settings').on('submit', function (e) {
       e.preventDefault();
       config.set({
-        url: $('#wsUrl').val(),
-        realm: $('#realm').val(),
-        fontSize: $('#font-size').val(),
-        linkFiles: $('#link-files').prop('checked'),
-        linkFilesTemplate: $('#link-files-template').val()
+        url: $$1('#wsUrl').val(),
+        realm: $$1('#realm').val(),
+        fontSize: $$1('#font-size').val(),
+        linkFiles: $$1('#link-files').prop('checked'),
+        linkFilesTemplate: $$1('#link-files-template').val()
       });
-      $(this).modal('hide');
+      $$1(this).modal('hide');
     });
 
-    $('#modal-settings').on('hide.bs.modal', function (e) {
+    $$1('#modal-settings').on('hide.bs.modal', function (e) {
       updateCssProperty('wampClientCss', '#debug-cards', 'font-size', config.get('fontSize'));
     });
 
-    $('#modal-settings').on('show.bs.modal', function (e) {
-      $('#wsUrl').val(config.get('url'));
-      $('#realm').val(config.get('realm'));
-      $('#font-size').val(config.get('fontSize'));
-      $('#link-files').prop('checked', config.get('linkFiles')).trigger('change');
-      $('#link-files-template').val(config.get('linkFilesTemplate'));
+    $$1('#modal-settings').on('show.bs.modal', function (e) {
+      $$1('#wsUrl').val(config.get('url'));
+      $$1('#realm').val(config.get('realm'));
+      $$1('#font-size').val(config.get('fontSize'));
+      $$1('#link-files').prop('checked', config.get('linkFiles')).trigger('change');
+      $$1('#link-files-template').val(config.get('linkFilesTemplate'));
     });
   }
 
@@ -166,7 +166,7 @@
   var classExpanded = 'fa-chevron-down';
   var timeoutHandler;
   var navbarHeight; // = $('nav.navbar').outerHeight()
-  var $cardsInViewport = $();
+  var $cardsInViewport = $$1();
 
   function init$1 (config) {
     var io = new IntersectionObserver(
@@ -193,19 +193,19 @@
       }
     );
 
-    $('.navbar .clear').on('click', function () {
+    $$1('.navbar .clear').on('click', function () {
       console.time('clear');
-      $('#debug-cards > .card').not('.working').trigger('removed.debug.card');
+      $$1('#debug-cards > .card').not('.working').trigger('removed.debug.card');
       console.timeEnd('clear');
     });
 
-    $('#debug-cards').on('added.debug.card', function (e) {
+    $$1('#debug-cards').on('added.debug.card', function (e) {
       // console.warn('card added', e.target, e)
       io.observe(e.target);
     });
-    $('#debug-cards').on('removed.debug.card', function (e) {
+    $$1('#debug-cards').on('removed.debug.card', function (e) {
       // console.warn('card removed', e.target, e)
-      var $card = $(e.target);
+      var $card = $$1(e.target);
       io.unobserve(e.target);
       $cardsInViewport = $cardsInViewport.not(e.target);
       if ($card.hasClass('working')) {
@@ -214,7 +214,7 @@
       $card.remove();
     });
 
-    $('body').on('mouseup', function (e) {
+    $$1('body').on('mouseup', function (e) {
       if (timeoutHandler) {
         e.preventDefault();
         clearInterval(timeoutHandler);
@@ -223,16 +223,16 @@
     });
 
     // test for long-press of main clear button
-    $('.clear').on('mousedown', function (e) {
+    $$1('.clear').on('mousedown', function (e) {
       timeoutHandler = setTimeout(function () {
         // has been long pressed (3 seconds)
         // clear all (incl working)
-        $('#debug-cards > .card').trigger('removed.debug.card');
+        $$1('#debug-cards > .card').trigger('removed.debug.card');
       }, 2000);
     });
 
-    $('body').on('shown.bs.collapse hidden.bs.collapse', '.card-body', function (e) {
-      var $cardBody = $(this);
+    $$1('body').on('shown.bs.collapse hidden.bs.collapse', '.card-body', function (e) {
+      var $cardBody = $$1(this);
       var $card = $cardBody.closest('.card');
       var $cardHeader = $card.find('> .card-header');
       var $icon = $card.find('.card-header .' + classCollapsed + ', .card-header .' + classExpanded);
@@ -249,21 +249,21 @@
     });
 
     // close btn on card-header clicked
-    $('body').on('click', '.btn-remove-session', function (e) {
-      $(this).closest('.card').trigger('removed.debug.card');
+    $$1('body').on('click', '.btn-remove-session', function (e) {
+      $$1(this).closest('.card').trigger('removed.debug.card');
     });
 
-    $(window).on('scroll', debounce(function () {
+    $$1(window).on('scroll', debounce(function () {
       // console.group('scroll')
       $cardsInViewport.filter('.expanded').each(function () {
-        positionSidebar($(this));
+        positionSidebar($$1(this));
       });
       // console.groupEnd()
     }, 50));
 
-    $('body').on('open.debug.sidebar', function (e) {
+    $$1('body').on('open.debug.sidebar', function (e) {
       // console.warn('open.debug.sidebar')
-      var $sidebar = $(e.target);
+      var $sidebar = $$1(e.target);
       var $card = $sidebar.closest('.card');
       var sidebarContentHeight = $sidebar.find('.sidebar-content').height();
       // var minHeight = Math.max(sidebarContentHeight + 8, 200)
@@ -271,20 +271,20 @@
         minHeight: sidebarContentHeight + 'px'
       });
       positionSidebar($card);
-      $('body').on('click', onBodyClick);
+      $$1('body').on('click', onBodyClick);
     });
 
-    $('body').on('close.debug.sidebar', function (e) {
+    $$1('body').on('close.debug.sidebar', function (e) {
       // remove minHeight
-      var $card = $(e.target).closest('.card');
+      var $card = $$1(e.target).closest('.card');
       positionSidebar($card);
       // $card.find('.card-body .tab-pane').attr('style', '')
-      $('body').off('click', onBodyClick);
+      $$1('body').off('click', onBodyClick);
     });
 
-    $('body').on('click', '.card-header[data-toggle=collapse]', function () {
-      var $target = $($(this).data('target'));
-      navbarHeight = $('nav.navbar').outerHeight();
+    $$1('body').on('click', '.card-header[data-toggle=collapse]', function () {
+      var $target = $$1($$1(this).data('target'));
+      navbarHeight = $$1('nav.navbar').outerHeight();
       $target.collapse('toggle');
     });
 
@@ -296,12 +296,12 @@
     })
     */
 
-    $('body').on('mouseenter', '.sidebar-trigger', function () {
-      $(this).closest('.card').debugEnhance('sidebar', 'open');
+    $$1('body').on('mouseenter', '.sidebar-trigger', function () {
+      $$1(this).closest('.card').debugEnhance('sidebar', 'open');
     });
 
-    $('body').on('mouseleave', '.debug-sidebar', function () {
-      $(this).closest('.card').debugEnhance('sidebar', 'close');
+    $$1('body').on('mouseleave', '.debug-sidebar', function () {
+      $$1(this).closest('.card').debugEnhance('sidebar', 'close');
     });
 
     updateCssProperty('wampClientCss', '.debug', 'font-size', 'inherit');
@@ -310,7 +310,7 @@
     init(config);
 
     // note:  navbar may not yet be at final height
-    navbarHeight = $('nav.navbar').outerHeight();
+    navbarHeight = $$1('nav.navbar').outerHeight();
   }
 
   function debounce (fn, ms) {
@@ -329,8 +329,8 @@
   }
 
   function onBodyClick (e) {
-    if ($(e.target).closest('.debug-sidebar').length === 0) {
-      $('.debug-sidebar.show').closest('.card').debugEnhance('sidebar', 'close');
+    if ($$1(e.target).closest('.debug-sidebar').length === 0) {
+      $$1('.debug-sidebar.show').closest('.card').debugEnhance('sidebar', 'close');
     }
   }
 
@@ -350,7 +350,7 @@
     var heightHidden = bodyHeight - heightVis;
     var contentHeight = $sidebar.find('.sidebar-content').height();
     // var sidebarTopFixed = navbarHeight + headerHeight
-    var sidebarTop = heightHidden + (parseInt($('body').css('paddingTop')) - navbarHeight);
+    var sidebarTop = heightHidden + (parseInt($$1('body').css('paddingTop')) - navbarHeight);
 
     $sidebar.attr('style', '');
     if (isSticky) {
@@ -374,7 +374,7 @@
 
   Table.prototype.build = function (rows, meta, onBuildRow) {
     // console.warn('Table.build', meta, classname)
-    meta = $.extend({
+    meta = $$1.extend({
       attribs: {
         class: [
           'table-bordered',
@@ -388,7 +388,7 @@
     if (meta.caption === null) {
       meta.caption = '';
     }
-    $table = $('<table>' +
+    $table = $$1('<table>' +
       '<caption>' + meta.caption.escapeHtml() + '</caption>' +
       '<thead><tr><th>&nbsp;</th></tr></thead>' +
       '<tbody></tbody>' +
@@ -430,9 +430,9 @@
         rowKey = parseInt(rowKey, 10);
       }
       parsed = this.dump.parseTag(this.dump.dump(rowKey));
-      $tr = $('<tr></tr>', rowInfo.attribs || {})
+      $tr = $$1('<tr></tr>', rowInfo.attribs || {})
         .append(
-          $('<th scope="row" class="t_key text-right"></th>')
+          $$1('<th scope="row" class="t_key text-right"></th>')
             .addClass(/^\d+$/.test(rowKey) ? 't_int' : parsed.attribs.class.join(' '))
             .html(parsed.innerhtml)
         );
@@ -440,7 +440,7 @@
       if (tableInfo.haveObjRow) {
         $tr.append(
           rowInfo.class
-            ? $(this.dump.markupIdentifier(rowInfo.class, {}, 'td'))
+            ? $$1(this.dump.markupIdentifier(rowInfo.class, {}, 'td'))
               .attr('title', rowInfo.summary)
             : '<td class="t_undefined"></td>'
         );
@@ -511,7 +511,7 @@
         label += ' ' + this.dump.markupIdentifier(info.class);
       }
       $theadTr.append(
-        $('<th scope="col"></th>').html(label)
+        $$1('<th scope="col"></th>').html(label)
       );
     }
   };
@@ -2825,8 +2825,588 @@
 
   var mergeWith_1 = mergeWith;
 
+  var sectionPrototype = {
+    dumpItems: function (abs, what, cfg) {
+      var self = this;
+      var html = '';
+      var classes = JSON.parse(JSON.stringify(abs.extends));
+      classes.unshift(abs.className);
+      cfg = $.extend({
+        groupByInheritance : abs.sort.indexOf('inheritance') === 0,
+        objClassName : abs.className,
+        phpDocOutput : abs.cfgFlags & this.valDumper.objectDumper.PHPDOC_OUTPUT,
+      }, cfg);
+      delete abs[what].__debug_key_order__;
+      if (cfg.groupByInheritance === false) {
+        return this.dumpItemsFiltered(abs[what], cfg)
+      }
+      classes.forEach(function (classname) {
+        var info = {};
+        var items = {};
+        var name = '';
+        html += [abs.className, 'stdClass'].indexOf(classname) < 0
+          ? '<dd class="heading">Inherited from ' + self.valDumper.markupIdentifier(classname) + '</dd>'
+          : '';
+        for (name in abs[what]) {
+          info = abs[what][name];
+          if (!info.declaredLast || info.declaredLast === classname) {
+              items[name] = info;
+              delete abs[what][name];
+          }
+        }
+        html += self.dumpItemsFiltered(items, cfg);
+      });
+      return html
+    },
+
+    dumpItemsFiltered: function (items, cfg) {
+      var html = '';
+      var name = '';
+      var info = {};
+      var vis = [];
+      for (name in items) {
+        info = items[name];
+        if (typeof info.inheritedFrom !== 'undefined') {
+          info.declaredLast = info.inheritedFrom; // note that only populated if inherited...
+                                                 //    we don't know where it was declared
+          delete info.inheritedFrom;
+        }
+        if (typeof info.overrides !== 'undefined') {
+          info.declaredPrev = info.overrides;
+          delete info.overrides;
+        }
+        info = $.extend({
+          declaredLast : null,
+          declaredPrev : null,
+        }, info);
+        vis = typeof info.visibility === 'object'
+          ? info.visibility
+          : [info.visibility];
+        info.isInherited = info.declaredLast && info.declaredLast !== cfg.objClassName;
+        info.isPrivateAncestor = $.inArray('private', vis) >= 0 && info.isInherited;
+        if (info.isPrivateAncestor) {
+            info.isInherited = false;
+        }
+        html += this.dumpItem(name, info, cfg);
+      }
+      return html
+    },
+
+    dumpItem: function (name, info, cfg) {
+      var $dd = $('<dd></dd>')
+        .html(this.dumpInner(name, info, cfg));
+      this.addAttribs($dd, info, cfg);
+      return $dd[0].outerHTML
+    },
+
+    addAttribs: function ($element, info, cfg) {
+      if (cfg.attributeOutput && info.attributes && info.attributes.length) {
+        $element.attr('data-attributes', JSON.stringify(info.attributes));
+      }
+      if (!info.isInherited && info.declaredPrev) {
+        $element.attr('data-declared-prev', info.declaredPrev);
+      }
+      if (info.isInherited && info.declaredLast) {
+        $element.attr('data-inherited-from', info.declaredLast);
+      }
+    },
+
+    magicMethodInfo: function (abs, methods) {
+      var i = 0;
+      var methodsHave = [];
+      var method;
+      for (i = 0; i < methods.length; i++) {
+        method = methods[i];
+        if (abs.methods[method]) {
+          methodsHave.push('<code>' + method + '</code>');
+        }
+      }
+      if (methodsHave.length < 1) {
+        return ''
+      }
+      methods = methodsHave.join(' and ');
+      methods = methodsHave.length === 1
+        ? 'a ' + methods + ' method'
+        : methods + ' methods';
+      return '<dd class="magic info">This object has ' + methods + '</dd>'
+    },
+  };
+
+  function Cases (valDumper) {
+    this.valDumper = valDumper;
+  }
+  var name;
+  for (name in sectionPrototype) {
+    Cases.prototype[name] = sectionPrototype[name];
+  }
+
+  Cases.prototype.addAttribs = function ($element, info, cfg) {
+    $element.addClass('case');
+    sectionPrototype.addAttribs($element, info, cfg);
+  };
+
+  Cases.prototype.dump = function (abs) {
+    var cfg = {
+      attributeOutput : abs.cfgFlags & this.valDumper.objectDumper.CASE_ATTRIBUTE_OUTPUT,
+      collect : abs.cfgFlags & this.valDumper.objectDumper.CASE_COLLECT,
+      groupByInheritance : false,
+      output : abs.cfgFlags & this.valDumper.objectDumper.CASE_OUTPUT,
+      phpDocOutput : abs.cfgFlags & this.valDumper.objectDumper.PHPDOC_OUTPUT,
+    };
+    if (abs.implementsList.indexOf('UnitEnum') < 0) {
+      return ''
+    }
+    if (!cfg.output) {
+      return ''
+    }
+    if (!cfg.collect) {
+      return '<dt class="cases">cases <i>not collected</i></dt>'
+    }
+    if (Object.keys(abs.cases).length < 1) {
+      return '<dt class="cases"><i>no cases!</i></dt>'
+    }
+    return '<dt class="cases">cases</dt>' +
+      this.dumpItems(abs, 'cases', cfg)
+  };
+
+  Cases.prototype.dumpInner = function (name, info, cfg) {
+    var title = cfg.phpDocOutput
+      ? info.desc
+      : null;
+    var $element = $$1('<div></div>')
+      .html('<span class="t_identifier">' + name + '</span>' +
+        (info.value !== this.valDumper.UNDEFINED
+          ? ' <span class="t_operator">=</span> ' +
+            this.valDumper.dump(info.value)
+          : ''
+        )
+      );
+    if (title && title.length) {
+      $element.find('.t_identifier').attr('title', title);
+    }
+    return $element[0].innerHTML
+  };
+
+  function Constants (valDumper) {
+    this.valDumper = valDumper;
+  }
+  var name$1;
+  for (name$1 in sectionPrototype) {
+    Constants.prototype[name$1] = sectionPrototype[name$1];
+  }
+
+  Constants.prototype.addAttribs = function ($element, info, cfg) {
+    var classes = {
+      constant: true,
+      isFinal: info.isFinal,
+      'private-ancestor': info.isPrivateAncestor
+    };
+    $element.addClass(info.visibility).removeClass('debug');
+    $$1.each(classes, function (classname, useClass) {
+      if (useClass) {
+        $element.addClass(classname);
+      }
+    });
+    sectionPrototype.addAttribs($element, info, cfg);
+  };
+
+  Constants.prototype.dump = function (abs) {
+    var cfg = {
+      collect : abs.cfgFlags & this.valDumper.objectDumper.CONST_COLLECT,
+      attributeOutput : abs.cfgFlags & this.valDumper.objectDumper.CONST_ATTRIBUTE_OUTPUT,
+      output : abs.cfgFlags & this.valDumper.objectDumper.CONST_OUTPUT,
+    };
+    if (!cfg.output) {
+      return ''
+    }
+    if (!cfg.collect) {
+      return '<dt class="constants">constants <i>not collected</i></dt>'
+    }
+    if (Object.keys(abs.constants).length < 1) {
+      return ''
+    }
+    return '<dt class="constants">constants</dt>' +
+      this.dumpItems(abs, 'constants', cfg)
+  };
+
+  Constants.prototype.dumpInner = function (name, info, cfg) {
+    return this.dumpModifiers(info) +
+      '<span class="t_identifier"' + (cfg.phpDocOutput && info.desc ? ' title="' + info.desc.escapeHtml() + '"' : '') + '>' + name + '</span> ' +
+      '<span class="t_operator">=</span> ' +
+      this.valDumper.dump(info.value)
+  };
+
+  Constants.prototype.dumpModifiers = function (info) {
+    var html = '';
+    var vis = typeof info.visibility === 'object'
+      ? info.visibility
+      : [info.visibility];
+    var modifiers = JSON.parse(JSON.stringify(vis));
+    if (info.isFinal) {
+      modifiers.push('final');
+    }
+    $$1.each(modifiers, function (i, modifier) {
+      html += '<span class="t_modifier_' + modifier + '">' + modifier + '</span> ';
+    });
+    return html
+  };
+
+  function Methods (valDumper) {
+    this.valDumper = valDumper;
+  }
+  var name$2;
+  for (name$2 in sectionPrototype) {
+    Methods.prototype[name$2] = sectionPrototype[name$2];
+  }
+
+  Methods.prototype.addAttribs = function ($element, info, cfg) {
+    var classes = {
+      method: true,
+      isDeprecated: info.isDeprecated,
+      isFinal: info.isFinal,
+      isStatic: info.isStatic
+    };
+    $element.addClass(info.visibility).removeClass('debug');
+    $$1.each(classes, function (classname, useClass) {
+      if (useClass) {
+        $element.addClass(classname);
+      }
+    });
+    sectionPrototype.addAttribs($element, info, cfg);
+    if (info.implements && info.implements.length) {
+      $element.attr('data-implements', info.implements);
+    }
+    if (info.phpDoc && info.phpDoc.deprecated) {
+      $element.attr('data-deprecated-desc', info.phpDoc.deprecated[0].desc);
+    }
+    if (cfg.phpDocOutput && info.phpDoc && info.phpDoc.throws) {
+      $element.attr('data-throws', JSON.stringify(info.phpDoc.throws));
+    }
+  };
+
+  Methods.prototype.dump = function (abs) {
+    var cfg = {
+      attributeOutput : abs.cfgFlags & this.valDumper.objectDumper.METHOD_ATTRIBUTE_OUTPUT,
+      collect : abs.cfgFlags & this.valDumper.objectDumper.METHOD_COLLECT,
+      methodDescOutput : abs.cfgFlags & this.valDumper.objectDumper.METHOD_DESC_OUTPUT,
+      output : abs.cfgFlags & this.valDumper.objectDumper.METHOD_OUTPUT,
+      paramAttributeOutput : abs.cfgFlags & this.valDumper.objectDumper.PARAM_ATTRIBUTE_OUTPUT,
+      phpDocOutput : abs.cfgFlags & this.valDumper.objectDumper.PHPDOC_OUTPUT,
+      staticVarOutput : abs.cfgFlags & this.valDumper.objectDumper.METHOD_STATIC_VAR_OUTPUT,
+    };
+    if (!cfg.output) {
+      return ''
+    }
+    if (!cfg.collect) {
+      return ''
+    }
+    return '<dt class="methods">' + this.getLabel(abs) + '</dt>' +
+      this.magicMethodInfo(abs, ['__call', '__callStatic']) +
+      this.dumpItems(abs, 'methods', cfg)
+  };
+
+  Methods.prototype.dumpInner = function (name, info, cfg) {
+    return this.dumpModifiers(info) +
+      this.dumpName(name, info, cfg) +
+      this.dumpParams(info, cfg) +
+      this.dumpReturn(info, cfg) +
+      this.dumpStaticVars(info, cfg) +
+      (name === '__toString'
+        ? '<h3>return value</h3>' +
+            '<ul class="list-unstyled"><li>' +
+            this.valDumper.dump(info.returnValue, {
+              attribs: {
+                class : 'return-value'
+              }
+            }) +
+            '</li></ul>'
+        : ''
+      )
+  };
+
+  Methods.prototype.dumpModifiers = function (info) {
+    var html = '';
+    var vis = typeof info.visibility === 'object'
+      ? info.visibility
+      : [info.visibility];
+    var modifiers = JSON.parse(JSON.stringify(vis));
+    if (info.isFinal) {
+      modifiers.push('final');
+    }
+    if (info.isStatic) {
+      modifiers.push('static');
+    }
+    $$1.each(modifiers, function (i, modifier) {
+      html += '<span class="t_modifier_' + modifier + '">' + modifier + '</span> ';
+    });
+    return html
+  };
+
+  Methods.prototype.dumpName = function (name, info, cfg) {
+    var titleParts = [
+      info.phpDoc.summary || '',
+      cfg.methodDescOutput
+        ? info.phpDoc.desc || ''
+        : '',
+    ];
+    var title = titleParts.join("\n\n").trim();
+    return ' <span class="t_identifier"' +
+      (cfg.phpDocOutput && title !== ''
+        ? ' title="' + title.escapeHtml() + '"'
+        : ''
+      ) +
+      '>' + name + '</span>'
+  };
+
+  Methods.prototype.dumpParams = function (info, cfg) {
+    var self = this;
+    var params = [];
+    $$1.each(info.params, function (i, info) {
+      var $param = $$1('<span />', {
+        class: 'parameter'
+      });
+      info = $$1.extend({
+        desc: null,
+        defaultValue: self.valDumper.UNDEFINED
+      }, info);
+      if (info.isPromoted) {
+        $param.addClass('isPromoted');
+      }
+      if (cfg.paramAttributeOutput && info.attributes && info.attributes.length) {
+        $param.attr('data-attributes', JSON.stringify(info.attributes));
+      }
+      if (typeof info.type === 'string') {
+        $param.append(self.valDumper.objectDumper.markupType(info.type) + ' ');
+      }
+      self.dumpParamName(info, cfg, $param);
+      self.dumpParamDefault(info.defaultValue, $param);
+      params.push($param[0].outerHTML);
+    });
+    return '<span class="t_punct">(</span>' +
+      params.join('<span class="t_punct">,</span> ') +
+      '<span class="t_punct">)</span>'
+  };
+
+  Methods.prototype.dumpParamName = function (info, cfg, $param) {
+    $param.append('<span class="t_parameter-name"' +
+      (cfg.phpDocOutput && info.desc !== null
+        ? ' title="' + info.desc.escapeHtml().replace('\n', ' ') + '"'
+        : ''
+      ) + '>' + info.name.escapeHtml() + '</span>');
+  };
+
+  Methods.prototype.dumpParamDefault = function (defaultValue, $param) {
+    if (defaultValue === this.valDumper.UNDEFINED) {
+      return
+    }
+    if (typeof defaultValue === 'string') {
+      defaultValue = defaultValue.replace('\n', ' ');
+    }
+    $param.append(' <span class="t_operator">=</span> ' +
+      $$1(this.valDumper.dump(defaultValue))
+        .addClass('t_parameter-default')[0].outerHTML
+    );
+  };
+
+  Methods.prototype.dumpReturn = function (info, cfg) {
+    var returnType = info.return && info.return.type;
+    if (!returnType) {
+      return ''
+    }
+    return '<span class="t_punct t_colon">:</span> ' +
+      this.valDumper.objectDumper.markupType(returnType, {
+        title: cfg.phpDocOutput && info.return.desc !== null
+          ? info.return.desc
+          : ''
+      })
+  };
+
+  Methods.prototype.dumpStaticVars = function (info, cfg) {
+    var self = this;
+    var html = '';
+    if (!cfg.staticVarOutput || typeof info.staticVars === 'undefined' || info.staticVars.length < 1) {
+        return ''
+    }
+    html = '<h3>static variables</h3>';
+    html += '<ul class="list-unstyled">';
+    $$1.each(info.staticVars, function (name, value) {
+      html += '<li>' +
+        self.valDumper.dump(name, {
+          addQuotes : false,
+          attribs : {
+            class : 't_identifier'
+          }
+        }) +
+        '<span class="t_operator">=</span> ' + self.valDumper.dump(value) +
+        '</li>';
+    });
+    html += '</ul>';
+    return html
+  };
+
+  Methods.prototype.getLabel = function (abs) {
+    var label = Object.keys(abs.methods).length
+      ? 'methods'
+      : 'no methods';
+    if (!(abs.cfgFlags & this.valDumper.objectDumper.METHOD_COLLECT)) {
+        label = 'methods <i>not collected</i>';
+    }
+    return label
+  };
+
+  function versionCompare (v1, v2) {
+    var v1parts = v1.split('.');
+    var v2parts = v2.split('.');
+
+    function isValidPart(x) {
+      return (/^\d+$/).test(x)
+    }
+
+    if (!v1parts.every(isValidPart) || !v2parts.every(isValidPart)) {
+      return NaN
+    }
+
+    {
+      while (v1parts.length < v2parts.length) {
+        v1parts.push('0');
+      }
+      while (v2parts.length < v1parts.length) {
+        v2parts.push('0');
+      }
+    }
+
+    {
+      v1parts = v1parts.map(Number);
+      v2parts = v2parts.map(Number);
+    }
+
+    for (var i = 0; i < v1parts.length; ++i) {
+      if (v2parts.length === i) {
+        return 1
+      }
+      if (v1parts[i] === v2parts[i]) {
+        continue
+      } else if (v1parts[i] > v2parts[i]) {
+        return 1
+      } else {
+        return -1
+      }
+    }
+
+    if (v1parts.length != v2parts.length) {
+      return -1
+    }
+
+    return 0
+  }
+
+  function Properties (valDumper) {
+    this.valDumper = valDumper;
+  }
+  var name$3;
+  for (name$3 in sectionPrototype) {
+    Properties.prototype[name$3] = sectionPrototype[name$3];
+  }
+
+  Properties.prototype.dump = function (abs) {
+    var cfg = {
+      attributeOutput : abs.cfgFlags & this.valDumper.objectDumper.PROP_ATTRIBUTE_OUTPUT,
+      isDynamicSupport : versionCompare(abs.debugVersion, '3.1') >= 0
+    };
+    var label = Object.keys(abs.properties).length
+      ? 'properties'
+      : 'no properties';
+    if (abs.viaDebugInfo) {
+      label += ' <span class="text-muted">(via __debugInfo)</span>';
+    }
+    return '<dt class="properties">' + label + '</dt>' +
+      this.magicMethodInfo(abs, ['__get', '__set']) +
+      this.dumpItems(abs, 'properties', cfg)
+  };
+
+  Properties.prototype.addAttribs = function ($element, info, cfg) {
+    var classes = {
+      'debug-value': info.valueFrom === 'debug',
+      'debuginfo-excluded': info.debugInfoExcluded,
+      'debuginfo-value': info.valueFrom === 'debugInfo',
+      forceShow: info.forceShow,
+      isDynamic: info.declaredLast === null &&
+        info.valueFrom === 'value' &&
+        cfg.objClassName !== 'stdClass' &&
+        cfg.isDynamicSupport,
+      isPromoted: info.isPromoted,
+      isReadOnly: info.isReadOnly,
+      isStatic: info.isStatic,
+      'private-ancestor': info.isPrivateAncestor,
+      property: true
+    };
+    $element.addClass(info.visibility).removeClass('debug');
+    $$1.each(classes, function (classname, useClass) {
+      if (useClass) {
+        $element.addClass(classname);
+      }
+    });
+    sectionPrototype.addAttribs($element, info, cfg);
+  };
+
+  Properties.prototype.dumpInner = function (name, info, cfg) {
+    name = name.replace('debug.', '');
+    return this.dumpModifiers(info) +
+      (info.type
+        ? ' <span class="t_type">' + info.type + '</span>'
+        : ''
+      ) +
+      ' ' + this.valDumper.dump(name, {
+        addQuotes: /[\s\r\n]/.test(name) || name === '',
+        attribs: {
+          class: 't_identifier',
+          title: cfg.phpDocOutput && info.desc
+            ? info.desc
+            : null
+        }
+      }) +
+      (info.value !== this.valDumper.UNDEFINED
+        ? ' <span class="t_operator">=</span> ' +
+          this.valDumper.dump(info.value)
+        : ''
+      )
+  };
+
+  Properties.prototype.dumpModifiers = function (info) {
+    var html = '';
+    var vis = typeof info.visibility === 'object'
+      ? info.visibility
+      : [info.visibility];
+    var modifiers = JSON.parse(JSON.stringify(vis));
+    if (info.isReadOnly) {
+      modifiers.push('readonly');
+    }
+    if (info.isStatic) {
+      modifiers.push('static');
+    }
+    $$1.each(modifiers, function (i, modifier) {
+      html += '<span class="t_modifier_' + modifier + '">' + modifier + '</span> ';
+    });
+    return html
+  };
+
   function DumpObject (dump) {
     this.dumper = dump;
+    this.cases = new Cases(this.dumper);
+    this.constants = new Constants(this.dumper);
+    this.methods = new Methods(this.dumper);
+    this.properties = new Properties(this.dumper);
+
+    this.sectionDumpers = {
+      attributes : this.dumpAttributes.bind(this),
+      cases : this.cases.dump.bind(this.cases),
+      constants : this.constants.dump.bind(this.constants),
+      extends : this.dumpExtends.bind(this),
+      implements : this.dumpImplements.bind(this),
+      methods : this.methods.dump.bind(this.methods),
+      phpDoc : this.dumpPhpDoc.bind(this),
+      properties : this.properties.dump.bind(this.properties),
+    };
 
     // GENERAL
     this.PHPDOC_OUTPUT = 2;
@@ -2851,7 +3431,19 @@
     this.METHOD_OUTPUT = 65536;
     this.METHOD_ATTRIBUTE_OUTPUT = 262144;
     this.METHOD_DESC_OUTPUT = 524288;
+    this.METHOD_STATIC_VAR_OUTPUT = 16777216; // 2^24
     this.PARAM_ATTRIBUTE_OUTPUT = 2097152;
+
+    this.phpDocTypes = [
+      'array','bool','callable','float','int','iterable','null','object','string',
+      '$this','self','static',
+      'array-key','double','false','mixed','non-empty-array','resource','scalar','true','void',
+      'key-of', 'value-of',
+      'callable-string', 'class-string', 'literal-string', 'numeric-string', 'non-empty-string',
+      'negative-int', 'positive-int',
+      'int-mask', 'int-mask-of',
+    ];
+
   }
 
   function sort(obj, sortBy) {
@@ -2861,28 +3453,41 @@
     var objNew = {};
     var sortInfo = [];
     var sortVisOrder = ['public', 'magic', 'magic-read', 'magic-write', 'protected', 'private', 'debug'];
+    var vis;
     for (name in obj) {
+      if (name === '__construct') {
+        sortInfo.push({
+          name: name,
+          nameSort: "\x00",
+          visibility: 0,
+        });
+        continue
+      }
+      vis = Array.isArray(obj[name].visibility)
+        ? obj[name].visibility[0]
+        : obj[name].visibility;
       sortInfo.push({
         name: name,
-        visibility: obj[name].visibility
+        nameSort: name,
+        vis: sortVisOrder.indexOf(vis),
       });
     }
+    sortBy = sortBy.split(/[,\s]+/);
     sortInfo.sort(function (itemA, itemB) {
       var ret = 0;
-      if (itemA.name === '__construct') {
-        return -1
-      } else if (itemB.name === '__construct') {
-        return 1
-      }
-      if (sortBy === 'visibility') {
-        if (sortVisOrder.indexOf(itemA.visibility) < sortVisOrder.indexOf(itemB.visibility)) {
-          ret = -1;
-        } else if (sortVisOrder.indexOf(itemA.visibility) > sortVisOrder.indexOf(itemB.visibility)) {
-          ret = 1;
+      for (i = 0, count = sortBy.length; i < count; i++) {
+        if (['visibility', 'vis'].indexOf(sortBy[i]) > -1) {
+          if (itemA.vis < itemB.vis) {
+            ret = -1;
+          } else if (itemA.vis > itemB.vis) {
+            ret = 1;
+          }
+        } else if (sortBy[i] === 'name') {
+          ret = itemA.nameSort.localeCompare(itemB.nameSort);
         }
-      }
-      if (ret === 0 && ['name', 'visibility'].indexOf(sortBy) > -1) {
-        ret = itemA.name.localeCompare(itemB.name);
+        if (ret !== 0) {
+          break
+        }
       }
       return ret
     });
@@ -2895,36 +3500,25 @@
 
   DumpObject.prototype.dump = function (abs) {
     // console.info('dumpObject', abs)
-    var classDefinition;
     var html = '';
-    var i = 0;
-    var count;
-    var self = this;
     var strClassname = '';
-    var noInherit = ['attributes', 'cases', 'constants', 'methods', 'properties'];
+    var dumpOpts = this.dumper.getDumpOpts();
     try {
-      classDefinition = this.dumper.getClassDefinition(abs.classDefinition);
-      if (abs.isRecursion || abs.isExcluded) {
-        for (i = 0; i < noInherit.length; i++) {
-          classDefinition[noInherit[i]] = {};
+      abs.debugVersion = this.dumper.getRequestInfo().$container.data('meta').debugVersion;
+      if (typeof abs.sort === 'undefined') {
+        abs.sort = 'vis name';
+      } else if (abs.sort === 'visibility') {
+        if (versionCompare(abs.debugVersion, '3.2') === -1) {
+          abs.sort = 'vis name';
         }
-      }
-      abs = JSON.parse(JSON.stringify(mergeWith_1({}, classDefinition, abs, function (objValue, srcValue) {
-        if (objValue === null || srcValue === null) {
-          return
-        }
-        if (typeof objValue === 'object' && Object.keys(objValue).length === 0 && typeof srcValue === 'object') {
-          return srcValue
-        }
-      })));
-      for (i = 0, count = noInherit.length; i < count; i++) {
-        if (Object.keys(abs[noInherit[i]]).length < 2) {
-          continue
-        }
-        abs[noInherit[i]] = sort(abs[noInherit[i]], abs.sort);
       }
       if (typeof abs.cfgFlags === 'undefined') {
-        abs.cfgFlags = 0x3FFFFF; // 21 bits
+        abs.cfgFlags = 0x1FFFFFF & ~this.BRIEF;
+      }
+      abs = this.mergeInherited(abs);
+      if (typeof abs.implementsList === 'undefined') {
+        // PhpDebugConsole < 3.1
+        abs.implementsList = abs.implements;
       }
       strClassname = this.dumpClassname(abs);
       if (abs.isRecursion) {
@@ -2939,114 +3533,21 @@
         return strClassname +
           ' <span class="excluded">(not inspected)</span>'
       }
-      if (abs.cfgFlags & this.BRIEF && abs.implements.indexOf('UnitEnum') > -1) {
+      if (abs.cfgFlags & this.BRIEF && abs.implementsList.indexOf('UnitEnum') > -1) {
         return strClassname
+      }
+      if (abs.sort.indexOf('inheritance') === 0) {
+        dumpOpts.attribs.class.push('groupByInheritance');
       }
       html = this.dumpToString(abs) +
         strClassname +
         '<dl class="object-inner">' +
-          this.dumpModifiers(abs) +
-          (abs.extends && abs.extends.length
-            ? '<dt>extends</dt>' +
-              abs.extends.map(function (classname) {
-                return '<dd class="extends">' + self.dumper.markupIdentifier(classname) + '</dd>'
-              }).join('')
-            : ''
-          ) +
-          (abs.implements && abs.implements.length
-            ? '<dt>implements</dt>' +
-              '<dd class="interface">' + abs.implements.join('</dd><dd class="interface">') + '</dd>'
-            : ''
-          ) +
-          this.dumpAttributes(abs) +
-          this.dumpConstants(abs) +
-          this.dumpCases(abs) +
-          this.dumpProperties(abs, { viaDebugInfo: abs.viaDebugInfo }) +
-          this.dumpMethods(abs) +
-          this.dumpPhpDoc(abs) +
+          this.dumpInner(abs) +
         '</dl>';
     } catch (e) {
       console.warn('e', e);
     }
     return html
-  };
-
-  DumpObject.prototype.dumpModifiers = function  (abs) {
-    var modifiers = [];
-    var html = '<dt class="modifiers">modifiers</dt>';
-    if (abs.isFinal) {
-      modifiers.push('final');
-    }
-    if (abs.isReadOnly) {
-      modifiers.push('readonly');
-    }
-    if (modifiers.length === 0) {
-      return ''
-    }
-    $.each(modifiers, function (i, modifier) {
-      html += '<dd class="t_modifier_' + modifier + '">' + modifier + '</dt>';
-    });
-    return html
-  };
-
-  DumpObject.prototype.dumpClassname = function (abs) {
-    var phpDoc = abs.phpDoc || {};
-    var strClassname = abs.className;
-    var title = ((phpDoc.summary || '') + '\n\n' + (phpDoc.desc || '')).trim();
-    var phpDocOut = abs.cfgFlags & this.PHPDOC_OUTPUT;
-    var $span;
-    if (abs.implements.indexOf('UnitEnum') > -1) {
-      // strClassname += '::' + abs.properties.name.value
-      $span = $('<span />', {
-        class: 't_const',
-        html: this.dumper.markupIdentifier(strClassname + '::' + abs.properties.name.value)
-      });
-      if (title && title.length) {
-        $span.attr('title', title);
-      }
-      return $span[0].outerHTML
-    }
-    return this.dumper.markupIdentifier(strClassname, {
-      title: phpDocOut && title.length ? title : null
-    })
-  };
-
-  DumpObject.prototype.dumpToString = function (abs) {
-    // var objToString = ''
-    var val = '';
-    var len;
-    var title;
-    var valAppend = '';
-    var $toStringDump;
-    if (typeof abs.stringified !== 'undefined' && abs.stringified !== null) {
-      val = abs.stringified;
-    } else if (typeof abs.methods.__toString !== 'undefined' && abs.methods.__toString.returnValue) {
-      val = abs.methods.__toString.returnValue;
-    }
-    if (typeof val === 'object') {
-      len = val.strlen;
-      val = val.value;
-    } else {
-      len = val.length;
-    }
-    if (len === 0) {
-      return ''
-    }
-    if (len > 100) {
-      val = val.substring(0, 100);
-      valAppend = '&hellip; <i>(' + (len - 100) + ' more bytes)</i>';
-    }
-    $toStringDump = $(this.dumper.dump(val));
-    title = (!abs.stringified ? '__toString() : ' : '') + $toStringDump.prop('title');
-    if (title === '__toString() : ') {
-      title = '__toString()';
-    }
-    return '<span class="' + $toStringDump.prop('class') + ' t_stringified" ' +
-      (title.length ? 'title="' + title + '"' : '') +
-      '>' +
-      $toStringDump.html() +
-      valAppend +
-      '</span> '
   };
 
   DumpObject.prototype.dumpAttributes = function (abs) {
@@ -3059,12 +3560,12 @@
     if ((abs.cfgFlags & this.OBJ_ATTRIBUTE_OUTPUT) !== this.OBJ_ATTRIBUTE_OUTPUT) {
       return ''
     }
-    $.each(abs.attributes, function (key, attribute) {
+    $$1.each(abs.attributes, function (key, attribute) {
       args = [];
       html += '<dd class="attribute">';
       html += self.dumper.markupIdentifier(attribute.name);
       if (Object.keys(attribute.arguments).length) {
-        $.each(attribute.arguments, function (i, val) {
+        $$1.each(attribute.arguments, function (i, val) {
           args.push(
             (i.match(/^\d+$/) === null
               ? '<span class="t_parameter-name">' + i + '</span><span class="t_punct">:</span>'
@@ -3083,116 +3584,77 @@
       : ''
   };
 
-  DumpObject.prototype.dumpCases = function (abs) {
-    var html = '';
-    var self = this;
-    var $dd;
-    var attributeOut = abs.cfgFlags & this.CASE_ATTRIBUTE_OUTPUT;
-    var caseCollect = abs.cfgFlags & this.CASE_COLLECT;
-    var caseOut = abs.cfgFlags & this.CASE_OUTPUT;
+  DumpObject.prototype.dumpClassname = function (abs) {
+    var phpDoc = abs.phpDoc || {};
+    var strClassname = abs.className;
+    var title = ((phpDoc.summary || '') + '\n\n' + (phpDoc.desc || '')).trim();
     var phpDocOut = abs.cfgFlags & this.PHPDOC_OUTPUT;
-    if (abs.implements.indexOf('UnitEnum') < 0) {
-      return ''
-    }
-    if (!caseOut) {
-      return ''
-    }
-    if (!caseCollect) {
-      return '<dt class="cases">cases <i>not collected</i></dt>'
-    }
-    if (abs.cases.length === 0) {
-      return '<dt class="cases"><i>no cases!</i></dt>'
-    }
-    html = '<dt class="cases">cases</dt>';
-    $.each(abs.cases, function (key, info) {
-      var title = phpDocOut
-        ? info.desc
-        : null;
-      $dd = $('<dd class="case">' +
-        '<span class="t_identifier">' + key + '</span>' +
-        (info.value !== null
-          ? ' <span class="t_operator">=</span> ' +
-            self.dumper.dump(info.value)
-          : ''
-        ) +
-        '</dd>'
-      );
+    var $span;
+    if (abs.implementsList.indexOf('UnitEnum') > -1) {
+      // strClassname += '::' + abs.properties.name.value
+      $span = $$1('<span />', {
+        class: 't_const',
+        html: this.dumper.markupIdentifier(strClassname + '::' + abs.properties.name.value)
+      });
       if (title && title.length) {
-        $dd.find('.t_identifier').attr('title', title);
+        $span.attr('title', title);
       }
-      if (attributeOut && info.attributes && info.attributes.length) {
-        $dd.attr('data-attributes', JSON.stringify(info.attributes));
-      }
-      html += $dd[0].outerHTML;
+      return $span[0].outerHTML
+    }
+    return this.dumper.markupIdentifier(strClassname, {
+      title: phpDocOut && title.length ? title : null
+    })
+  };
+
+  DumpObject.prototype.dumpExtends = function (abs) {
+    var self = this;
+    return abs.extends && abs.extends.length
+      ? '<dt>extends</dt>' +
+          abs.extends.map(function (classname) {
+            return '<dd class="extends">' + self.dumper.markupIdentifier(classname) + '</dd>'
+          }).join('')
+      : ''
+  };
+
+  DumpObject.prototype.dumpImplements = function (abs) {
+    if (!abs.implementsList.length) {
+      return ''
+    }
+    if (typeof abs.interfacesCollapse === 'undefined') {
+      // PhpDebugConsole < 3.2
+      abs.interfacesCollapse = ['ArrayAccess', 'BackedEnum', 'Countable', 'Iterator', 'IteratorAggregate', 'UnitEnum'];
+    }
+    return '<dt>implements</dt>' +
+      '<dd>' + this.buildImplementsTree(abs.implements, abs.interfacesCollapse) + '</dd>'
+  };
+
+  DumpObject.prototype.dumpInner = function  (abs) {
+    var self = this;
+    var html = this.dumpModifiers(abs);
+    if (typeof abs.sectionOrder === 'undefined') {
+      // PhpDebugConsole < 3.2
+      abs.sectionOrder = ['attributes', 'extends', 'implements', 'constants', 'cases', 'properties', 'methods', 'phpDoc'];
+    }
+    abs.sectionOrder.forEach(function (sectionName) {
+      html += self.sectionDumpers[sectionName](abs);
     });
     return html
   };
 
-  DumpObject.prototype.dumpConstants = function (abs) {
-    var html = '';
-    var self = this;
-    var constCollect = abs.cfgFlags & this.CONST_COLLECT;
-    var attributeOut = abs.cfgFlags & this.CONST_ATTRIBUTE_OUTPUT;
-    var constOut = abs.cfgFlags & this.CONST_OUTPUT;
-    var phpDocOut = abs.cfgFlags & this.PHPDOC_OUTPUT;
-    var name;
-    var info;
-    if (!constOut) {
-      return ''
-    }
-    if (!constCollect) {
-      return '<dt class="constants">constants <i>not collected</i></dt>'
-    }
-    if (!abs.constants) {
-      return ''
-    }
-    html = '<dt class="constants">constants</dt>';
-    for (name in abs.constants) {
-      info = abs.constants[name];
-      var $dd = $('<dd class="constant"></dd>').addClass(info.visibility);
-      var vis = typeof info.visibility === 'object'
-        ? info.visibility
-        : [info.visibility];
-      var isInherited = info.declaredLast && info.declaredLast !== abs.className;
-      var isPrivateAncestor = $.inArray('private', vis) >= 0 && isInherited;
-      var classes = {
-        inherited: isInherited && !isPrivateAncestor,
-        isFinal: info.isFinal,
-        'private-ancestor': isPrivateAncestor
-      };
-      $dd.html(
-        self.dumpConstantModifiers(info) +
-        '<span class="t_identifier"' + (phpDocOut && info.desc ? ' title="' + info.desc.escapeHtml() + '"' : '') + '>' + name + '</span> ' +
-        '<span class="t_operator">=</span> ' +
-        self.dumper.dump(info.value)
-      );
-      $.each(classes, function (classname, useClass) {
-        if (useClass) {
-          $dd.addClass(classname);
-        }
-      });
-      if (attributeOut && info.attributes && info.attributes.length) {
-        $dd.attr('data-attributes', JSON.stringify(info.attributes));
-      }
-      if (isInherited || isPrivateAncestor) {
-        $dd.attr('data-inherited-from', info.declaredLast);
-      }
-      html += $dd[0].outerHTML;
-    }
-    return html
-  };
-
-  DumpObject.prototype.dumpConstantModifiers = function (info) {
-    var html = '';
-    var vis = typeof info.visibility === 'object'
-      ? info.visibility
-      : [info.visibility];
-    var modifiers = JSON.parse(JSON.stringify(vis));
-    if (info.isFinal) {
+  DumpObject.prototype.dumpModifiers = function  (abs) {
+    var modifiers = [];
+    var html = '<dt class="modifiers">modifiers</dt>';
+    if (abs.isFinal) {
       modifiers.push('final');
     }
-    $.each(modifiers, function (i, modifier) {
-      html += '<span class="t_modifier_' + modifier + '">' + modifier + '</span> ';
+    if (abs.isReadOnly) {
+      modifiers.push('readonly');
+    }
+    if (modifiers.length === 0) {
+      return ''
+    }
+    $$1.each(modifiers, function (i, modifier) {
+      html += '<dd class="t_modifier_' + modifier + '">' + modifier + '</dt>';
     });
     return html
   };
@@ -3250,267 +3712,157 @@
     return html
   };
 
-  DumpObject.prototype.dumpProperties = function (abs, meta) {
-    var html = '';
-    var label = Object.keys(abs.properties).length
-      ? 'properties'
-      : 'no properties';
-    var phpDocOut = abs.cfgFlags & this.PHPDOC_OUTPUT;
-    var attributeOut = abs.cfgFlags & this.PROP_ATTRIBUTE_OUTPUT;
-    var self = this;
-    var name;
-    var info;
-    if (meta.viaDebugInfo) {
-      label += ' <span class="text-muted">(via __debugInfo)</span>';
+  DumpObject.prototype.dumpToString = function (abs) {
+    // var objToString = ''
+    var val = '';
+    var len;
+    var title;
+    var valAppend = '';
+    var $toStringDump;
+    if (typeof abs.stringified !== 'undefined' && abs.stringified !== null) {
+      val = abs.stringified;
+    } else if (typeof abs.methods.__toString !== 'undefined' && abs.methods.__toString.returnValue) {
+      val = abs.methods.__toString.returnValue;
     }
-    html = '<dt class="properties">' + label + '</dt>';
-    html += magicMethodInfo(abs, ['__get', '__set']);
-    for (name in abs.properties) {
-      info = abs.properties[name];
-      var $dd = $('<dd></dd>').addClass(info.visibility).removeClass('debug');
-      var vis = typeof info.visibility === 'object'
-        ? info.visibility
-        : [info.visibility];
-      var isInherited = info.declaredLast && info.declaredLast !== abs.className;
-      var isPrivateAncestor = $.inArray('private', vis) >= 0 && isInherited;
-      var classes = {
-        'debug-value': info.valueFrom === 'debug',
-        'debuginfo-excluded': info.debugInfoExcluded,
-        'debuginfo-value': info.valueFrom === 'debugInfo',
-        forceShow: info.forceShow,
-        inherited: isInherited && !isPrivateAncestor,
-        isDynamic: info.declaredLast === null &&
-          info.valueFrom === 'value' &&
-          abs.className !== 'stdClass',
-        isPromoted: info.isPromoted,
-        isReadOnly: info.isReadOnly,
-        isStatic: info.isStatic,
-        'private-ancestor': isPrivateAncestor,
-        property: true
-      };
-      name = name.replace('debug.', '');
-      $dd.html(
-        self.dumpPropertyModifiers(info) +
-        (info.type
-          ? ' <span class="t_type">' + info.type + '</span>'
-          : ''
-        ) +
-        ' ' + self.dumper.dump(name, {
-          addQuotes: /[\s\r\n]/.test(name) || name === '',
-          attribs: {
-            class: ['t_identifier'],
-            title: phpDocOut && info.desc
-              ? info.desc
-              : null
-          }
-        }) +
-        (info.value !== self.dumper.UNDEFINED
-          ? ' <span class="t_operator">=</span> ' +
-            self.dumper.dump(info.value)
-          : ''
-        )
-      );
-      $.each(classes, function (classname, useClass) {
-        if (useClass) {
-          $dd.addClass(classname);
-        }
-      });
-      if (attributeOut && info.attributes && info.attributes.length) {
-        $dd.attr('data-attributes', JSON.stringify(info.attributes));
-      }
-      if (isInherited || isPrivateAncestor) {
-        $dd.attr('data-inherited-from', info.declaredLast);
-      }
-      html += $dd[0].outerHTML;
+    if (typeof val === 'object') {
+      len = val.strlen;
+      val = val.value;
+    } else {
+      len = val.length;
     }
-    return html
-  };
-
-  DumpObject.prototype.dumpPropertyModifiers = function (info) {
-    var html = '';
-    var vis = typeof info.visibility === 'object'
-      ? info.visibility
-      : [info.visibility];
-    var modifiers = JSON.parse(JSON.stringify(vis));
-    if (info.isReadOnly) {
-      modifiers.push('readonly');
-    }
-    if (info.isStatic) {
-      modifiers.push('static');
-    }
-    $.each(modifiers, function (i, modifier) {
-      html += '<span class="t_modifier_' + modifier + '">' + modifier + '</span> ';
-    });
-    return html
-  };
-
-  DumpObject.prototype.dumpMethods = function (abs) {
-    var self = this;
-    var html = '';
-    var label = Object.keys(abs.methods).length
-      ? 'methods'
-      : 'no methods';
-    var methodCollect = abs.cfgFlags & this.METHOD_COLLECT;
-    var attributeOut = abs.cfgFlags & this.METHOD_ATTRIBUTE_OUTPUT;
-    var paramAttributeOut = abs.cfgFlags & this.PARAM_ATTRIBUTE_OUTPUT;
-    var methodOut = abs.cfgFlags & this.METHOD_OUTPUT;
-    var phpDocOut = abs.cfgFlags & this.PHPDOC_OUTPUT;
-    var name;
-    var info;
-    if (!methodOut) {
+    if (len === 0) {
       return ''
     }
-    if (!methodCollect) {
-      return '<dt class="methdos">methods not collected</dt>'
+    if (len > 100) {
+      val = val.substring(0, 100);
+      valAppend = '&hellip; <i>(' + (len - 100) + ' more bytes)</i>';
     }
-    html = '<dt class="methods">' + label + '</dt>';
-    html += magicMethodInfo(abs, ['__call', '__callStatic']);
-    for (name in abs.methods) {
-      info = abs.methods[name];
-      var $dd = $('<dd class="method"></dd>').addClass(info.visibility);
-      var isInherited = info.declaredLast && info.declaredLast !== abs.className;
-      var paramStr = self.dumpMethodParams(info.params, {
-        attributeOut: paramAttributeOut,
-        phpDocOut: phpDocOut
-      });
-      var classes = {
-        inherited: isInherited,
-        isDeprecated: info.isDeprecated,
-        isFinal: info.isFinal,
-        isStatic: info.isStatic
-      };
-      $.each(classes, function (classname, useClass) {
-        if (useClass) {
-          $dd.addClass(classname);
+    $toStringDump = $$1(this.dumper.dump(val));
+    title = (!abs.stringified ? '__toString() : ' : '') + $toStringDump.prop('title');
+    if (title === '__toString() : ') {
+      title = '__toString()';
+    }
+    return '<span class="' + $toStringDump.prop('class') + ' t_stringified" ' +
+      (title.length ? 'title="' + title + '"' : '') +
+      '>' +
+      $toStringDump.html() +
+      valAppend +
+      '</span> '
+  };
+
+  DumpObject.prototype.buildImplementsTree = function (implementsObj, interfacesCollapse) {
+    var html = '<ul class="list-unstyled">';
+    var iface;
+    var $span;
+    var k;
+    for (k in implementsObj) {
+        iface = typeof implementsObj[k] === 'string'
+          ? implementsObj[k]
+          : k;
+        $span = $$1('<span />', {
+          class: 'interface',
+          html: this.dumper.markupIdentifier(iface)
+        });
+        if (interfacesCollapse.indexOf(iface) > -1) {
+          $span.addClass('toggle-off');
         }
-      });
-      $dd.html(
-        self.dumpMethodModifiers(info) +
-        ' <span class="t_identifier"' +
-          (phpDocOut && info.phpDoc && info.phpDoc.summary !== null
-            ? ' title="' + info.phpDoc.summary.escapeHtml() + '"'
-            : ''
+        html += '<li>' +
+          $span[0].outerHTML +
+          (typeof implementsObj[k] === 'object'
+             ? this.buildImplementsTree(implementsObj[k], interfacesCollapse)
+             : ''
           ) +
-          '>' + name + '</span>' +
-        '<span class="t_punct">(</span>' + paramStr + '<span class="t_punct">)</span>' +
-        self.dumpMethodReturn(info, { phpDocOut: phpDocOut }) +
-        (name === '__toString'
-          ? '<br />' + self.dumper.dump(info.returnValue)
-          : ''
-        ) +
-        '</dd>'
-      );
-      if (attributeOut && info.attributes && info.attributes.length) {
-        $dd.attr('data-attributes', JSON.stringify(info.attributes));
-      }
-      if (info.implements && info.implements.length) {
-        $dd.attr('data-implements', info.implements);
-      }
-      if (isInherited) {
-        $dd.attr('data-inherited-from', info.declaredLast);
-      }
-      if (info.phpDoc && info.phpDoc.deprecated) {
-        $dd.attr('data-deprecated-desc', info.phpDoc.deprecated[0].desc);
-      }
-      html += $dd[0].outerHTML;
+          '</li>';
     }
+    html += '</ul>';
     return html
   };
 
-  DumpObject.prototype.dumpMethodModifiers = function (info) {
-    var html = '';
-    var vis = typeof info.visibility === 'object'
-      ? info.visibility
-      : [info.visibility];
-    var modifiers = JSON.parse(JSON.stringify(vis));
-    if (info.isFinal) {
-      modifiers.push('final');
-    }
-    if (info.isStatic) {
-      modifiers.push('static');
-    }
-    $.each(modifiers, function (i, modifier) {
-      html += '<span class="t_modifier_' + modifier + '">' + modifier + '</span> ';
-    });
-    return html
-  };
-
-  DumpObject.prototype.dumpMethodParams = function (params, opts) {
-    var $param;
-    var defaultValue;
+  DumpObject.prototype.markupType = function (type, attribs) {
     var self = this;
-    $.each(params, function (i, info) {
-      $param = $('<span />', {
-        class: 'parameter'
-      });
-      info = $.extend({
-        desc: null,
-        defaultValue: self.dumper.UNDEFINED
-      }, info);
-      if (info.isPromoted) {
-        $param.addClass('isPromoted');
-      }
-      if (opts.attributeOut && info.attributes && info.attributes.length) {
-        $param.attr('data-attributes', JSON.stringify(info.attributes));
-      }
-      if (typeof info.type === 'string') {
-        $param.append('<span class="t_type">' + info.type + '</span> ');
-      }
-      $param.append('<span class="t_parameter-name"' +
-        (opts.phpDocOut && info.desc !== null
-          ? ' title="' + info.desc.escapeHtml().replace('\n', ' ') + '"'
-          : ''
-        ) + '>' + info.name.escapeHtml() + '</span>');
-      if (info.defaultValue !== self.dumper.UNDEFINED) {
-        defaultValue = info.defaultValue;
-        if (typeof defaultValue === 'string') {
-          defaultValue = defaultValue.replace('\n', ' ');
-        }
-        $param.append(' <span class="t_operator">=</span> ' +
-          $(self.dumper.dump(defaultValue))
-            .addClass('t_parameter-default')[0].outerHTML
-        );
-      }
-      params[i] = $param[0].outerHTML;
+    type = type.replace(/(?:(\$this|[-\w\[\]'"\\]+:?)|([\(\)<>\{\},\|&]))/g, function (match, p1, p2) {
+      return p1
+        ? self.markupTypePart(p1)
+        : '<span class="t_punct">' + p2.escapeHtml() + '</span>'
     });
-    return params
-      ? params.join('<span class="t_punct">,</span> ')
-      : ''
-  };
-
-  DumpObject.prototype.dumpMethodReturn = function (info, opts) {
-    var returnType = info.return && info.return.type;
-    if (!returnType) {
-      return ''
+    if (typeof attribs === 'undefined') {
+      return type
     }
-    return '<span class="t_punct t_colon">:</span> ' +
-       ' <span class="t_type"' +
-      (opts.phpDocOut && info.return.desc !== null
-        ? ' title="' + info.return.desc.escapeHtml() + '"'
-        : ''
-      ) +
-      '>' + returnType + '</span>'
+    attribs = Object.fromEntries(
+      Object.entries(attribs).filter(function (entry) {
+        return typeof entry[1] === 'string' && entry[1].length > 0
+      })
+    );
+    if (Object.keys(attribs).length > 0) {
+      type = $$1('<span></span>').attr(attribs).html(type)[0].outerHTML;
+    }
+    return type
   };
 
-  function magicMethodInfo (abs, methods) {
+  DumpObject.prototype.markupTypePart = function (type) {
+    var arrayCount = 0;
+    var strlen = 0;
+    var matches = type.match(/(\[\])+$/);
+    if (matches) {
+      strlen = matches[0].length;
+      arrayCount = strlen / 2;
+      type = type.substr(0, 0 - strlen);
+    }
+    if (type.match(/^\d+$/)) {
+      return '<span class="t_type">' + type + '</span>'
+    }
+    if (type.substr(-1) === ':') {
+      // array "shape" key
+      type = type.replace(/^[:'"]+|[:'"]$/g, '');
+      return '<span class="t_string">' + type + '</span><span class="t_punct">:</span>'
+    }
+    if (type.match(/^['"]/)) {
+      type = type.replace(/^['"]+|['"]$/g, '');
+      return '<span class="t_string t_type">' + type + '</span>'
+    }
+    if (this.phpDocTypes.indexOf(type) < 0) {
+      type = this.dumper.markupIdentifier(type);
+    }
+    if (arrayCount > 0) {
+      type += '<span class="t_punct">' + '[]'.repeat(arrayCount) + '</span>';
+    }
+    return '<span class="t_type">' + type + '</span>'
+  };
+
+  DumpObject.prototype.mergeInherited = function (abs) {
+    var count;
     var i = 0;
-    var methodsHave = [];
-    var method;
-    for (i = 0; i < methods.length; i++) {
-      method = methods[i];
-      if (abs.methods[method]) {
-        methodsHave.push('<code>' + method + '</code>');
+    var inherited;
+    var noInherit = ['attributes', 'cases', 'constants', 'methods', 'properties'];
+    if (abs.classDefinition) {
+      // PhpDebugConsole < 3.2
+      abs.inheritsFrom = abs.classDefinition;
+    }
+    while (abs.inheritsFrom) {
+      inherited = this.dumper.getClassDefinition(abs.inheritsFrom);
+      if (abs.isRecursion || abs.isExcluded) {
+        for (i = 0, count = noInherit.length; i < count; i++) {
+          inherited[noInherit[i]] = {};
+        }
       }
+      abs = JSON.parse(JSON.stringify(mergeWith_1({}, inherited, abs, function (objValue, srcValue) {
+        if (objValue === null || srcValue === null) {
+          return
+        }
+        if (typeof srcValue === 'object' && typeof objValue === 'object' && Object.keys(objValue).length === 0) {
+          return srcValue
+        }
+      })));
+      abs.inheritsFrom = inherited.inheritsFrom;
     }
-    if (methodsHave.length < 1) {
-      return ''
+    for (i = 0, count = noInherit.length; i < count; i++) {
+      if (typeof abs[noInherit[i]] === 'undefined') {
+        abs[noInherit[i]] = {};
+      }
+      abs[noInherit[i]] = sort(abs[noInherit[i]], abs.sort);
     }
-    methods = methodsHave.join(' and ');
-    methods = methodsHave.length === 1
-      ? 'a ' + methods + ' method'
-      : methods + ' methods';
-    return '<dd class="magic info">This object has ' + methods + '</dd>'
-  }
+    return abs
+  };
 
   var base64Arraybuffer = createCommonjsModule(function (module, exports) {
   /*
@@ -3602,7 +3954,7 @@
     tabs = this.buildTabsAndPanes(abs);
     dumpOpts.tagName = null;
 
-    return $('<' + tagName + '>', {
+    return $$1('<' + tagName + '>', {
       class: 'string-encoded tabs-container',
       'data-type-more': abs.typeMore
     }).html('\n' +
@@ -3646,7 +3998,7 @@
     return tabValuesFinish({
       labelDecoded: 'decoded',
       labelRaw: 'raw',
-      valRaw: $('<span />', attribs).html(
+      valRaw: $$1('<span />', attribs).html(
         dumper.dump(abs.value, { tagName: null })
       )[0].outerHTML
     }, abs, dumper)
@@ -4242,7 +4594,7 @@
 
   DumpString.prototype.dump = function (val, abs) {
     var dumpOpts = this.dumper.getDumpOpts();
-    if ($.isNumeric(val)) {
+    if ($$1.isNumeric(val)) {
       this.dumper.checkTimestamp(val, abs);
     }
     if (!dumpOpts.addQuotes) {
@@ -4262,7 +4614,7 @@
     if (abs.typeMore === 'classname') {
       val = this.dumper.markupIdentifier(abs.value);
       parsed = this.dumper.parseTag(val);
-      $.extend(dumpOpts.attribs, parsed.attribs);
+      $$1.extend(dumpOpts.attribs, parsed.attribs);
       return parsed.innerhtml
     }
     val = this.helper(abs.value);
@@ -4277,7 +4629,7 @@
     }
     if (abs.prettifiedTag) {
       dumpOpts.postDump = function (val, dumpOpts) {
-        return $('<span />', {
+        return $$1('<span />', {
           class: 'value-container',
           'data-type': dumpOpts.type,
           html: '<span class="prettified">(prettified)</span> '
@@ -4332,11 +4684,11 @@
     dumpOpts.postDump = function (val, dumpOpts) {
       var lis = [];
       if (abs.contentType) {
-        lis.push('<li>mime type = <span class="t_string">' + abs.contentType + '</span></li>');
+        lis.push('<li>mime type = <span class="content-type t_string">' + abs.contentType + '</span></li>');
       }
       lis.push('<li>size = <span class="t_int">' + abs.strlen + '</span></li>');
       lis.push(abs.value.length
-        ? '<li class="t_string"><span class="binary">' + val + '</span></li>'
+        ? '<li class="t_string">' + val + '</li>'
         : '<li>Binary data not collected</li>');
       val = '<span class="t_keyword">string</span><span class="text-muted">(binary)</span>' +
         '<ul class="list-unstyled value-container" data-type="' + abs.type + '" data-type-more="binary">' +
@@ -4430,13 +4782,13 @@
     dumpOpts.postDump = function (dumped, opts) {
       if (opts.tagName === 'td') {
         opts.attribs.class = 't_' + opts.type;
-        return $('<td />', {
+        return $$1('<td />', {
           class: 'timestamp value-container',
           title: date,
-          html: $('<span />', opts.attribs).html(val)
+          html: $$1('<span />', opts.attribs).html(val)
         })
       }
-      return $('<span />', {
+      return $$1('<span />', {
         class: 'timestamp value-container',
         title: date,
         html: dumped
@@ -4446,7 +4798,7 @@
 
   Dump.prototype.dump = function (val, opts) {
     var $wrap;
-    var dumpOpts = $.extend({
+    var dumpOpts = $$1.extend({
       addQuotes: true,
       attribs: {
         class: []
@@ -4467,6 +4819,9 @@
       dumpOpts.type = type[0];
       dumpOpts.typeMore = type[1];
     }
+    if (typeof dumpOpts.attribs.class === 'string') {
+      dumpOpts.attribs.class = [dumpOpts.attribs.class];
+    }
     dumpOptStack.push(dumpOpts);
     method = 'dump' + dumpOpts.type.ucfirst();
     val = dumpOpts.typeMore === 'abstraction'
@@ -4483,10 +4838,10 @@
     }
     if (tagName) {
       dumpOpts.attribs.class.push('t_' + dumpOpts.type);
-      if (dumpOpts.typeMore) {
+      if (dumpOpts.typeMore && dumpOpts.typeMore !== 'abstraction') {
         dumpOpts.attribs['data-type-more'] = dumpOpts.typeMore.replace(/\0/g, '');
       }
-      $wrap = $('<' + tagName + ' />')
+      $wrap = $$1('<' + tagName + ' />')
         .addClass(dumpOpts.attribs.class.join(' '));
       delete dumpOpts.attribs.class;
       $wrap.attr(dumpOpts.attribs);
@@ -4528,7 +4883,7 @@
       }
     }
     if (abs.options) {
-      $.extend(dumpOpts, abs.options);
+      $$1.extend(dumpOpts, abs.options);
     }
     if (simpleTypes.indexOf(abs.type) > -1) {
       value = abs.value;
@@ -4553,7 +4908,7 @@
     var key;
     var keys = array.__debug_key_order__ || Object.keys(array);
     var length = keys.length;
-    var dumpOpts = $.extend({
+    var dumpOpts = $$1.extend({
       asFileTree: false,
       expand: null,
       isMaxDepth: false,
@@ -4603,21 +4958,23 @@
   };
 
   Dump.prototype.dumpArrayValue = function (key, val, withKey) {
-    var classes = ['t_key'];
-    if (/^\d+$/.test(key)) {
-      classes.push('t_int');
+    var $key = $$1('<span></span>');
+    if (withKey === false) {
+      return this.dump(val, { tagName: 'li' })
     }
-    return withKey
-      ? '\t<li>' +
-          this.dump(key, {
-            attribs : {
-              class: classes
-            }
-          }) +
-          '<span class="t_operator">=&gt;</span>' +
-          this.dump(val) +
-        '</li>\n'
-      : '\t' + this.dump(val, { tagName: 'li' }) + '\n'
+    $key
+      .addClass('t_key')
+      .html(this.dump(key, {
+        tagName : null
+      }));
+    if (/^\d+$/.test(key)) {
+      $key.addClass('t_int');
+    }
+    return '<li>' +
+      $key[0].outerHTML +
+        '<span class="t_operator">=&gt;</span>' +
+        this.dump(val) +
+      '</li>'
   };
 
   Dump.prototype.dumpBool = function (val) {
@@ -4719,7 +5076,7 @@
       if (val === this.UNDEFINED) {
         return ['undefined', null]
       }
-      if ($.isNumeric(val)) {
+      if ($$1.isNumeric(val)) {
         return ['string', 'numeric']
       }
       return ['string', null]
@@ -4783,7 +5140,7 @@
           classname;
       }
       attribs.class = 'classname';
-      classname = $('<' + tag + '/>', attribs).html(classname)[0].outerHTML;
+      classname = $$1('<' + tag + '/>', attribs).html(classname)[0].outerHTML;
     } else {
       operator = '';
     }
@@ -4796,13 +5153,13 @@
   };
 
   Dump.prototype.parseTag = function parseTag (html) {
-    var $node = $(html);
+    var $node = $$1(html);
     var parsed = {
       tag: $node[0].tagName.toLowerCase(),
       attribs: {},
       innerhtml: $node[0].innerHTML
     };
-    $.each($node[0].attributes, function () {
+    $$1.each($node[0].attributes, function () {
       if (this.specified) {
         parsed.attribs[this.name] = this.value;
       }
@@ -4821,7 +5178,7 @@
       var message;
       var level = logEntry.meta.level || logEntry.meta.class;
       var dismissible = logEntry.meta.dismissible;
-      var $node = $('<div class="m_alert"></div>')
+      var $node = $$1('<div class="m_alert"></div>')
         .addClass('alert-' + level)
         // .html(message)
         .attr('data-channel', logEntry.meta.channel); // using attr so can use [data-channel="xxx"] selector
@@ -4849,7 +5206,7 @@
         'data-line': logEntry.meta.line
       };
       var channelFilter = function () {
-        return $(this).data('channel') === logEntry.meta.channel
+        return $$1(this).data('channel') === logEntry.meta.channel
       };
       var flags = logEntry.meta.flags;
       var i;
@@ -4882,7 +5239,7 @@
       }
       if (flags.summary) {
         $tabPane.find('.debug-log-summary > .m_groupSummary').each(function () {
-          $remove = $(this)
+          $remove = $$1(this)
             .find('*')
             .not($curTreeSummary)
             .filter(channelFilter);
@@ -4914,7 +5271,7 @@
           info.$node = $tabPane.find('.debug-log');
         }
         info.$node = $curNodeLog;
-        return $('<li>', attribs).html(logEntry.args[0])
+        return $$1('<li>', attribs).html(logEntry.args[0])
       }
     },
     endOutput: function (logEntry, info) {
@@ -4937,7 +5294,7 @@
       var $tabPane = info.$tabPane;
       var $node = $tabPane.find('.alert.error-summary');
       if (!$node.length) {
-        $node = $('<div class="alert alert-error error-summary">' +
+        $node = $$1('<div class="alert alert-error error-summary">' +
           '<h3><i class="fa fa-lg fa-times-circle"></i> Error(s) not consoled</h3>' +
           '<ul class="list-unstyled">' +
           '</ul>' +
@@ -4957,11 +5314,11 @@
       }
     },
     group: function (logEntry, info) {
-      var $group = $('<li>', {
+      var $group = $$1('<li>', {
         class: 'empty expanded m_group'
       });
       var $groupHeader = groupHeader(logEntry);
-      var $groupBody = $('<ul>', {
+      var $groupBody = $$1('<ul>', {
         class: 'group-body'
       });
       var nodes = info.$tabPane.data('nodes');
@@ -4993,21 +5350,21 @@
       var $tabPane = info.$tabPane;
       var nodes = $tabPane.data('nodes');
       $tabPane.find('.debug-log-summary .m_groupSummary').each(function () {
-        var priorityCur = $(this).data('priority');
+        var priorityCur = $$1(this).data('priority');
         if (priorityCur === priority) {
-          $node = $(this);
+          $node = $$1(this);
           return false // break
         } else if (priority > priorityCur) {
-          $node = $('<li>')
+          $node = $$1('<li>')
             .addClass('m_groupSummary')
             .data('priority', priority)
             .html('<ul class="group-body"></ul>');
-          $(this).before($node);
+          $$1(this).before($node);
           return false // break
         }
       });
       if (!$node) {
-        $node = $('<li>')
+        $node = $$1('<li>')
           .addClass('m_groupSummary')
           .data('priority', priority)
           .html('<ul class="group-body"></ul>');
@@ -5041,7 +5398,7 @@
       } else if ($group.hasClass('ungroup')) {
         var $children = $group.find('> ul.group-body > li');
         var $groupLabel = $group.find('> .group-header > .group-label');
-        var $li = $('<li></li>').data($group.data());
+        var $li = $$1('<li></li>').data($group.data());
         if ($children.length === 0) {
           $group.replaceWith(
             $li.html($groupLabel.html())
@@ -5073,7 +5430,10 @@
       var classDefinition;
       if (isInit) {
         info.$container.data('classDefinitions', {});
-        info.$container.data('meta', metaVals);
+        info.$container.data('meta', $$1.extend({
+          debugVersion: meta.debugVersion,
+          requestId: meta.requestId,
+        }, metaVals));
       }
       if (meta.channelNameRoot) {
         info.$container.find('.debug').data('channelNameRoot', meta.channelNameRoot);
@@ -5092,6 +5452,7 @@
       if (metaVals.classDefinitions) {
         for (k in metaVals.classDefinitions) {
           classDefinition = metaVals.classDefinitions[k];
+          classDefinition.implementsList = buildImplementsList(classDefinition.implements);
           if (k.substr(0, 6) === '_b64_:') {
             k = atob(k.substr(6));
           }
@@ -5117,7 +5478,7 @@
           ? tableAddContextRow
           : null
       );
-      return $('<li>', { class: 'm_' + logEntry.method }).append($table)
+      return $$1('<li>', { class: 'm_' + logEntry.method }).append($table)
     },
     trace: function (logEntry, info) {
       return this.table(logEntry, info)
@@ -5131,7 +5492,7 @@
       var method = logEntry.method;
       var meta = logEntry.meta;
       if (meta.file && meta.channel !== info.channelNameRoot + '.phpError') {
-        attribs = $.extend({
+        attribs = $$1.extend({
           'data-file': meta.file,
           'data-line': meta.line
         }, attribs);
@@ -5173,7 +5534,7 @@
       $node.attr(attribs);
       if (meta.trace && meta.trace.length > 1) {
         $node.append(
-          $('<ul>', { class: 'list-unstyled no-indent' }).append(
+          $$1('<ul>', { class: 'list-unstyled no-indent' }).append(
             methods.trace({
               method: 'trace',
               args: [meta.trace],
@@ -5195,6 +5556,22 @@
     }
   };
 
+  function buildImplementsList(obj) {
+    var list = [];
+    var key;
+    var val;
+    for (key in obj) {
+      val = obj[key];
+      if (typeof val === 'string') {
+        list.push(val);
+        continue
+      }
+      list.push(key);
+      list = list.concat(buildImplementsList(val));
+    }
+    return list
+  }
+
   function buildTitle (metaVals) {
     var title = '';
     if (metaVals.HTTPS === 'on') {
@@ -5215,12 +5592,12 @@
   function buildContext (context, lineNumber) {
     var keys = Object.keys(context || {}); // .map(function(val){return parseInt(val)}),
     var start = Math.min.apply(null, keys);
-    return $('<pre>', {
+    return $$1('<pre>', {
       class: 'highlight line-numbers',
       'data-line': lineNumber,
       'data-start': start
     }).append(
-      $('<code>', {
+      $$1('<code>', {
         class: 'language-php'
       }).text(Object.values(context).join(''))
     )
@@ -5239,13 +5616,13 @@
     }
     return [
       $tr,
-      $('<tr>', {
+      $$1('<tr>', {
         class: 'context',
         style: i === 0
           ? 'display:table-row;'
           : null
       }).append(
-        $('<td>', {
+        $$1('<td>', {
           colspan: 4
         }).append(
           [
@@ -5265,7 +5642,7 @@
     var glueAfterFirst = true;
     var args = logEntry.args;
     var numArgs = args.length;
-    var meta = $.extend({
+    var meta = $$1.extend({
       sanitize: true,
       sanitizeFirst: null
     }, logEntry.meta);
@@ -5278,7 +5655,7 @@
       if (args[0].match(/[=:]\s*$/)) {
         // first arg ends with '=' or ':'
         glueAfterFirst = false;
-        args[0] = $.trim(args[0]) + ' ';
+        args[0] = $$1.trim(args[0]) + ' ';
       } else if (numArgs === 2) {
         glue = ' = ';
       }
@@ -5300,14 +5677,14 @@
       });
     }
     return glueAfterFirst
-      ? $('<li>').html(args.join(glue))
-      : $('<li>').html(args[0] + ' ' + args.slice(1).join(glue))
+      ? $$1('<li>').html(args.join(glue))
+      : $$1('<li>').html(args[0] + ' ' + args.slice(1).join(glue))
   }
 
   function getTab (info) {
     var classname = 'debug-tab-' + info.channelNameTop.toLowerCase().replace(/\W+/g, '-');
     return classname === 'debug-tab-general'
-      ? $()
+      ? $$1()
       : info.$container.find('.debug-menu-bar .nav-link[data-toggle=tab][data-target=".' + classname + '"]')
   }
 
@@ -5345,7 +5722,7 @@
         argStr;
       argStr = argStr.replace(/:<\/span> $/, '</span>');
     }
-    $header = $('<div class="group-header">' +
+    $header = $$1('<div class="group-header">' +
       argStr +
       '</div>');
     if (typeof logEntry.meta.boldLabel === 'undefined' || logEntry.meta.boldLabel) {
@@ -5507,15 +5884,15 @@
     var i;
     if (logEntry.meta.format === 'html') {
       if (typeof logEntry.args === 'object') {
-        $node = $('<li />', { class: 'm_' + method });
+        $node = $$1('<li />', { class: 'm_' + method });
         for (i = 0; i < logEntry.args.length; i++) {
           $node.append(logEntry.args[i]);
         }
         return $node
       }
-      $node = $(logEntry.args);
+      $node = $$1(logEntry.args);
       if (!$node.is('.m_' + method)) {
-        $node = $('<li />', { class: 'm_' + method }).html(logEntry.args);
+        $node = $$1('<li />', { class: 'm_' + method }).html(logEntry.args);
       }
       return $node
     }
@@ -5526,7 +5903,7 @@
   }
 
   function getNodeInfo (meta) {
-    var $container = $('#' + meta.requestId);
+    var $container = $$1('#' + meta.requestId);
     var $debug;
     var $node;
     var $tabPane;
@@ -5551,7 +5928,7 @@
     } else {
       // create
       //   header and card are separate so we can sticky the header
-      $container = $('' +
+      $container = $$1('' +
         '<div class="card mb-3 sticky working" id="' + meta.requestId + '">' +
           '<div class="card-header" data-toggle="collapse" data-target="#' + meta.requestId + ' &gt; .collapse">' +
             '<i class="fa fa-chevron-right"></i>' +
@@ -5572,6 +5949,7 @@
                 '<div class="sidebar-trigger"></div>' +
                 '<div class="tab-body">' +
                   '<ul class="debug-log-summary group-body"></ul>' +
+                  '<hr />' +
                   '<ul class="debug-log group-body"></ul>' +
                 '</div>' +
               '</div>' +
@@ -5595,10 +5973,10 @@
       $tabPane.data('options', {
         sidebar: true
       });
-      $('#debug-cards').append($container);
+      $$1('#debug-cards').append($container);
       $container.trigger('added.debug.card');
     }
-    $.extend(info, {
+    $$1.extend(info, {
       $container: $container,
       $node: $node,
       $tabPane: $tabPane,
@@ -5654,9 +6032,9 @@
       channelsChecked.push(info.channelName);
     }
     $channels.find('input:checked').each(function () {
-      channelsChecked.push($(this).val());
+      channelsChecked.push($$1(this).val());
     });
-    $ul = $().debugEnhance('buildChannelList', channelsTab, info.channelNameRoot, channelsChecked);
+    $ul = $$1().debugEnhance('buildChannelList', channelsTab, info.channelNameRoot, channelsChecked);
 
     $channels.find('> ul').replaceWith($ul);
     $channels.show();
@@ -5681,12 +6059,12 @@
       $badge.text(count);
     } else {
       $ul.append(
-        $('<li>'
+        $$1('<li>'
         ).append(
-          $('<label>', {
+          $$1('<label>', {
             class: 'toggle active'
           }).append(
-            $('<input>', {
+            $$1('<input>', {
               type: 'checkbox',
               checked: true,
               'data-toggle': 'error',
@@ -5700,8 +6078,8 @@
       );
       rows = $ul.find('> li');
       rows.sort(function (liA, liB) {
-        var liAindex = order.indexOf($(liA).find('input').val());
-        var liBindex = order.indexOf($(liB).find('input').val());
+        var liAindex = order.indexOf($$1(liA).find('input').val());
+        var liBindex = order.indexOf($$1(liB).find('input').val());
         return liAindex > liBindex ? 1 : -1
       });
       for (i = 0; i < rows.length; ++i) {
@@ -5717,7 +6095,7 @@
     var sort = $link.data('sort');
     var text = $link.text().trim();
     $navLinks.each(function (i, node) {
-      var $navLink = $(this);
+      var $navLink = $$1(this);
       var curSort = $navLink.data('sort');
       var curText = $navLink.text().trim();
       var cmp = (function () {
@@ -5731,12 +6109,12 @@
         return curText.localeCompare(text)
       })();
       if (cmp > 0) {
-        $(this).before($link);
+        $$1(this).before($link);
         return false // break
       }
       if (i + 1 === length) {
         // we're on last tab..  insert now or never
-        $(this).after($link);
+        $$1(this).after($link);
       }
     });
   }
@@ -5751,7 +6129,7 @@
       return $tabPane
     }
     meta.channelSort = meta.channelSort || 0;
-    $link = $('<a>', {
+    $link = $$1('<a>', {
       class: 'nav-link',
       'data-sort': meta.channelSort,
       'data-target': '.' + classname,
@@ -5762,18 +6140,19 @@
     if (meta.channelIcon) {
       $link.prepend(
         meta.channelIcon.match('<')
-          ? $(meta.channelIcon)
-          : $('<i>').addClass(meta.channelIcon)
+          ? $$1(meta.channelIcon)
+          : $$1('<i>').addClass(meta.channelIcon)
       );
     }
     addTab(info, $link);
-    $tabPane = $('<div>', {
+    $tabPane = $$1('<div>', {
       class: 'tab-pane ' + classname,
       role: 'tabpanel'
     })
-      .append($('<div>', {
+      .append($$1('<div>', {
         class: 'tab-body',
         html: '<ul class="debug-log-summary group-body"></ul>' +
+          '<hr />' +
           '<ul class="debug-log group-body"></ul>'
       }));
     $tabPane.data('nodes', [$tabPane.find('.debug-log')]);
@@ -5848,37 +6227,37 @@
 
   function Xdebug(pubSub) {
   	var self = this;
-    var $root = $('#debug-cards');
+    var $root = $$1('#debug-cards');
   	this.pubSub = pubSub;
     this.contextMsgReceived = null;
     this.contextTimer = null;
   	$root.on('click', '.xdebug-commands .btn[data-cmd]', function () {
-  		var cmd = $(this).data('cmd');
-      var appId = $(this).closest('.card-body').find('.xdebug').data('appId');
-      $(this).blur();
+  		var cmd = $$1(this).data('cmd');
+      var appId = $$1(this).closest('.card-body').find('.xdebug').data('appId');
+      $$1(this).blur();
       self.sendCmd(appId, cmd);
   	});
     $root.on('click', '.xdebug-menu-bar .btn[data-target]', function () {
-      var $node = $(this).closest('.card-body').find($(this).data('target'));
-      $(this).blur();
+      var $node = $$1(this).closest('.card-body').find($$1(this).data('target'));
+      $$1(this).blur();
       self.scrollIntoView($node);
     });
     $root.on('expanded.debug.array expanded.debug.object', '.max-depth', function (e) {
-      var appId = $(this).closest('.card-body').find('.xdebug').data('appId');
+      var appId = $$1(this).closest('.card-body').find('.xdebug').data('appId');
       // console.log('xdebug expanded .max-depth', this)
-      $(this).find('.array-inner, .object-inner').html(
+      $$1(this).find('.array-inner, .object-inner').html(
         '<i class="fa fa-spinner fa-pulse fa-lg"></i>'
       );
       self.sendCmd(
         appId,
         'property_get',
         {
-          n: $(this).data('fullname')
+          n: $$1(this).data('fullname')
         }
       );
     });
     $root.on('shown.bs.collapse', '.card-body', function (e) {
-      var $menuBar = $(this).find('.xdebug-menu-bar');
+      var $menuBar = $$1(this).find('.xdebug-menu-bar');
       self.positionToolbar($menuBar);
     });
     $root.on('endOutput', '.card', function (e) {
@@ -5899,7 +6278,7 @@
     var $card = $menuBar.closest('.card');
     $menuBar.css('top',
       (
-        $('nav.navbar').outerHeight() +
+        $$1('nav.navbar').outerHeight() +
         $card.find('> .card-header').outerHeight() +
         $card.find('> .card-body > .debug-menu-bar').outerHeight()
       ) + 'px'
@@ -5946,7 +6325,7 @@
           $node = methods.default(logEntry, nodeInfo).find('> *'); // array = span, object = div
           // find  open .max-depth where data-fullname = meta.fullname
           $node2 = nodeInfo.$node.find('.max-depth.expanded').filter(function (i, nodeTemp) {
-            return $(nodeTemp).data('fullname') === meta.fullname
+            return $$1(nodeTemp).data('fullname') === meta.fullname
           });
           $node2.replaceWith($node);
           $node.debugEnhance().debugEnhance('expand');
@@ -5978,9 +6357,9 @@
   Xdebug.prototype.getNodeInfo = function (appId) {
     var id = 'xdebug';
     // var $container = $('#' + id)
-    var $container = $('#debug-cards .card.working').filter(function () {
-      var dataCard = $(this).data() || {};
-      var dataXdebug = $(this).find('.xdebug').data() || {};
+    var $container = $$1('#debug-cards .card.working').filter(function () {
+      var dataCard = $$1(this).data() || {};
+      var dataXdebug = $$1(this).find('.xdebug').data() || {};
       if (dataXdebug.appId === appId) {
         // xdebug appId match
         return true
@@ -5999,7 +6378,7 @@
       Step 1: find or create primary container (card)
     */
     if ($container.length === 0) {
-      $container = $('' +
+      $container = $$1('' +
         '<div class="card mb-3 sticky" id="' + id + '">' +
           '<div class="card-header" data-toggle="collapse" data-target="#' + id + ' &gt; .collapse">' +
             '<i class="fa fa-chevron-right"></i>' +
@@ -6030,14 +6409,14 @@
           '</div>' +
         '</div>'
       );
-  	  $('#debug-cards').append($container);
+  	  $$1('#debug-cards').append($container);
     }
     /*
       Step 2: find or create xdebug area
     */
     $xdebug = $container.find('.xdebug');
     if ($xdebug.length === 0) {
-      $menuBar = $('' +
+      $menuBar = $$1('' +
         '<header class="debug-bar xdebug-menu-bar">' +
           '<div class="btn-toolbar" role="toolbar" aria-label="Xdebug">' +
             '<div class="btn-group xdebug-commands mr-2" role="group" aria-label="Xdebug Commands">' +
@@ -6054,7 +6433,7 @@
            '</div>' +
         '</header>'
       );
-      $xdebug = $('<ul class="xdebug group-body"></ul>');
+      $xdebug = $$1('<ul class="xdebug group-body"></ul>');
       $xdebug.data('appId', appId);
       $container.find('.debug > header').after($menuBar);
       $container.find('.tab-primary .tab-body').append($xdebug);
@@ -6070,16 +6449,16 @@
   };
 
   Xdebug.prototype.remove = function ($container) {
-    $container = $($container);
+    $container = $$1($container);
     $container.find('.xdebug-menu-bar').remove();
     $container.find('.xdebug.group-body').remove();
   };
 
   Xdebug.prototype.scrollIntoView = function (node) {
-    var toolbarBottom = $(node).closest('.card-body').find('.xdebug-menu-bar')[0].getBoundingClientRect().bottom;
+    var toolbarBottom = $$1(node).closest('.card-body').find('.xdebug-menu-bar')[0].getBoundingClientRect().bottom;
     var nodePos;
     var adjustY;
-    node = $(node)[0];
+    node = $$1(node)[0];
     nodePos = node.getBoundingClientRect();
     adjustY = nodePos.top - toolbarBottom;
     /*
@@ -7014,14 +7393,14 @@
   initWamp();
   var xdebug = initXdebug();
 
-  $(function () {
+  $$1(function () {
     var hasConnected = false;
 
     init$1(config);
     /*
       init on #debug-cards vs body so we can stop event propagation before bubbles to body  (ie clipboard.js)
     */
-    $('#debug-cards').debugEnhance('init', {
+    $$1('#debug-cards').debugEnhance('init', {
       sidebar: true,
       useLocalStorage: false
     });
@@ -7048,22 +7427,22 @@
         // myWorker.postMessage('getMsg') // request next msg
         PubSub.publish('wamp', 'getMsg');
       } else if (cmd === 'connectionClosed') {
-        $('#alert.connecting').remove();
-        if ($('#alert.closed').length) {
+        $$1('#alert.connecting').remove();
+        if ($$1('#alert.closed').length) {
           return
         }
-        $('#debug-cards').prepend(
+        $$1('#debug-cards').prepend(
           '<div id="alert" class="alert alert-warning alert-dismissible closed">' +
             'Not connected to debug server' +
             '<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>' +
           '</div>'
         );
         if (!config.haveSavedConfig && !hasConnected) {
-          $('#modal-settings').modal('show');
+          $$1('#modal-settings').modal('show');
         }
       } else if (cmd === 'connectionOpened') {
         hasConnected = true;
-        $('#alert').remove();
+        $$1('#alert').remove();
       }
     });
 
@@ -7074,7 +7453,7 @@
     PubSub.publish('wamp', 'connectionOpen');
 
     PubSub.subscribe('phpDebugConsoleConfig', function (vals) {
-      $('body').debugEnhance('setConfig', vals);
+      $$1('body').debugEnhance('setConfig', vals);
     });
 
     config.checkPhpDebugConsole();

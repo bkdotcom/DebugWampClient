@@ -102,11 +102,11 @@ DumpString.prototype.dumpBinary = function (abs) {
   dumpOpts.postDump = function (val, dumpOpts) {
     var lis = []
     if (abs.contentType) {
-      lis.push('<li>mime type = <span class="t_string">' + abs.contentType + '</span></li>')
+      lis.push('<li>mime type = <span class="content-type t_string">' + abs.contentType + '</span></li>')
     }
     lis.push('<li>size = <span class="t_int">' + abs.strlen + '</span></li>')
     lis.push(abs.value.length
-      ? '<li class="t_string"><span class="binary">' + val + '</span></li>'
+      ? '<li class="t_string">' + val + '</li>'
       : '<li>Binary data not collected</li>')
     val = '<span class="t_keyword">string</span><span class="text-muted">(binary)</span>' +
       '<ul class="list-unstyled value-container" data-type="' + abs.type + '" data-type-more="binary">' +
