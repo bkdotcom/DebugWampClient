@@ -11,10 +11,9 @@ for (name in sectionPrototype) {
 }
 
 Properties.prototype.dump = function (abs) {
-  var debugVersion = this.valDumper.getRequestInfo().$container.data('meta').debugVersion
   var cfg = {
     attributeOutput : abs.cfgFlags & this.valDumper.objectDumper.PROP_ATTRIBUTE_OUTPUT,
-    isDynamicSupport : versionCompare(debugVersion, '3.1') >= 0
+    isDynamicSupport : versionCompare(abs.debugVersion, '3.1') >= 0
   }
   var label = Object.keys(abs.properties).length
     ? 'properties'

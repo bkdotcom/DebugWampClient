@@ -120,13 +120,12 @@ DumpObject.prototype.dump = function (abs) {
   var self = this
   var strClassname = ''
   var dumpOpts = this.dumper.getDumpOpts()
-  var debugVersion
   try {
+    abs.debugVersion = this.dumper.getRequestInfo().$container.data('meta').debugVersion
     if (typeof abs.sort === 'undefined') {
       abs.sort = 'vis name'
     } else if (abs.sort === 'visibility') {
-      debugVersion = this.dumper.getRequestInfo().$container.data('meta').debugVersion
-      if (versionCompare(debugVersion, '3.2') === -1) {
+      if (versionCompare(abs.debugVersion, '3.2') === -1) {
         abs.sort = 'vis name'
       }
     }
