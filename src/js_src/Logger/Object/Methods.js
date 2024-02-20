@@ -138,11 +138,19 @@ Methods.prototype.dumpParams = function (info, cfg) {
 }
 
 Methods.prototype.dumpParamName = function (info, cfg, $param) {
+  var name = info.name
+  if (typeof info.isVariadic !== 'undefined') {
+    name = [
+      info.isPassedByReference ? '&' : '',
+      info.isVariadic ? '...' : '',
+      '$' + info.name,
+    ].join('')
+  }
   $param.append('<span class="t_parameter-name"' +
     (cfg.phpDocOutput && info.desc !== null
       ? ' title="' + info.desc.escapeHtml().replace('\n', ' ') + '"'
       : ''
-    ) + '>' + info.name.escapeHtml() + '</span>')
+    ) + '>' + name.escapeHtml() + '</span>')
 }
 
 Methods.prototype.dumpParamDefault = function (defaultValue, $param) {

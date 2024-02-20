@@ -122,17 +122,15 @@ DumpObject.prototype.dump = function (abs) {
   var dumpOpts = this.dumper.getDumpOpts()
   try {
     abs.debugVersion = this.dumper.getRequestInfo().$container.data('meta').debugVersion
-    if (typeof abs.sort === 'undefined') {
-      abs.sort = 'vis name'
-    } else if (abs.sort === 'visibility') {
-      if (versionCompare(abs.debugVersion, '3.2') === -1) {
-        abs.sort = 'vis name'
-      }
-    }
     if (typeof abs.cfgFlags === 'undefined') {
       abs.cfgFlags = 0x1FFFFFF & ~this.BRIEF
     }
     abs = this.mergeInherited(abs)
+    if (typeof abs.sort === 'undefined') {
+      abs.sort = 'vis name'
+    } else if (abs.sort === 'visibility' && versionCompare(abs.debugVersion, '3.2') === -1) {
+      abs.sort = 'vis name'
+    }
     if (typeof abs.implementsList === 'undefined') {
       // PhpDebugConsole < 3.1
       abs.implementsList = abs.implements

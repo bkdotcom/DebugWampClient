@@ -36,8 +36,9 @@ var tasks = [
       // }),
       // nodePolyfills(),
       resolve({
-        jsnext: true,
-        main: true,
+        // jsnext: true,
+        // main: true,
+        mainFields: ['jsnext:main'],
         browser: true,
       }),
       commonjs({
@@ -66,8 +67,9 @@ if (process.env.NODE_ENV !== 'watch') {
     // }),
     // nodePolyfills(),
     resolve({
-      jsnext: true,
-      main: true,
+      // jsnext: true,
+      // main: true,
+      mainFields: ['jsnext:main'],
       browser: true,
     }),
     commonjs({
