@@ -1,7 +1,7 @@
 {
 	"name": "bdk/debug-wamp-client",
-	"description": "Html/Javascript WAMP based debug client used in conjuction with PHPDebugConsole on the server",
-	"keywords": ["debug", "debugging", "wamp", "wampws", "var_dump", "inspect", "errorhandler", "phpdebugconsole"],
+	"description": "Html/Javascript WAMP based debug client used in conjunction with PHPDebugConsole on the server",
+	"keywords": ["debug", "debugging", "wamp", "wampws", "var_dump", "inspect", "errorhandler", "phpDebugConsole"],
 	"homepage": "http://github.com/bkdotcom/DebugWampClient",
 	"license": "MIT",
 	"authors": [

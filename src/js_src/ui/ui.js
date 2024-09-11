@@ -84,7 +84,8 @@ export function init (config) {
         navbarHeight +
         $cardHeader.outerHeight()
       ) + 'px')
-      $cardBody.find('.m_alert, .group-body:visible').debugEnhance()
+      // event listener will call .debugEnhance() on relevant elements
+      $cardBody.find('> .tab-panes > .tab-pane.active').trigger('shown.debug.tab')
     }
   })
 

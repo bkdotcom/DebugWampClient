@@ -58,8 +58,9 @@ Dump.prototype.dump = function (val, opts) {
     attribs: {
       class: []
     },
-    requestInfo: null,
+    charHighlight: true,
     postDump: null, // set to function
+    requestInfo: null,
     sanitize: true,
     tagName: '__default__',
     type: null,
@@ -143,7 +144,7 @@ Dump.prototype.dumpAbstraction = function (abs) {
   if (simpleTypes.indexOf(abs.type) > -1) {
     value = abs.value
     if (abs.type === 'array') {
-      // remove value so not setting as dumpOpt or passing redundently to dumpXxxx in 2nd param
+      // remove value so not setting as dumpOpt or passing redundantly to dumpXxxx in 2nd param
       delete abs.value
     }
     for (k in abs) {
@@ -157,12 +158,16 @@ Dump.prototype.dumpAbstraction = function (abs) {
   return this[method](abs)
 }
 
-Dump.prototype.dumpArray = function (array) {
+Dump.prototype.dumpArray = function (array, abs) {
   var html = ''
   var i
   var key
+  var keyShow
   var keys = array.__debug_key_order__ || Object.keys(array)
   var length = keys.length
+  var absKeys = typeof abs?.keys === 'object'
+    ? abs.keys
+    : {}
   var dumpOpts = $.extend({
     asFileTree: false,
     expand: null,
@@ -205,7 +210,11 @@ Dump.prototype.dumpArray = function (array) {
     '<ul class="array-inner list-unstyled">\n'
   for (i = 0; i < length; i++) {
     key = keys[i]
-    html += this.dumpArrayValue(key, array[key], showKeys)
+    keyShow = key
+    if (absKeys.hasOwnProperty(key)) {
+      keyShow = absKeys[key]
+    }
+    html += this.dumpArrayValue(keyShow, array[key], showKeys)
   }
   html += '</ul>' +
     '<span class="t_punct">)</span>'
@@ -238,15 +247,15 @@ Dump.prototype.dumpBool = function (val) {
 
 Dump.prototype.dumpCallable = function (abs) {
   return (!abs.hideType ? '<span class="t_type">callable</span> ' : '') +
-    this.markupIdentifier(abs)
+    this.markupIdentifier(abs, 'function')
 }
 
 Dump.prototype.dumpConst = function (abs) {
   var dumpOpts = this.getDumpOpts()
-  dumpOpts.attribs.title = abs.value
+  dumpOpts.attribs.title = abs.value !== this.UNDEFINED
     ? 'value: ' + this.dump(abs.value)
     : null
-  return this.markupIdentifier(abs.name)
+  return this.markupIdentifier(abs.name, 'const')
 }
 
 Dump.prototype.dumpFloat = function (val, abs) {
@@ -298,6 +307,18 @@ Dump.prototype.dumpUndefined = function () {
 
 Dump.prototype.dumpUnknown = function () {
   return '<span class="t_unknown">unknown type</span>'
+}
+
+Dump.prototype.dumpPhpDocStr = function (str) {
+  if (str === '' || str === undefined || str === null) {
+    return ''
+  }
+  return this.dump(str, {
+    sanitize: false,
+    tagName: null,
+    type: 'string',
+    visualWhiteSpace: false,
+  })
 }
 
 Dump.prototype.getClassDefinition = function (name) {
@@ -353,58 +374,67 @@ Dump.prototype.getType = function (val) {
   }
 }
 
-Dump.prototype.markupIdentifier = function (val, attribs, tag) {
-  // console.warn('markupIdentifier', val)
-  var classname = ''
-  var identifier = ''
+Dump.prototype.parseIdentifier = function (val, what) {
   var matches = [] // str.match()
-  var operator = '::'
-  var regex = /^(.+)(::|->)(.+)$/
-  var split = []
-  attribs = attribs || {}
-  tag = tag || 'span'
-
+  var regExp = new RegExp('^(.+)(::|->)(.+)$', 'u')
+  var parts = {
+    className: '',
+    identifier: '',
+    namespace: '',
+    operator: '',
+  }
   if (typeof val === 'object' && val.debug === this.ABSTRACTION) {
     val = val.value
-    if (typeof val === 'object') {
-      classname = val[0]
-      identifier = val[1]
-    } else {
-      matches = val.match(regex)
-      if (matches) {
-        classname = matches[1]
-        operator = matches[2]
-        identifier = matches[3]
-      } else {
-        identifier = val
-      }
-    }
-  } else if (typeof val === 'string' && (matches = val.match(regex))) {
-    classname = matches[1]
-    operator = matches[2]
-    identifier = matches[3]
-  } else {
-    classname = val
   }
-  operator = '<span class="t_operator">' + operator.escapeHtml() + '</span>'
-  if (classname) {
-    split = classname.split('\\')
+  parts.className = val
+  if (Array.isArray(val)) {
+    parts.className = val[0]
+    parts.identifier = val[1]
+    parts.operator = '::'
+  } else if (matches = val.match(regExp)) {
+    parts.className = matches[1]
+    parts.operator = matches[2]
+    parts.identifier = matches[3]
+  } else if (['const', 'function'].indexOf(what) > -1) {
+    matches = val.match(/^(.+\\)?(.+)$/)
+    parts.className = ''
+    parts.identifier = matches[2]
+    parts.namespace = matches[1]
+  }
+  return parts
+}
+
+Dump.prototype.markupIdentifier = function (val, what, tag, attribs) {
+  var parts = this.parseIdentifier(val, what)
+  var split = []
+  what = what || 'classname'
+  tag = tag || 'span'
+  attribs = attribs || {}
+
+  if (parts.className) {
+    parts.className = this.dumpPhpDocStr(parts.className)
+    split = parts.className.split('\\')
     if (split.length > 1) {
-      classname = split.pop()
-      classname = '<span class="namespace">' + split.join('\\') + '\\</span>' +
-        classname
+      parts.className = split.pop()
+      parts.className = '<span class="namespace">' + split.join('\\') + '\\</span>' +
+        parts.className
     }
     attribs.class = 'classname'
-    classname = $('<' + tag + '/>', attribs).html(classname)[0].outerHTML
-  } else {
-    operator = ''
+    parts.className = $('<' + tag + '/>', attribs).html(parts.className)[0].outerHTML
+  } else if (parts.namespace) {
+    attribs.class = 'namespace'
+    parts.className = $('<' + tag + '/>', attribs).html(parts.namespace)[0].outerHTML
   }
-  if (identifier) {
-    identifier = '<span class="t_identifier">' + identifier + '</span>'
-  } else {
-    operator = ''
+  if (parts.operator) {
+    parts.operator = '<span class="t_operator">' + parts.operator.escapeHtml() + '</span>'
   }
-  return classname + operator + identifier
+  if (parts.identifier) {
+    parts.identifier = this.dumpPhpDocStr(parts.identifier)
+    parts.identifier = '<span class="t_identifier">' + parts.identifier + '</span>'
+  }
+  return [parts.className, parts.identifier].filter(function (val) {
+    return val !== ''
+  }).join(parts.operator)
 }
 
 Dump.prototype.parseTag = function parseTag (html) {

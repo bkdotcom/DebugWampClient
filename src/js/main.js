@@ -244,7 +244,8 @@
           navbarHeight +
           $cardHeader.outerHeight()
         ) + 'px');
-        $cardBody.find('.m_alert, .group-body:visible').debugEnhance();
+        // event listener will call .debugEnhance() on relevant elements
+        $cardBody.find('> .tab-panes > .tab-pane.active').trigger('shown.debug.tab');
       }
     });
 
@@ -440,7 +441,7 @@
       if (tableInfo.haveObjRow) {
         $tr.append(
           rowInfo.class
-            ? $$1(this.dump.markupIdentifier(rowInfo.class, {}, 'td'))
+            ? $$1(this.dump.markupIdentifier(rowInfo.class, 'classname', 'td'))
               .attr('title', rowInfo.summary)
             : '<td class="t_undefined"></td>'
         );
@@ -508,7 +509,7 @@
       info = tableInfo.columns[i];
       label = info.key;
       if (typeof info.class !== 'undefined') {
-        label += ' ' + this.dump.markupIdentifier(info.class);
+        label += ' ' + this.dump.markupIdentifier(info.class, 'classname');
       }
       $theadTr.append(
         $$1('<th scope="col"></th>').html(label)
@@ -2840,16 +2841,16 @@
       if (cfg.groupByInheritance === false) {
         return this.dumpItemsFiltered(abs[what], cfg)
       }
-      classes.forEach(function (classname) {
+      classes.forEach(function (className) {
         var info = {};
         var items = {};
         var name = '';
-        html += [abs.className, 'stdClass'].indexOf(classname) < 0
-          ? '<dd class="heading">Inherited from ' + self.valDumper.markupIdentifier(classname) + '</dd>'
+        html += [abs.className, 'stdClass'].indexOf(className) < 0
+          ? '<dd class="heading">Inherited from ' + self.valDumper.markupIdentifier(className) + '</dd>'
           : '';
         for (name in abs[what]) {
           info = abs[what][name];
-          if (!info.declaredLast || info.declaredLast === classname) {
+          if (!info.declaredLast || info.declaredLast === className) {
               items[name] = info;
               delete abs[what][name];
           }
@@ -2902,6 +2903,7 @@
     addAttribs: function ($element, info, cfg) {
       if (cfg.attributeOutput && info.attributes && info.attributes.length) {
         $element.attr('data-attributes', JSON.stringify(info.attributes));
+        // $element.attr('data-chars', JSON.stringify(this.valDumper.stringDumper.charHighlight.findChars(JSON.stringify(info.attributes))))
       }
       if (!info.isInherited && info.declaredPrev) {
         $element.attr('data-declared-prev', info.declaredPrev);
@@ -2934,7 +2936,9 @@
 
   function Cases (valDumper) {
     this.valDumper = valDumper;
+    sectionPrototype.valDumper = valDumper;
   }
+
   var name;
   for (name in sectionPrototype) {
     Cases.prototype[name] = sectionPrototype[name];
@@ -2989,7 +2993,9 @@
 
   function Constants (valDumper) {
     this.valDumper = valDumper;
+    sectionPrototype.valDumper = valDumper;
   }
+
   var name$1;
   for (name$1 in sectionPrototype) {
     Constants.prototype[name$1] = sectionPrototype[name$1];
@@ -3030,8 +3036,13 @@
   };
 
   Constants.prototype.dumpInner = function (name, info, cfg) {
+    var title = info.phpDoc?.summary || info.desc || null;
     return this.dumpModifiers(info) +
-      '<span class="t_identifier"' + (cfg.phpDocOutput && info.desc ? ' title="' + info.desc.escapeHtml() + '"' : '') + '>' + name + '</span> ' +
+      '<span class="t_identifier"' + (cfg.phpDocOutput && title
+          ? ' title="' + this.valDumper.dumpPhpDocStr(title).escapeHtml() + '"'
+          : '') + '>' +
+        this.valDumper.dump(name, {addQuotes: false}) +
+      '</span> ' +
       '<span class="t_operator">=</span> ' +
       this.valDumper.dump(info.value)
   };
@@ -3053,7 +3064,9 @@
 
   function Methods (valDumper) {
     this.valDumper = valDumper;
+    sectionPrototype.valDumper = valDumper;
   }
+
   var name$2;
   for (name$2 in sectionPrototype) {
     Methods.prototype[name$2] = sectionPrototype[name$2];
@@ -3066,10 +3079,11 @@
       isFinal: info.isFinal,
       isStatic: info.isStatic
     };
+    var self = this;
     $element.addClass(info.visibility).removeClass('debug');
-    $$1.each(classes, function (classname, useClass) {
+    $$1.each(classes, function (className, useClass) {
       if (useClass) {
-        $element.addClass(classname);
+        $element.addClass(className);
       }
     });
     sectionPrototype.addAttribs($element, info, cfg);
@@ -3077,10 +3091,15 @@
       $element.attr('data-implements', info.implements);
     }
     if (info.phpDoc && info.phpDoc.deprecated) {
-      $element.attr('data-deprecated-desc', info.phpDoc.deprecated[0].desc);
+      $element.attr('data-deprecated-desc', this.valDumper.dumpPhpDocStr(info.phpDoc.deprecated[0].desc));
     }
     if (cfg.phpDocOutput && info.phpDoc && info.phpDoc.throws) {
-      $element.attr('data-throws', JSON.stringify(info.phpDoc.throws));
+      $element.attr('data-throws', JSON.stringify(info.phpDoc.throws.map(function (throwInfo) {
+        return {
+          desc: self.valDumper.dumpPhpDocStr(throwInfo.desc),
+          type: self.valDumper.dumpPhpDocStr(throwInfo.type),
+        }
+      })));
     }
   };
 
@@ -3094,13 +3113,15 @@
       phpDocOutput : abs.cfgFlags & this.valDumper.objectDumper.PHPDOC_OUTPUT,
       staticVarOutput : abs.cfgFlags & this.valDumper.objectDumper.METHOD_STATIC_VAR_OUTPUT,
     };
+    var html = '';
     if (!cfg.output) {
       return ''
     }
+    html = '<dt class="methods">' + this.getLabel(abs) + '</dt>';
     if (!cfg.collect) {
-      return ''
+      return html
     }
-    return '<dt class="methods">' + this.getLabel(abs) + '</dt>' +
+    return html +
       this.magicMethodInfo(abs, ['__call', '__callStatic']) +
       this.dumpItems(abs, 'methods', cfg)
   };
@@ -3127,35 +3148,51 @@
   Methods.prototype.dumpModifiers = function (info) {
     var html = '';
     var vis = typeof info.visibility === 'object'
-      ? info.visibility
+      ? JSON.parse(JSON.stringify(info.visibility))
       : [info.visibility];
-    var modifiers = JSON.parse(JSON.stringify(vis));
+    var modifiers = {
+      abstract: info.isAbstract,
+      final: info.isFinal,
+      [vis.join(' ')]: true,
+      static: info.isStatic,
+    };
+    /*
+    if (info.isAbstract) {
+      modifiers.push('abstract')
+    }
     if (info.isFinal) {
-      modifiers.push('final');
+      modifiers.push('final')
     }
+    modifiers.push(vis.join('  '))
     if (info.isStatic) {
-      modifiers.push('static');
+      modifiers.push('static')
     }
-    $$1.each(modifiers, function (i, modifier) {
-      html += '<span class="t_modifier_' + modifier + '">' + modifier + '</span> ';
+    */
+    $$1.each(modifiers, function (modifier, isSet) {
+      if (isSet) {
+        html += '<span class="t_modifier_' + modifier + '">' + modifier + '</span> ';
+      }
     });
     return html
   };
 
   Methods.prototype.dumpName = function (name, info, cfg) {
+    if (typeof info.phpDoc === 'undefined') {
+      console.warn('phpDoc missing for method ' + name, info);
+    }
     var titleParts = [
-      info.phpDoc.summary || '',
+      info.phpDoc?.summary || '',
       cfg.methodDescOutput
-        ? info.phpDoc.desc || ''
+        ? info.phpDoc?.desc || ''
         : '',
     ];
     var title = titleParts.join("\n\n").trim();
     return ' <span class="t_identifier"' +
       (cfg.phpDocOutput && title !== ''
-        ? ' title="' + title.escapeHtml() + '"'
+        ? ' title="' + this.valDumper.dumpPhpDocStr(title).escapeHtml() + '"'
         : ''
       ) +
-      '>' + name + '</span>'
+      '>' + this.valDumper.dumpPhpDocStr(name) + '</span>'
   };
 
   Methods.prototype.dumpParams = function (info, cfg) {
@@ -3200,7 +3237,7 @@
       (cfg.phpDocOutput && info.desc !== null
         ? ' title="' + info.desc.escapeHtml().replace('\n', ' ') + '"'
         : ''
-      ) + '>' + name.escapeHtml() + '</span>');
+      ) + '>' + this.valDumper.dumpPhpDocStr(name) + '</span>');
   };
 
   Methods.prototype.dumpParamDefault = function (defaultValue, $param) {
@@ -3262,6 +3299,85 @@
     return label
   };
 
+  function PhpDoc (valDumper) {
+    this.valDumper = valDumper;
+  }
+
+  PhpDoc.prototype.dump = function (abs) {
+    var count;
+    var html = '';
+    var i;
+    var tagData;
+    var tagName;
+    var tagEntries;
+    for (tagName in abs.phpDoc) {
+      tagEntries = abs.phpDoc[tagName];
+      if (!Array.isArray(tagEntries)) {
+        continue
+      }
+      for (i = 0, count = tagEntries.length; i < count; i++) {
+        tagData = tagEntries[i];
+        tagData.tagName = tagName;
+        html += this.dumpTag(tagData);
+      }
+    }
+    if (html.length) {
+      html = '<dt>phpDoc</dt>' + html;
+    }
+    return html
+  };
+
+  PhpDoc.prototype.dumpTag = function (tagData) {
+    var tagName = tagData.tagName;
+    var value = '';
+    switch (tagName) {
+      case 'author':
+        value = this.dumpTagAuthor(tagData);
+        break
+      case 'link':
+      case 'see':
+        value = this.dumpTagSeeLink(tagData);
+        break
+      default:
+        delete tagData.tagName;
+        /*
+        for (i in tagData) {
+          value += tagData[i] === null
+            ? ''
+            : tagData[i] + ' '
+        }
+        */
+        value = Object.values(tagData).join(' ');
+        value = this.valDumper.dumpPhpDocStr(value);
+    }
+    return '<dd class="phpDoc phpdoc-' + tagName + '">' +
+      '<span class="phpdoc-tag">' + this.valDumper.dumpPhpDocStr(tagName) + '</span>' +
+      '<span class="t_operator">:</span> ' +
+      value +
+      '</dd>'
+  };
+
+  PhpDoc.prototype.dumpTagAuthor = function (tagData) {
+    var html = this.valDumper.dumpPhpDocStr(tagData.name);
+    if (tagData.email) {
+      html += ' &lt;<a href="mailto:' + tagData.email + '">' + this.valDumper.dumpPhpDocStr(tagData.email) + '</a>&gt;';
+    }
+    if (tagData.desc) {
+      // desc is non-standard for author tag
+      html += ' ' + this.valDumper.dumpPhpDocStr(tagData.desc);
+    }
+    return html
+  };
+
+  PhpDoc.prototype.dumpTagSeeLink = function (tagData) {
+    var desc = this.valDumper.dumpPhpDocStr(tagData.desc || tagData.uri);
+    if (tagData.uri) {
+      return '<a href="' + tagData.uri + '" target="_blank">' + desc + '</a>'
+    }
+    // see tag
+    return this.valDumper.markupIdentifier(tagData.fqsen) + (desc ? ' ' + desc : '')
+  };
+
   function versionCompare (v1, v2) {
     var v1parts = v1.split('.');
     var v2parts = v2.split('.');
@@ -3310,7 +3426,9 @@
 
   function Properties (valDumper) {
     this.valDumper = valDumper;
+    sectionPrototype.valDumper = valDumper;
   }
+
   var name$3;
   for (name$3 in sectionPrototype) {
     Properties.prototype[name$3] = sectionPrototype[name$3];
@@ -3321,6 +3439,9 @@
       attributeOutput : abs.cfgFlags & this.valDumper.objectDumper.PROP_ATTRIBUTE_OUTPUT,
       isDynamicSupport : versionCompare(abs.debugVersion, '3.1') >= 0
     };
+    if (abs.isInterface) {
+      return ''
+    }
     var label = Object.keys(abs.properties).length
       ? 'properties'
       : 'no properties';
@@ -3338,6 +3459,8 @@
       'debuginfo-excluded': info.debugInfoExcluded,
       'debuginfo-value': info.valueFrom === 'debugInfo',
       forceShow: info.forceShow,
+      getHook: info.hooks.indexOf('get') > -1,
+      isDeprecated: info.isDeprecated,
       isDynamic: info.declaredLast === null &&
         info.valueFrom === 'value' &&
         cfg.objClassName !== 'stdClass' &&
@@ -3345,8 +3468,11 @@
       isPromoted: info.isPromoted,
       isReadOnly: info.isReadOnly,
       isStatic: info.isStatic,
+      isVirtual: info.isVirtual,
+      isWriteOnly: info.isVirtual && info.hooks.indexOf('get') > -1,
       'private-ancestor': info.isPrivateAncestor,
-      property: true
+      property: true,
+      setHook: info.hooks.indexOf('set') > -1
     };
     $element.addClass(info.visibility).removeClass('debug');
     $$1.each(classes, function (classname, useClass) {
@@ -3358,6 +3484,7 @@
   };
 
   Properties.prototype.dumpInner = function (name, info, cfg) {
+    var title = info.phpDoc?.summary || info.desc || null;
     name = name.replace('debug.', '');
     return this.dumpModifiers(info) +
       (info.type
@@ -3368,8 +3495,8 @@
         addQuotes: /[\s\r\n]/.test(name) || name === '',
         attribs: {
           class: 't_identifier',
-          title: cfg.phpDocOutput && info.desc
-            ? info.desc
+          title: cfg.phpDocOutput && title
+            ? this.valDumper.dumpPhpDocStr(title).escapeHtml()
             : null
         }
       }) +
@@ -3404,6 +3531,7 @@
     this.constants = new Constants(this.dumper);
     this.methods = new Methods(this.dumper);
     this.properties = new Properties(this.dumper);
+    this.phpDoc = new PhpDoc(this.dumper);
 
     this.sectionDumpers = {
       attributes : this.dumpAttributes.bind(this),
@@ -3412,7 +3540,7 @@
       extends : this.dumpExtends.bind(this),
       implements : this.dumpImplements.bind(this),
       methods : this.methods.dump.bind(this.methods),
-      phpDoc : this.dumpPhpDoc.bind(this),
+      phpDoc : this.phpDoc.dump.bind(this.phpDoc),
       properties : this.properties.dump.bind(this.properties),
     };
 
@@ -3509,7 +3637,7 @@
   DumpObject.prototype.dump = function (abs) {
     // console.info('dumpObject', abs)
     var html = '';
-    var strClassname = '';
+    var strClassName = '';
     var dumpOpts = this.dumper.getDumpOpts();
     try {
       abs.debugVersion = this.dumper.getRequestInfo().$container.data('meta').debugVersion;
@@ -3526,27 +3654,27 @@
         // PhpDebugConsole < 3.1
         abs.implementsList = abs.implements;
       }
-      strClassname = this.dumpClassname(abs);
+      strClassName = this.dumpClassName(abs);
       if (abs.isRecursion) {
-        return strClassname +
+        return strClassName +
           ' <span class="t_recursion">*RECURSION*</span>'
       }
       if (abs.isMaxDepth) {
-        return strClassname +
+        return strClassName +
           ' <span class="t_maxDepth">*MAX DEPTH*</span>'
       }
       if (abs.isExcluded) {
-        return strClassname +
+        return strClassName +
           ' <span class="excluded">(not inspected)</span>'
       }
       if (abs.cfgFlags & this.BRIEF && abs.implementsList.indexOf('UnitEnum') > -1) {
-        return strClassname
+        return strClassName
       }
       if (abs.sort.indexOf('inheritance') === 0) {
         dumpOpts.attribs.class.push('groupByInheritance');
       }
       html = this.dumpToString(abs) +
-        strClassname +
+        strClassName +
         '<dl class="object-inner">' +
           this.dumpInner(abs) +
         '</dl>';
@@ -3571,10 +3699,10 @@
       html += '<dd class="attribute">';
       html += self.dumper.markupIdentifier(attribute.name);
       if (Object.keys(attribute.arguments).length) {
-        $$1.each(attribute.arguments, function (i, val) {
+        $$1.each(attribute.arguments, function (name, val) {
           args.push(
-            (i.match(/^\d+$/) === null
-              ? '<span class="t_parameter-name">' + i + '</span><span class="t_punct">:</span>'
+            (name.match(/^\d+$/) === null
+              ? '<span class="t_parameter-name">' + self.dumper.dumpPhpDocStr(name) + '</span><span class="t_punct">:</span>'
               : '') +
             self.dumper.dump(val)
           );
@@ -3590,24 +3718,24 @@
       : ''
   };
 
-  DumpObject.prototype.dumpClassname = function (abs) {
+  DumpObject.prototype.dumpClassName = function (abs) {
     var phpDoc = abs.phpDoc || {};
-    var strClassname = abs.className;
-    var title = ((phpDoc.summary || '') + '\n\n' + (phpDoc.desc || '')).trim();
+    var strClassName = abs.className;
+    var title = this.dumper.dumpPhpDocStr(((phpDoc.summary || '') + '\n\n' + (phpDoc.desc || '')).trim());
     var phpDocOut = abs.cfgFlags & this.PHPDOC_OUTPUT;
     var $span;
     if (abs.implementsList.indexOf('UnitEnum') > -1) {
-      // strClassname += '::' + abs.properties.name.value
+      // strClassName += '::' + abs.properties.name.value
       $span = $$1('<span />', {
         class: 't_const',
-        html: this.dumper.markupIdentifier(strClassname + '::' + abs.properties.name.value)
+        html: this.dumper.markupIdentifier(strClassName + '::' + abs.properties.name.value)
       });
       if (title && title.length) {
         $span.attr('title', title);
       }
       return $span[0].outerHTML
     }
-    return this.dumper.markupIdentifier(strClassname, {
+    return this.dumper.markupIdentifier(strClassName, 'classname', 'span', {
       title: phpDocOut && title.length ? title : null
     })
   };
@@ -3616,8 +3744,8 @@
     var self = this;
     return abs.extends && abs.extends.length
       ? '<dt>extends</dt>' +
-          abs.extends.map(function (classname) {
-            return '<dd class="extends">' + self.dumper.markupIdentifier(classname) + '</dd>'
+          abs.extends.map(function (className) {
+            return '<dd class="extends">' + self.dumper.markupIdentifier(className, 'classname') + '</dd>'
           }).join('')
       : ''
   };
@@ -3631,10 +3759,10 @@
       abs.interfacesCollapse = ['ArrayAccess', 'BackedEnum', 'Countable', 'Iterator', 'IteratorAggregate', 'UnitEnum'];
     }
     return '<dt>implements</dt>' +
-      '<dd>' + this.buildImplementsTree(abs.implements, abs.interfacesCollapse) + '</dd>'
+      '<dd class="implements">' + this.buildImplementsTree(abs.implements, abs.interfacesCollapse) + '</dd>'
   };
 
-  DumpObject.prototype.dumpInner = function  (abs) {
+  DumpObject.prototype.dumpInner = function (abs) {
     var self = this;
     var html = this.dumpModifiers(abs);
     if (typeof abs.sectionOrder === 'undefined') {
@@ -3647,75 +3775,36 @@
     return html
   };
 
-  DumpObject.prototype.dumpModifiers = function  (abs) {
-    var modifiers = [];
+  DumpObject.prototype.dumpModifiers = function (abs) {
+    var modifiers = {
+      abstract: abs.isAbstract,
+      final: abs.isFinal,
+      interface: abs.isInterface,
+      readonly: abs.isReadOnly,
+      trait: abs.isTrait,
+    };
+    var haveModifier = false;
     var html = '<dt class="modifiers">modifiers</dt>';
+    /*
     if (abs.isFinal) {
-      modifiers.push('final');
+      modifiers.push('final')
     }
     if (abs.isReadOnly) {
-      modifiers.push('readonly');
+      modifiers.push('readonly')
     }
     if (modifiers.length === 0) {
       return ''
     }
-    $$1.each(modifiers, function (i, modifier) {
-      html += '<dd class="t_modifier_' + modifier + '">' + modifier + '</dt>';
+    */
+    $$1.each(modifiers, function (modifier, isSet) {
+      if (isSet) {
+        haveModifier = true;
+        html += '<dd class="t_modifier_' + modifier + '">' + modifier + '</dd>';
+      }
     });
-    return html
-  };
-
-  DumpObject.prototype.dumpPhpDoc = function (abs) {
-    var count;
-    var html = '';
-    var i;
-    var i2;
-    var info;
-    var key;
-    var tagEntries;
-    var value;
-    for (key in abs.phpDoc) {
-      tagEntries = abs.phpDoc[key];
-      if (!Array.isArray(tagEntries)) {
-        continue
-      }
-      for (i = 0, count = tagEntries.length; i < count; i++) {
-        info = tagEntries[i];
-        if (key === 'author') {
-          value = info.name;
-          if (info.email) {
-            value += ' &lt;<a href="mailto:' + info.email + '">' + info.email + '</a>&gt;';
-          }
-          if (info.desc) {
-            value += ' ' + info.desc.escapeHtml();
-          }
-        } else if (key === 'link') {
-          value = '<a href="' + info.uri + '" target="_blank">' +
-            (info.desc || info.uri).escapeHtml() +
-            '</a>';
-        } else if (key === 'see' && info.uri) {
-          value = '<a href="' + info.uri + '" target="_blank">' +
-            (info.desc || info.uri).escapeHtml() +
-            '</a>';
-        } else {
-          value = '';
-          for (i2 in info) {
-            value += info[i2] === null
-              ? ''
-              : info[i2].escapeHtml() + ' ';
-          }
-        }
-        html += '<dd class="phpDoc phpdoc-' + key + '">' +
-          '<span class="phpdoc-tag">' + key + '</span>' +
-          '<span class="t_operator">:</span> ' +
-          value +
-          '</dd>';
-      }
-    }
-    if (html.length) {
-      html = '<dt>phpDoc</dt>' + html;
-    }
-    return html
+    return haveModifier
+      ? html
+      : ''
   };
 
   DumpObject.prototype.dumpToString = function (abs) {
@@ -3767,7 +3856,7 @@
           : k;
         $span = $$1('<span />', {
           class: 'interface',
-          html: this.dumper.markupIdentifier(iface)
+          html: this.dumper.markupIdentifier(iface, 'classname')
         });
         if (interfacesCollapse.indexOf(iface) > -1) {
           $span.addClass('toggle-off');
@@ -3941,6 +4030,83 @@
   var base64Arraybuffer_1 = base64Arraybuffer.encode;
   var base64Arraybuffer_2 = base64Arraybuffer.decode;
 
+  function chunkSplit(str, length, separator) {
+    if (typeof separator === 'undefined') {
+      separator = '\n';
+    }
+    return str.match(new RegExp('.{1,' + length + '}', 'g')).map(function (chunk) {
+      return chunk + separator
+    }).join('')
+  }
+
+  function DumpStringBinary (dumpString) {
+    this.dumpString = dumpString;
+    // this.dumpEncoded = new DumpStringEncoded(this)
+    // this.charHighlight = new CharHighlight(this)
+  }
+
+  DumpStringBinary.prototype.dump = function (abs) {
+    var dumpOpts = this.dumpString.dumper.getDumpOpts();
+    var tagName = dumpOpts.tagName;
+    var str = this.dumpBasic(abs);
+    var strLenDiff = abs.strlen - abs.strlenValue;
+    if (abs.strlenValue && strLenDiff) {
+        str += '<span class="maxlen">&hellip; ' + strLenDiff + ' more bytes (not logged)</span>';
+    }
+    if (abs.brief) {
+        return this.dumpBrief(str, abs)
+    }
+    if (abs.percentBinary > 33 || abs.contentType) {
+        dumpOpts.postDump = this.dumpPost(abs, tagName);
+    }
+    return str
+  };
+
+  DumpStringBinary.prototype.dumpBasic = function (abs) {
+    var self = this;
+    if (abs.strlenValue === 0) {
+      return ''
+    }
+    return typeof abs.chunks !== 'undefined'
+      ? abs.chunks.map(function (chunk) {
+          return chunk[0] === 'utf8'
+            ? self.dumpString.dump(chunk[1])
+            : '<span class="binary">\\x' + chunk[1].replace(' ', ' \\x') + '</span>'
+        }).join('')
+      : '<span class="binary">'
+          + chunkSplit(abs.value, 3 * 32, '<br />').substring(0, -6)
+          + '</span>'
+  };
+
+  DumpStringBinary.prototype.dumpBrief = function (str, abs) {
+      // @todo display bytes
+      return abs.contentType
+        ? '<span class="t_keyword">string</span>' +
+            '<span class="text-muted">(' + abs.contentType + ')</span><span class="t_punct colon">:</span> '
+        : str
+  };
+
+  DumpStringBinary.prototype.dumpPost = function (abs, tagName) {
+    return function (str) {
+      var lis = [];
+      if (abs.contentType) {
+        lis.push('<li>mime type = <span class="content-type t_string">' + abs.contentType + '</span></li>');
+      }
+      lis.push('<li>size = <span class="t_int">' + abs.strlen + '</span></li>');
+      lis.push(abs.value.length
+        ? '<li class="t_string">' + str + '</li>'
+        : '<li>Binary data not collected</li>');
+      str = '<span class="t_keyword">string</span><span class="text-muted">(binary)</span>' +
+        '<ul class="list-unstyled value-container" data-type="' + abs.type + '" data-type-more="binary">' +
+           lis.join('\n') +
+        '</ul>';
+      if (tagName === 'td') {
+        str = '<td>' + str + '</td>';
+      }
+      return str
+    }
+  };
+
   function DumpStringEncoded (dumpString) {
     this.dumpString = dumpString;
     this.dumper = dumpString.dumper;
@@ -4069,28 +4235,6 @@
   var StrDump = function () {
     this.str = '';
     this.bytes = null;
-    this.special = [
-      new RegExp(/[\xA0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000]/), // equiv to \p{Z}
-      // control chars:  \p{C}
-      new RegExp(/(?:[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F\xAD\u0378\u0379\u0380-\u0383\u038B\u038D\u03A2\u0530\u0557\u0558\u0560\u0588\u058B\u058C\u0590\u05C8-\u05CF\u05EB-\u05EF\u05F5-\u0605\u061C\u061D\u06DD\u070E\u070F\u074B\u074C\u07B2-\u07BF\u07FB-\u07FF\u082E\u082F\u083F\u085C\u085D\u085F-\u089F\u08B5\u08BE-\u08D3\u08E2\u0984\u098D\u098E\u0991\u0992\u09A9\u09B1\u09B3-\u09B5\u09BA\u09BB\u09C5\u09C6\u09C9\u09CA\u09CF-\u09D6\u09D8-\u09DB\u09DE\u09E4\u09E5\u09FC-\u0A00\u0A04\u0A0B-\u0A0E\u0A11\u0A12\u0A29\u0A31\u0A34\u0A37\u0A3A\u0A3B\u0A3D\u0A43-\u0A46\u0A49\u0A4A\u0A4E-\u0A50\u0A52-\u0A58\u0A5D\u0A5F-\u0A65\u0A76-\u0A80\u0A84\u0A8E\u0A92\u0AA9\u0AB1\u0AB4\u0ABA\u0ABB\u0AC6\u0ACA\u0ACE\u0ACF\u0AD1-\u0ADF\u0AE4\u0AE5\u0AF2-\u0AF8\u0AFA-\u0B00\u0B04\u0B0D\u0B0E\u0B11\u0B12\u0B29\u0B31\u0B34\u0B3A\u0B3B\u0B45\u0B46\u0B49\u0B4A\u0B4E-\u0B55\u0B58-\u0B5B\u0B5E\u0B64\u0B65\u0B78-\u0B81\u0B84\u0B8B-\u0B8D\u0B91\u0B96-\u0B98\u0B9B\u0B9D\u0BA0-\u0BA2\u0BA5-\u0BA7\u0BAB-\u0BAD\u0BBA-\u0BBD\u0BC3-\u0BC5\u0BC9\u0BCE\u0BCF\u0BD1-\u0BD6\u0BD8-\u0BE5\u0BFB-\u0BFF\u0C04\u0C0D\u0C11\u0C29\u0C3A-\u0C3C\u0C45\u0C49\u0C4E-\u0C54\u0C57\u0C5B-\u0C5F\u0C64\u0C65\u0C70-\u0C77\u0C84\u0C8D\u0C91\u0CA9\u0CB4\u0CBA\u0CBB\u0CC5\u0CC9\u0CCE-\u0CD4\u0CD7-\u0CDD\u0CDF\u0CE4\u0CE5\u0CF0\u0CF3-\u0D00\u0D04\u0D0D\u0D11\u0D3B\u0D3C\u0D45\u0D49\u0D50-\u0D53\u0D64\u0D65\u0D80\u0D81\u0D84\u0D97-\u0D99\u0DB2\u0DBC\u0DBE\u0DBF\u0DC7-\u0DC9\u0DCB-\u0DCE\u0DD5\u0DD7\u0DE0-\u0DE5\u0DF0\u0DF1\u0DF5-\u0E00\u0E3B-\u0E3E\u0E5C-\u0E80\u0E83\u0E85\u0E86\u0E89\u0E8B\u0E8C\u0E8E-\u0E93\u0E98\u0EA0\u0EA4\u0EA6\u0EA8\u0EA9\u0EAC\u0EBA\u0EBE\u0EBF\u0EC5\u0EC7\u0ECE\u0ECF\u0EDA\u0EDB\u0EE0-\u0EFF\u0F48\u0F6D-\u0F70\u0F98\u0FBD\u0FCD\u0FDB-\u0FFF\u10C6\u10C8-\u10CC\u10CE\u10CF\u1249\u124E\u124F\u1257\u1259\u125E\u125F\u1289\u128E\u128F\u12B1\u12B6\u12B7\u12BF\u12C1\u12C6\u12C7\u12D7\u1311\u1316\u1317\u135B\u135C\u137D-\u137F\u139A-\u139F\u13F6\u13F7\u13FE\u13FF\u169D-\u169F\u16F9-\u16FF\u170D\u1715-\u171F\u1737-\u173F\u1754-\u175F\u176D\u1771\u1774-\u177F\u17DE\u17DF\u17EA-\u17EF\u17FA-\u17FF\u180E\u180F\u181A-\u181F\u1878-\u187F\u18AB-\u18AF\u18F6-\u18FF\u191F\u192C-\u192F\u193C-\u193F\u1941-\u1943\u196E\u196F\u1975-\u197F\u19AC-\u19AF\u19CA-\u19CF\u19DB-\u19DD\u1A1C\u1A1D\u1A5F\u1A7D\u1A7E\u1A8A-\u1A8F\u1A9A-\u1A9F\u1AAE\u1AAF\u1ABF-\u1AFF\u1B4C-\u1B4F\u1B7D-\u1B7F\u1BF4-\u1BFB\u1C38-\u1C3A\u1C4A-\u1C4C\u1C89-\u1CBF\u1CC8-\u1CCF\u1CF7\u1CFA-\u1CFF\u1DF6-\u1DFA\u1F16\u1F17\u1F1E\u1F1F\u1F46\u1F47\u1F4E\u1F4F\u1F58\u1F5A\u1F5C\u1F5E\u1F7E\u1F7F\u1FB5\u1FC5\u1FD4\u1FD5\u1FDC\u1FF0\u1FF1\u1FF5\u1FFF\u200B-\u200F\u202A-\u202E\u2060-\u206F\u2072\u2073\u208F\u209D-\u209F\u20BF-\u20CF\u20F1-\u20FF\u218C-\u218F\u23FF\u2427-\u243F\u244B-\u245F\u2B74\u2B75\u2B96\u2B97\u2BBA-\u2BBC\u2BC9\u2BD2-\u2BEB\u2BF0-\u2BFF\u2C2F\u2C5F\u2CF4-\u2CF8\u2D26\u2D28-\u2D2C\u2D2E\u2D2F\u2D68-\u2D6E\u2D71-\u2D7E\u2D97-\u2D9F\u2DA7\u2DAF\u2DB7\u2DBF\u2DC7\u2DCF\u2DD7\u2DDF\u2E45-\u2E7F\u2E9A\u2EF4-\u2EFF\u2FD6-\u2FEF\u2FFC-\u2FFF\u3040\u3097\u3098\u3100-\u3104\u312E-\u3130\u318F\u31BB-\u31BF\u31E4-\u31EF\u321F\u32FF\u4DB6-\u4DBF\u9FD6-\u9FFF\uA48D-\uA48F\uA4C7-\uA4CF\uA62C-\uA63F\uA6F8-\uA6FF\uA7AF\uA7B8-\uA7F6\uA82C-\uA82F\uA83A-\uA83F\uA878-\uA87F\uA8C6-\uA8CD\uA8DA-\uA8DF\uA8FE\uA8FF\uA954-\uA95E\uA97D-\uA97F\uA9CE\uA9DA-\uA9DD\uA9FF\uAA37-\uAA3F\uAA4E\uAA4F\uAA5A\uAA5B\uAAC3-\uAADA\uAAF7-\uAB00\uAB07\uAB08\uAB0F\uAB10\uAB17-\uAB1F\uAB27\uAB2F\uAB66-\uAB6F\uABEE\uABEF\uABFA-\uABFF\uD7A4-\uD7AF\uD7C7-\uD7CA\uD7FC-\uD7FF\uE000-\uF8FF\uFA6E\uFA6F\uFADA-\uFAFF\uFB07-\uFB12\uFB18-\uFB1C\uFB37\uFB3D\uFB3F\uFB42\uFB45\uFBC2-\uFBD2\uFD40-\uFD4F\uFD90\uFD91\uFDC8-\uFDEF\uFDFE\uFDFF\uFE1A-\uFE1F\uFE53\uFE67\uFE6C-\uFE6F\uFE75\uFEFD-\uFF00\uFFBF-\uFFC1\uFFC8\uFFC9\uFFD0\uFFD1\uFFD8\uFFD9\uFFDD-\uFFDF\uFFE7\uFFEF-\uFFFB\uFFFE\uFFFF]|\uD800[\uDC0C\uDC27\uDC3B\uDC3E\uDC4E\uDC4F\uDC5E-\uDC7F\uDCFB-\uDCFF\uDD03-\uDD06\uDD34-\uDD36\uDD8F\uDD9C-\uDD9F\uDDA1-\uDDCF\uDDFE-\uDE7F\uDE9D-\uDE9F\uDED1-\uDEDF\uDEFC-\uDEFF\uDF24-\uDF2F\uDF4B-\uDF4F\uDF7B-\uDF7F\uDF9E\uDFC4-\uDFC7\uDFD6-\uDFFF]|\uD801[\uDC9E\uDC9F\uDCAA-\uDCAF\uDCD4-\uDCD7\uDCFC-\uDCFF\uDD28-\uDD2F\uDD64-\uDD6E\uDD70-\uDDFF\uDF37-\uDF3F\uDF56-\uDF5F\uDF68-\uDFFF]|\uD802[\uDC06\uDC07\uDC09\uDC36\uDC39-\uDC3B\uDC3D\uDC3E\uDC56\uDC9F-\uDCA6\uDCB0-\uDCDF\uDCF3\uDCF6-\uDCFA\uDD1C-\uDD1E\uDD3A-\uDD3E\uDD40-\uDD7F\uDDB8-\uDDBB\uDDD0\uDDD1\uDE04\uDE07-\uDE0B\uDE14\uDE18\uDE34-\uDE37\uDE3B-\uDE3E\uDE48-\uDE4F\uDE59-\uDE5F\uDEA0-\uDEBF\uDEE7-\uDEEA\uDEF7-\uDEFF\uDF36-\uDF38\uDF56\uDF57\uDF73-\uDF77\uDF92-\uDF98\uDF9D-\uDFA8\uDFB0-\uDFFF]|\uD803[\uDC49-\uDC7F\uDCB3-\uDCBF\uDCF3-\uDCF9\uDD00-\uDE5F\uDE7F-\uDFFF]|\uD804[\uDC4E-\uDC51\uDC70-\uDC7E\uDCBD\uDCC2-\uDCCF\uDCE9-\uDCEF\uDCFA-\uDCFF\uDD35\uDD44-\uDD4F\uDD77-\uDD7F\uDDCE\uDDCF\uDDE0\uDDF5-\uDDFF\uDE12\uDE3F-\uDE7F\uDE87\uDE89\uDE8E\uDE9E\uDEAA-\uDEAF\uDEEB-\uDEEF\uDEFA-\uDEFF\uDF04\uDF0D\uDF0E\uDF11\uDF12\uDF29\uDF31\uDF34\uDF3A\uDF3B\uDF45\uDF46\uDF49\uDF4A\uDF4E\uDF4F\uDF51-\uDF56\uDF58-\uDF5C\uDF64\uDF65\uDF6D-\uDF6F\uDF75-\uDFFF]|\uD805[\uDC5A\uDC5C\uDC5E-\uDC7F\uDCC8-\uDCCF\uDCDA-\uDD7F\uDDB6\uDDB7\uDDDE-\uDDFF\uDE45-\uDE4F\uDE5A-\uDE5F\uDE6D-\uDE7F\uDEB8-\uDEBF\uDECA-\uDEFF\uDF1A-\uDF1C\uDF2C-\uDF2F\uDF40-\uDFFF]|\uD806[\uDC00-\uDC9F\uDCF3-\uDCFE\uDD00-\uDEBF\uDEF9-\uDFFF]|\uD807[\uDC09\uDC37\uDC46-\uDC4F\uDC6D-\uDC6F\uDC90\uDC91\uDCA8\uDCB7-\uDFFF]|\uD808[\uDF9A-\uDFFF]|\uD809[\uDC6F\uDC75-\uDC7F\uDD44-\uDFFF]|[\uD80A\uD80B\uD80E-\uD810\uD812-\uD819\uD823-\uD82B\uD82D\uD82E\uD830-\uD833\uD837\uD839\uD83F\uD874-\uD87D\uD87F-\uDB3F\uDB41-\uDBFF][\uDC00-\uDFFF]|\uD80D[\uDC2F-\uDFFF]|\uD811[\uDE47-\uDFFF]|\uD81A[\uDE39-\uDE3F\uDE5F\uDE6A-\uDE6D\uDE70-\uDECF\uDEEE\uDEEF\uDEF6-\uDEFF\uDF46-\uDF4F\uDF5A\uDF62\uDF78-\uDF7C\uDF90-\uDFFF]|\uD81B[\uDC00-\uDEFF\uDF45-\uDF4F\uDF7F-\uDF8E\uDFA0-\uDFDF\uDFE1-\uDFFF]|\uD821[\uDFED-\uDFFF]|\uD822[\uDEF3-\uDFFF]|\uD82C[\uDC02-\uDFFF]|\uD82F[\uDC6B-\uDC6F\uDC7D-\uDC7F\uDC89-\uDC8F\uDC9A\uDC9B\uDCA0-\uDFFF]|\uD834[\uDCF6-\uDCFF\uDD27\uDD28\uDD73-\uDD7A\uDDE9-\uDDFF\uDE46-\uDEFF\uDF57-\uDF5F\uDF72-\uDFFF]|\uD835[\uDC55\uDC9D\uDCA0\uDCA1\uDCA3\uDCA4\uDCA7\uDCA8\uDCAD\uDCBA\uDCBC\uDCC4\uDD06\uDD0B\uDD0C\uDD15\uDD1D\uDD3A\uDD3F\uDD45\uDD47-\uDD49\uDD51\uDEA6\uDEA7\uDFCC\uDFCD]|\uD836[\uDE8C-\uDE9A\uDEA0\uDEB0-\uDFFF]|\uD838[\uDC07\uDC19\uDC1A\uDC22\uDC25\uDC2B-\uDFFF]|\uD83A[\uDCC5\uDCC6\uDCD7-\uDCFF\uDD4B-\uDD4F\uDD5A-\uDD5D\uDD60-\uDFFF]|\uD83B[\uDC00-\uDDFF\uDE04\uDE20\uDE23\uDE25\uDE26\uDE28\uDE33\uDE38\uDE3A\uDE3C-\uDE41\uDE43-\uDE46\uDE48\uDE4A\uDE4C\uDE50\uDE53\uDE55\uDE56\uDE58\uDE5A\uDE5C\uDE5E\uDE60\uDE63\uDE65\uDE66\uDE6B\uDE73\uDE78\uDE7D\uDE7F\uDE8A\uDE9C-\uDEA0\uDEA4\uDEAA\uDEBC-\uDEEF\uDEF2-\uDFFF]|\uD83C[\uDC2C-\uDC2F\uDC94-\uDC9F\uDCAF\uDCB0\uDCC0\uDCD0\uDCF6-\uDCFF\uDD0D-\uDD0F\uDD2F\uDD6C-\uDD6F\uDDAD-\uDDE5\uDE03-\uDE0F\uDE3C-\uDE3F\uDE49-\uDE4F\uDE52-\uDEFF]|\uD83D[\uDED3-\uDEDF\uDEED-\uDEEF\uDEF7-\uDEFF\uDF74-\uDF7F\uDFD5-\uDFFF]|\uD83E[\uDC0C-\uDC0F\uDC48-\uDC4F\uDC5A-\uDC5F\uDC88-\uDC8F\uDCAE-\uDD0F\uDD1F\uDD28-\uDD2F\uDD31\uDD32\uDD3F\uDD4C-\uDD4F\uDD5F-\uDD7F\uDD92-\uDDBF\uDDC1-\uDFFF]|\uD869[\uDED7-\uDEFF]|\uD86D[\uDF35-\uDF3F]|\uD86E[\uDC1E\uDC1F]|\uD873[\uDEA2-\uDFFF]|\uD87E[\uDE1E-\uDFFF]|\uDB40[\uDC00-\uDCFF\uDDF0-\uDFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])/)
-      // "\xe2\x80\x8b",  // zero-width space
-      // "\xef\xbb\xbf",  // UTF-8 BOM
-      // "\xef\xbf\xbd",  // 'Replacement Character'
-    ];
-  };
-
-  StrDump.prototype.bytesToString = function (bytes) {
-    var str = '';
-    var info = {};
-    this.setBytes(bytes);
-    // console.log('bytes', bytes)
-    // return 'foo'
-    while (this.curI < this.stats.bytesLen) {
-      // curI = this.curI   // store before gets incremented
-      this.isOffsetUtf8(info);
-      str += info.char;
-    }
-    return str
   };
 
   /**
@@ -4118,19 +4262,16 @@
         ((cp >> 6) & 0x3F) | 0x80,
         (cp & 0x3F) | 0x80
       ]
-    } else {
-      return [
-        ((cp >> 18) & 0x07) | 0xF0,
-        ((cp >> 12) & 0x3F) | 0x80,
-        ((cp >> 6) & 0x3F) | 0x80,
-        (cp & 0x3F) | 0x80
-      ]
     }
+    return [
+      ((cp >> 18) & 0x07) | 0xF0,
+      ((cp >> 12) & 0x3F) | 0x80,
+      ((cp >> 6) & 0x3F) | 0x80,
+      (cp & 0x3F) | 0x80
+    ]
   };
 
   StrDump.prototype.dump = function (bytes, sanitize) {
-    var controlCharAs = 'other';
-    // var i = 0
     var curI = 0;
     var isUtf8;
     var info = {};
@@ -4141,36 +4282,17 @@
     var percentOther = 0;
     var strNew = '';
     var strBlock = '';
-    // return this.bytesToString(bytes)
     this.setBytes(bytes);
     while (this.curI < this.stats.bytesLen) {
       curI = this.curI; // store before gets incremented
       isUtf8 = this.isOffsetUtf8(info);
-      if (isUtf8 && info.isSpecial && this.bytes[curI] < 0x80 && controlCharAs !== 'utf8special') {
-        {
-          isUtf8 = false;
-        }
-      }
+      newBlockType = isUtf8
+        ? 'utf8'
+        : 'other';
       if (isUtf8) {
-        if (info.isSpecial) {
-          // control-char or special
-          if (curBlockType !== 'utf8special') {
-            newBlockType = 'utf8special';
-          }
-        } else {
-          // plain-ol-utf8
-          if (curBlockType !== 'utf8') {
-            newBlockType = 'utf8';
-          }
-          strBlock += info.char;
-        }
-      } else {
-        // not a valid utf-8 character
-        if (curBlockType !== 'other') {
-          newBlockType = 'other';
-        }
+        strBlock += info.char;
       }
-      if (newBlockType) {
+      if (newBlockType !== curBlockType) {
         len = curI - curBlockStart;
         this.incStat(curBlockType, len);
         if (curBlockType === 'utf8') {
@@ -4184,15 +4306,7 @@
         }
         curBlockStart = curI;
         curBlockType = newBlockType;
-        newBlockType = null;
       }
-      /*
-      i++
-      if (i > this.stats.bytesLen) {
-        console.warn('something went dreadfuly wrong')
-        break
-      }
-      */
     }
     len = this.stats.bytesLen - curBlockStart;
     this.incStat(curBlockType, len);
@@ -4224,55 +4338,13 @@
    * Private method
    */
   StrDump.prototype.dumpBlock = function (bytes, blockType, options) {
-    // var i
-    var offset = 0;
-    var offsetObj = { offset: 0 };
-    var charBytes = [];
-    var cp;
-    var cpHex;
     var str = '';
-    var title;
+    // var title
     options = options || {};
     if (typeof options.prefix === 'undefined') {
       options.prefix = true;
     }
-    if (blockType === 'utf8') ; else if (blockType === 'utf8special') {
-      // console.log('utf8special', bytes)
-      while (offsetObj.offset < bytes.length) {
-        offset = offsetObj.offset;
-        cp = this.Utf8BytesToCodePoint(bytes, offsetObj);
-        cpHex = cp.toString(16).padLeft('0', 4);
-        charBytes = bytes.slice(offset, offsetObj.offset);
-        title = this.bytesToHex(charBytes, '\\x');
-        /*
-        if (isset(self::$charDesc[$ord])) {
-          $title = self::$charDesc[$ord].': '.$utf8Hex
-        }
-        */
-        str = '<a class="unicode" href="https://unicode-table.com/en/' + cpHex + '" target="unicode-table" title="' + title + '">\\u' + cpHex + '</a>';
-      }
-    } else if (blockType === 'other') {
-      /*
-      for (i = 0; i < bytes.length; i++) {
-        cpHex = bytes[i].toString(16).padLeft('0', 2)
-        if (options.prefix) {
-          cpHex = "\\x" + cpHex
-        }
-        str += cpHex + ' '
-      }
-      str = str.substr(0, str.length - 1)
-      */
-      /*
-      str = bytes.map(function (val) {
-        // var ret = val
-        // console.log(typeof ret, ret)
-        var ret = val.toString(16).padLeft('0', 2)
-        if (options.prefix) {
-          ret = "\\x" + ret
-        }
-        return ret
-      }).join(' ')
-      */
+    if (blockType === 'other') {
       str = this.bytesToHex(bytes, options.prefix ? '\\x' : '');
       str = '<span class="binary">' + str + '</span>';
     }
@@ -4298,37 +4370,11 @@
     var codepoints = this.utf16ToUnicode(str);
     var i;
     var length = codepoints.length;
-    // console.log('codepoints', codepoints)
     for (i = 0; i < length; i++) {
       bytes.push.apply(bytes, this.cpToUtf8Bytes(codepoints[i]));
     }
     return bytes
   };
-
-  /*
-  StrDump.prototype.getUtf16Bytes = function (str) {
-    var bytes = []
-    var char
-    var b1
-    var b1
-    var i
-    var l = str.length
-    try {
-      for(i = 0; i < l; i++) {
-        char = str.charCodeAt(i)
-        b1 = char >>> 8
-        b2 = char & 0xFF
-        if (b1) {
-          bytes.push(b1)
-        }
-        bytes.push(b2)
-      }
-    } catch (e) {
-      console.warn('e', e)
-    }
-    return bytes
-  }
-  */
 
   /**
    * @return array of codepoints
@@ -4340,17 +4386,13 @@
     var i;
     var code1 = null;
     var code2 = null;
-    // var utf8 = []
     var codes = [];
-    // console.log('utf16ToUnicode', str.length)
     for (i = 0; i < str.length; i++) {
       code1 = str.charCodeAt(i);
       if (code1 >= 0xD800 && code1 <= 0xDFFF) {
-        // console.warn('code1', code1.toString(16))
         if (i + 1 < str.length) {
           i++;
           code2 = str.charCodeAt(i);
-          // console.warn('code2', code2.toString(16))
           if (code2 >= 0xDC00 && code2 <= 0xDFFF) {
             codes.push((code1 - 0xD800) * 0x400 + code2 - 0xDC00 + 0x10000);
             code2 = null;
@@ -4363,31 +4405,7 @@
     if (code2 !== null) {
       codes.push(code2);
     }
-    // console.log('codes', codes)
     return codes
-  };
-
-  /**
-   * Check UTF-8 string (or single-character) against list of special characters or regular-expressions
-   *
-   * @param string $str String to check
-   *
-   * @return boolean
-   */
-  StrDump.prototype.hasSpecial = function (str) {
-    var i;
-    var special;
-    for (i = 0; i < this.special.length; i++) {
-      special = this.special[i];
-      if (special instanceof RegExp) {
-        if (special.test(str)) {
-          return true
-        }
-      } else if (str.indexOf(special) > -1) {
-        return true
-      }
-    }
-    return false
   };
 
   StrDump.prototype.incStat = function (stat, inc) {
@@ -4399,37 +4417,10 @@
     this.stats[stat] += inc;
   };
 
-  /*
-  StrDump.prototype.isUtf8 = function (str, info) {
-    console.log('isUtf8')
-    var isUtf8
-    var foundSpecial = false
-    info.hasSpecial = false
-    while (this.curI < this.stats.bytesLen) {
-      isUtf8 = this.isOffsetUtf8(info)
-      foundSpecial = foundSpecial || info.isSpecial
-      if (!isUtf8) {
-        return false
-      }
-    }
-    delete info.isSpecial
-    info.hasSpecial = foundSpecial // || this.hasSpecial(str)
-    return true
-  }
-  */
-
-  /*
-  StrDump.prototype.isValidUtf8Code = function (cp, info) {
-    info.char = this.fromCharCode(cp)
-    info.isSpecial = this.hasSpecial(info.char)
-    return true
-  }
-  */
-
   /**
-   * sets info.isSpecial
-   *      info.char
-   *      info.codepoint
+   * sets
+   *   info.char
+   *   info.codepoint
    */
   StrDump.prototype.isOffsetUtf8 = function (info) {
     var len = this.stats.bytesLen;
@@ -4438,15 +4429,10 @@
     var byte3 = this.curI + 2 < len ? this.bytes[this.curI + 2] : null;
     var byte4 = this.curI + 3 < len ? this.bytes[this.curI + 3] : null;
     var numBytes = 1;
-    info.isSpecial = false;
     info.codepoint = null;
     info.char = null;
     if (byte1 < 0x80) {
       // 0xxxxxxx
-      if ((byte1 < 0x20 || byte1 === 0x7F) && [0x09, 0x0A, 0x0D].indexOf(byte1) < 0) {
-        // ctrl char
-        info.isSpecial = true;
-      }
       numBytes = 1;
     } else if ((byte1 & 0xE0) === 0xC0) {
       // 110xxxxx 10xxxxxx
@@ -4493,7 +4479,6 @@
     }
     info.codepoint = this.Utf8BytesToCodePoint(this.bytes, { offset: this.curI });
     info.char = this.fromCodepoint(info.codepoint);
-    info.isSpecial = info.isSpecial || this.hasSpecial(info.char);
     /*
     console.log({
       curI: this.curI,
@@ -4550,52 +4535,139 @@
   };
 
   /*
-  String.prototype.hexify = (function () {
-
-    function convertBase (val, base1, base2) {
-      var ret
-      if (typeof(val) === 'number') {
-        ret = parseInt(String(val), 10).toString(base2)
-      } else {
-        ret = parseInt(val.toString(), base1).toString(base2)
+  StrDump.prototype.getUtf16Bytes = function (str) {
+    var bytes = []
+    var char
+    var b1
+    var b1
+    var i
+    var l = str.length
+    try {
+      for(i = 0; i < l; i++) {
+        char = str.charCodeAt(i)
+        b1 = char >>> 8
+        b2 = char & 0xFF
+        if (b1) {
+          bytes.push(b1)
+        }
+        bytes.push(b2)
       }
-      if (base2 === 16 && ret.length < 2) {
-        ret = '0' + ret.toString()
-      }
-      return ret
+    } catch (e) {
+      console.warn('e', e)
     }
-
-    //  discuss at: http://locutus.io/php/chunk_split/
-    function chunkSplit (str, chunklen, separator) {
-      chunklen = parseInt(chunklen, 10) || 76
-      separator = separator || '\r\n'
-      if (chunklen < 1) {
-        return false
-      }
-      var regEx = new RegExp('.{0,' + chunklen + '}', 'g')
-      return str.match(regEx).join(separator)
-    }
-
-    function pack(bytes) {
-      var retStr = ''
-      // var chars = []
-      var char, i, l
-      for (var i = 0, l = bytes.length; i < l;) {
-        char = ((bytes[i++] & 0xff) << 8) | (bytes[i++] & 0xff)
-        retStr += String.fromCharCode(char)
-      }
-      return retStr
-    }
-
-    return hexify
-  }())
+    return bytes
+  }
   */
+
+  /**
+   * Check UTF-8 string (or single-character) against list of special characters or regular-expressions
+   *
+   * @param string $str String to check
+   *
+   * @return boolean
+   */
+  /*
+  StrDump.prototype.hasSpecial = function (str) {
+    var i
+    var special
+    for (i = 0; i < this.special.length; i++) {
+      special = this.special[i]
+      if (special instanceof RegExp) {
+        if (special.test(str)) {
+          return true
+        }
+      } else if (str.indexOf(special) > -1) {
+        return true
+      }
+    }
+    return false
+  }
+  */
+
+  /*
+  StrDump.prototype.bytesToString = function (bytes) {
+    var str = ''
+    var info = {}
+    this.setBytes(bytes)
+    while (this.curI < this.stats.bytesLen) {
+      this.isOffsetUtf8(info)
+      str += info.char
+    }
+    return str
+  }
+  */
+
+  var CharHighlight = function (dumpString) {
+    var self = this;
+    this.dumpString = dumpString;
+    fetch('./?action=charData')
+      .then(function(response) {
+        return response.json()
+      }).then(function(charData) {
+        self.charData = charData;
+        self.charRegex = self.buildCharRegex();
+      });
+  };
+
+  CharHighlight.prototype.findChars = function (str) {
+    if (typeof str !== 'string') {
+      return []
+    }
+    return (str.match(this.charRegex) || []).filter(function (value, index, array) {
+      // only return if first occurrence
+      return array.indexOf(value) === index
+    })
+  };
+
+  CharHighlight.prototype.highlight = function (str) {
+    var self = this;
+    if (typeof str !== 'string') {
+      return str
+    }
+    return str.replace(this.charRegex, function (char) {
+      var info = $$1.extend({
+        char: char,
+        class: 'unicode',
+        codePoint: char.codePointAt(0).toString(16),
+        desc: '',
+        replaceWith: char,
+      }, self.charData[char]);
+      return $$1('<span></span>', {
+        class: info.class,
+        'data-abbr': info.abbr
+          ? info.abbr
+          : null,
+        'data-code-point': info.codePoint,
+        title: [
+            char.codePointAt(0) < 0x80
+              ? '\\x' + info.codePoint.padStart(2, '0')
+              : 'U-' + info.codePoint,
+            info.desc,
+        ].filter(function (val) {
+          return val.length > 0
+        }).join(': '),
+        html: info.replaceWith
+      })[0].outerHTML
+    })
+  };
+
+  CharHighlight.prototype.buildCharRegex = function () {
+    var charList = '[' +  Object.keys(this.charData).join('') + ']';
+    var charControl = '[^\\P{C}\\r\\n\\t]';   // \p{C} includes \r, \n, & \t
+    var charSeparator = '[^\\P{Z} ]';         // \p{Z} includes space (but not \r, \n, & \t)
+    var regExTemp = new RegExp('(' + charControl + '|' + charSeparator + ')', 'ug');
+    // remove chars that are covered via character properties regExs
+    charList = charList.replace(regExTemp, '');
+    return new RegExp('(' + charList + '|' + charControl + '|' + charSeparator + ')', 'ug')
+  };
 
   var strDump = new StrDump();
 
   function DumpString (dump) {
     this.dumper = dump;
+    this.dumpStringBinary = new DumpStringBinary(this);
     this.dumpEncoded = new DumpStringEncoded(this);
+    this.charHighlight = new CharHighlight(this);
   }
 
   DumpString.prototype.dump = function (val, abs) {
@@ -4603,22 +4675,36 @@
     if ($$1.isNumeric(val)) {
       this.dumper.checkTimestamp(val, abs);
     }
+    val = abs
+      ? this.dumpAbs(abs)
+      : this.doDump(val);
     if (!dumpOpts.addQuotes) {
       dumpOpts.attribs.class.push('no-quotes');
     }
-    if (abs) {
-      return this.dumpAbs(abs)
+    return val
+  };
+
+  DumpString.prototype.doDump = function (val) {
+    var opts = this.dumper.getDumpOpts();
+    if (opts.sanitize) {
+      val = val.escapeHtml();
     }
-    return this.helper(val)
+    if (opts.charHighlight) {
+      val = this.charHighlight.highlight(val);
+    }
+    if (opts.visualWhiteSpace) {
+      val = visualWhiteSpace(val);
+    }
+    return val
   };
 
   DumpString.prototype.dumpAbs = function (abs) {
-    // console.log('dumpAbs', JSON.parse(JSON.stringify(abs)))
+    // console.log('DumpString.dumpAbs', JSON.parse(JSON.stringify(abs)))
     var dumpOpts = this.dumper.getDumpOpts();
     var parsed;
     var val;
     if (abs.typeMore === 'classname') {
-      val = this.dumper.markupIdentifier(abs.value);
+      val = this.dumper.markupIdentifier(abs.value, 'classname');
       parsed = this.dumper.parseTag(val);
       $$1.extend(dumpOpts.attribs, parsed.attribs);
       return parsed.innerhtml
@@ -4628,7 +4714,7 @@
       return this.dumpEncoded.dump(val, abs)
     }
     if (abs.typeMore === 'binary') {
-      return this.dumpBinary(abs)
+      return this.dumpStringBinary.dump(abs)
     }
     if (abs.strlen) {
       val += '<span class="maxlen">&hellip; ' + (abs.strlen - abs.value.length) + ' more bytes (not logged)</span>';
@@ -4668,58 +4754,18 @@
     })
   };
 
-  DumpString.prototype.dumpBinary = function (abs) {
-    var dumpOpts = this.dumper.getDumpOpts();
-    var tagName = dumpOpts.tagName;
-    var val = abs.value
-      ? this.helper(abs.value)
-      : '';
-    var strLenDiff = abs.strlen - abs.strlenValue;
-    dumpOpts.tagName = null;
-    // console.warn('dumpBinary', abs)
-    if (val.length && strLenDiff) {
-      val += '<span class="maxlen">&hellip; ' + strLenDiff + ' more bytes (not logged)</span>';
-    }
-    if (abs.brief) {
-      // @todo display bytes
-      return abs.contentType
-        ? '<span class="t_keyword">string</span>' +
-            '<span class="text-muted">(' + abs.contentType + ')</span><span class="t_punct colon">:</span> '
-        : val
-    }
-    dumpOpts.postDump = function (val, dumpOpts) {
-      var lis = [];
-      if (abs.contentType) {
-        lis.push('<li>mime type = <span class="content-type t_string">' + abs.contentType + '</span></li>');
-      }
-      lis.push('<li>size = <span class="t_int">' + abs.strlen + '</span></li>');
-      lis.push(abs.value.length
-        ? '<li class="t_string">' + val + '</li>'
-        : '<li>Binary data not collected</li>');
-      val = '<span class="t_keyword">string</span><span class="text-muted">(binary)</span>' +
-        '<ul class="list-unstyled value-container" data-type="' + abs.type + '" data-type-more="binary">' +
-           lis.join('\n') +
-        '</ul>';
-      if (tagName === 'td') {
-        val = '<td>' + val + '</td>';
-      }
-      return val
-    };
-    return val
-  };
-
   DumpString.prototype.helper = function (val) {
     var bytes = val.substr(0, 6) === '_b64_:'
       ? new Uint8Array(base64Arraybuffer.decode(val.substr(6)))
       : strDump.encodeUTF16toUTF8(val);
     var dumpOpts = this.dumper.getDumpOpts();
-    val = dumpOpts.sanitize
-      ? strDump.dump(bytes, true)
-      : strDump.dump(bytes, false);
+    return strDump.dump(bytes, dumpOpts.sanitize)
+    /*
     if (dumpOpts.visualWhiteSpace) {
-      val = visualWhiteSpace(val);
+      val = visualWhiteSpace(val)
     }
     return val
+    */
   };
 
   DumpString.prototype.isEncoded = function (val) {
@@ -4729,12 +4775,13 @@
   /**
    * Add whitespace markup
    *
+   * \r, \n, & \t
+   *
    * @param string str string which to add whitespace html markup
    *
    * @return string
    */
   function visualWhiteSpace (str) {
-    // display \r, \n, & \t
     var i = 0;
     var strBr = '';
     var searchReplacePairs = [
@@ -4809,8 +4856,9 @@
       attribs: {
         class: []
       },
-      requestInfo: null,
+      charHighlight: true,
       postDump: null, // set to function
+      requestInfo: null,
       sanitize: true,
       tagName: '__default__',
       type: null,
@@ -4894,7 +4942,7 @@
     if (simpleTypes.indexOf(abs.type) > -1) {
       value = abs.value;
       if (abs.type === 'array') {
-        // remove value so not setting as dumpOpt or passing redundently to dumpXxxx in 2nd param
+        // remove value so not setting as dumpOpt or passing redundantly to dumpXxxx in 2nd param
         delete abs.value;
       }
       for (k in abs) {
@@ -4908,12 +4956,16 @@
     return this[method](abs)
   };
 
-  Dump.prototype.dumpArray = function (array) {
+  Dump.prototype.dumpArray = function (array, abs) {
     var html = '';
     var i;
     var key;
+    var keyShow;
     var keys = array.__debug_key_order__ || Object.keys(array);
     var length = keys.length;
+    var absKeys = typeof abs?.keys === 'object'
+      ? abs.keys
+      : {};
     var dumpOpts = $$1.extend({
       asFileTree: false,
       expand: null,
@@ -4956,7 +5008,11 @@
       '<ul class="array-inner list-unstyled">\n';
     for (i = 0; i < length; i++) {
       key = keys[i];
-      html += this.dumpArrayValue(key, array[key], showKeys);
+      keyShow = key;
+      if (absKeys.hasOwnProperty(key)) {
+        keyShow = absKeys[key];
+      }
+      html += this.dumpArrayValue(keyShow, array[key], showKeys);
     }
     html += '</ul>' +
       '<span class="t_punct">)</span>';
@@ -4989,15 +5045,15 @@
 
   Dump.prototype.dumpCallable = function (abs) {
     return (!abs.hideType ? '<span class="t_type">callable</span> ' : '') +
-      this.markupIdentifier(abs)
+      this.markupIdentifier(abs, 'function')
   };
 
   Dump.prototype.dumpConst = function (abs) {
     var dumpOpts = this.getDumpOpts();
-    dumpOpts.attribs.title = abs.value
+    dumpOpts.attribs.title = abs.value !== this.UNDEFINED
       ? 'value: ' + this.dump(abs.value)
       : null;
-    return this.markupIdentifier(abs.name)
+    return this.markupIdentifier(abs.name, 'const')
   };
 
   Dump.prototype.dumpFloat = function (val, abs) {
@@ -5049,6 +5105,18 @@
 
   Dump.prototype.dumpUnknown = function () {
     return '<span class="t_unknown">unknown type</span>'
+  };
+
+  Dump.prototype.dumpPhpDocStr = function (str) {
+    if (str === '' || str === undefined || str === null) {
+      return ''
+    }
+    return this.dump(str, {
+      sanitize: false,
+      tagName: null,
+      type: 'string',
+      visualWhiteSpace: false,
+    })
   };
 
   Dump.prototype.getClassDefinition = function (name) {
@@ -5104,58 +5172,67 @@
     }
   };
 
-  Dump.prototype.markupIdentifier = function (val, attribs, tag) {
-    // console.warn('markupIdentifier', val)
-    var classname = '';
-    var identifier = '';
+  Dump.prototype.parseIdentifier = function (val, what) {
     var matches = []; // str.match()
-    var operator = '::';
-    var regex = /^(.+)(::|->)(.+)$/;
-    var split = [];
-    attribs = attribs || {};
-    tag = tag || 'span';
-
+    var regExp = new RegExp('^(.+)(::|->)(.+)$', 'u');
+    var parts = {
+      className: '',
+      identifier: '',
+      namespace: '',
+      operator: '',
+    };
     if (typeof val === 'object' && val.debug === this.ABSTRACTION) {
       val = val.value;
-      if (typeof val === 'object') {
-        classname = val[0];
-        identifier = val[1];
-      } else {
-        matches = val.match(regex);
-        if (matches) {
-          classname = matches[1];
-          operator = matches[2];
-          identifier = matches[3];
-        } else {
-          identifier = val;
-        }
-      }
-    } else if (typeof val === 'string' && (matches = val.match(regex))) {
-      classname = matches[1];
-      operator = matches[2];
-      identifier = matches[3];
-    } else {
-      classname = val;
     }
-    operator = '<span class="t_operator">' + operator.escapeHtml() + '</span>';
-    if (classname) {
-      split = classname.split('\\');
+    parts.className = val;
+    if (Array.isArray(val)) {
+      parts.className = val[0];
+      parts.identifier = val[1];
+      parts.operator = '::';
+    } else if (matches = val.match(regExp)) {
+      parts.className = matches[1];
+      parts.operator = matches[2];
+      parts.identifier = matches[3];
+    } else if (['const', 'function'].indexOf(what) > -1) {
+      matches = val.match(/^(.+\\)?(.+)$/);
+      parts.className = '';
+      parts.identifier = matches[2];
+      parts.namespace = matches[1];
+    }
+    return parts
+  };
+
+  Dump.prototype.markupIdentifier = function (val, what, tag, attribs) {
+    var parts = this.parseIdentifier(val, what);
+    var split = [];
+    what = what || 'classname';
+    tag = tag || 'span';
+    attribs = attribs || {};
+
+    if (parts.className) {
+      parts.className = this.dumpPhpDocStr(parts.className);
+      split = parts.className.split('\\');
       if (split.length > 1) {
-        classname = split.pop();
-        classname = '<span class="namespace">' + split.join('\\') + '\\</span>' +
-          classname;
+        parts.className = split.pop();
+        parts.className = '<span class="namespace">' + split.join('\\') + '\\</span>' +
+          parts.className;
       }
       attribs.class = 'classname';
-      classname = $$1('<' + tag + '/>', attribs).html(classname)[0].outerHTML;
-    } else {
-      operator = '';
+      parts.className = $$1('<' + tag + '/>', attribs).html(parts.className)[0].outerHTML;
+    } else if (parts.namespace) {
+      attribs.class = 'namespace';
+      parts.className = $$1('<' + tag + '/>', attribs).html(parts.namespace)[0].outerHTML;
     }
-    if (identifier) {
-      identifier = '<span class="t_identifier">' + identifier + '</span>';
-    } else {
-      operator = '';
+    if (parts.operator) {
+      parts.operator = '<span class="t_operator">' + parts.operator.escapeHtml() + '</span>';
     }
-    return classname + operator + identifier
+    if (parts.identifier) {
+      parts.identifier = this.dumpPhpDocStr(parts.identifier);
+      parts.identifier = '<span class="t_identifier">' + parts.identifier + '</span>';
+    }
+    return [parts.className, parts.identifier].filter(function (val) {
+      return val !== ''
+    }).join(parts.operator)
   };
 
   Dump.prototype.parseTag = function parseTag (html) {
@@ -5323,7 +5400,7 @@
       var $group = $$1('<li>', {
         class: 'empty expanded m_group'
       });
-      var $groupHeader = groupHeader(logEntry);
+      var $groupHeader = groupHeader(logEntry, info);
       var $groupBody = $$1('<ul>', {
         class: 'group-body'
       });
@@ -5479,7 +5556,6 @@
       var $table = table.build(
         logEntry.args[0],
         logEntry.meta,
-        // 'table-bordered'
         logEntry.meta.inclContext
           ? tableAddContextRow
           : null
@@ -5504,7 +5580,7 @@
         }, attribs);
       }
       /*
-        update card header to empasize error
+        update card header to emphasize error
       */
       if (meta.errorCat) {
         // console.warn('errorCat', meta.errorCat)
@@ -5520,8 +5596,8 @@
           }
         }
       }
-      if (meta.uncollapse === false) {
-        attribs['data-uncollapse'] = 'false';
+      if (meta.uncollapse !== undefined) {
+        attribs['data-uncollapse'] = JSON.stringify(meta.uncollapse);
       }
       if (['assert', 'error', 'info', 'log', 'warn'].indexOf(method) > -1 && logEntry.args.length > 1) {
         /*
@@ -5549,17 +5625,17 @@
           )
         );
         $node.find('.m_trace').debugEnhance();
-        if ($node.is('.error-fatal')) {
-          this.endOutput(logEntry, info);
-        }
       } else if (meta.context) {
-        console.log('context', meta.context);
+        // console.log('context', meta.context)
         $node.append(
           buildContext(meta.context, meta.line)
         );
       }
+      if ($node.is('.error-fatal')) {
+        this.endOutput(logEntry, info);
+      }
       return $node
-    }
+    } // end default
   };
 
   function buildImplementsList(obj) {
@@ -5633,7 +5709,7 @@
         }).append(
           [
             buildContext(rowInfo.context, row.line),
-            rowInfo.args.length
+            Array.isArray(rowInfo.args) && rowInfo.args.length
               ? '<hr />Arguments = ' + dump.dump(row.args)
               : ''
           ]
@@ -5697,13 +5773,9 @@
   /**
    * Generates groupHeader HTML
    *
-   * @param string method debug method
-   * @param list   args   method's arguments
-   * @param object meta   meta values
-   *
    * @return jQuery obj
    */
-  function groupHeader (logEntry) {
+  function groupHeader (logEntry, requestInfo) {
     var i = 0;
     var $header;
     var argStr = '';
@@ -5711,14 +5783,16 @@
       ? logEntry.meta.argsAsParams
       : true;
     var label = logEntry.args.shift();
+    label = logEntry.meta.isFuncName
+      ? dump.markupIdentifier(label, 'function')
+      : dump.dump(label).replace(new RegExp('^<span class="t_string">(.+)</span>$', 's'), '$1');
     for (i = 0; i < logEntry.args.length; i++) {
-      logEntry.args[i] = dump.dump(logEntry.args[i]);
+      logEntry.args[i] = dump.dump(logEntry.args[i], {
+        requestInfo: requestInfo,
+      });
     }
     argStr = logEntry.args.join(', ');
     if (argsAsParams) {
-      if (logEntry.meta.isFuncName) {
-        label = dump.markupIdentifier(label);
-      }
       argStr = '<span class="group-label">' + label + '(</span>' +
         argStr +
         '<span class="group-label">)</span>';
@@ -5807,7 +5881,7 @@
   }
 
   /**
-   * Cooerce value to string
+   * Coerce value to string
    *
    * @param mixed $val value
    *
@@ -5824,7 +5898,7 @@
         '<span class="t_punct">(</span>' + Object.keys(val).length + '<span class="t_punct">)</span>'
     }
     if (type[0] === 'object') {
-      return dump.markupIdentifier(val.className)
+      return dump.markupIdentifier(val.className, 'classname')
     }
     return dump.dump(val)
   }
@@ -5851,7 +5925,7 @@
       $node.attr('data-channel', meta.channel); // using attr so can use [data-channel="xxx"] selector
       if (meta.attribs && Object.keys(meta.attribs).length) {
         if (meta.attribs.class) {
-          $node.addClass(meta.attribs.class);
+          $node.addClass(Array.isArray(meta.attribs.class) ? meta.attribs.class.join(' ') : meta.attribs.class);
           delete meta.attribs.class;
         }
         if (meta.attribs.id) {
@@ -7401,12 +7475,13 @@
 
   $$1(function () {
     var hasConnected = false;
+    var $root = $$1('#debug-cards');
 
     init$1(config);
     /*
       init on #debug-cards vs body so we can stop event propagation before bubbles to body  (ie clipboard.js)
     */
-    $$1('#debug-cards').debugEnhance('init', {
+    $root.debugEnhance('init', {
       sidebar: true,
       useLocalStorage: false
     });
@@ -7459,7 +7534,7 @@
     PubSub.publish('wamp', 'connectionOpen');
 
     PubSub.subscribe('phpDebugConsoleConfig', function (vals) {
-      $$1('body').debugEnhance('setConfig', vals);
+      $root.debugEnhance('setConfig', vals);
     });
 
     config.checkPhpDebugConsole();

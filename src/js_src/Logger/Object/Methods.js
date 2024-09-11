@@ -3,7 +3,9 @@ import { sectionPrototype } from './SectionPrototype.js'
 
 export function Methods (valDumper) {
   this.valDumper = valDumper
+  sectionPrototype.valDumper = valDumper
 }
+
 var name
 for (name in sectionPrototype) {
   Methods.prototype[name] = sectionPrototype[name]
@@ -16,10 +18,11 @@ Methods.prototype.addAttribs = function ($element, info, cfg) {
     isFinal: info.isFinal,
     isStatic: info.isStatic
   }
+  var self = this
   $element.addClass(info.visibility).removeClass('debug')
-  $.each(classes, function (classname, useClass) {
+  $.each(classes, function (className, useClass) {
     if (useClass) {
-      $element.addClass(classname)
+      $element.addClass(className)
     }
   })
   sectionPrototype.addAttribs($element, info, cfg)
@@ -27,10 +30,15 @@ Methods.prototype.addAttribs = function ($element, info, cfg) {
     $element.attr('data-implements', info.implements)
   }
   if (info.phpDoc && info.phpDoc.deprecated) {
-    $element.attr('data-deprecated-desc', info.phpDoc.deprecated[0].desc)
+    $element.attr('data-deprecated-desc', this.valDumper.dumpPhpDocStr(info.phpDoc.deprecated[0].desc))
   }
   if (cfg.phpDocOutput && info.phpDoc && info.phpDoc.throws) {
-    $element.attr('data-throws', JSON.stringify(info.phpDoc.throws))
+    $element.attr('data-throws', JSON.stringify(info.phpDoc.throws.map(function (throwInfo) {
+      return {
+        desc: self.valDumper.dumpPhpDocStr(throwInfo.desc),
+        type: self.valDumper.dumpPhpDocStr(throwInfo.type),
+      }
+    })))
   }
 }
 
@@ -44,13 +52,15 @@ Methods.prototype.dump = function (abs) {
     phpDocOutput : abs.cfgFlags & this.valDumper.objectDumper.PHPDOC_OUTPUT,
     staticVarOutput : abs.cfgFlags & this.valDumper.objectDumper.METHOD_STATIC_VAR_OUTPUT,
   }
+  var html = ''
   if (!cfg.output) {
     return ''
   }
+  html = '<dt class="methods">' + this.getLabel(abs) + '</dt>'
   if (!cfg.collect) {
-    return ''
+    return html
   }
-  return '<dt class="methods">' + this.getLabel(abs) + '</dt>' +
+  return html +
     this.magicMethodInfo(abs, ['__call', '__callStatic']) +
     this.dumpItems(abs, 'methods', cfg)
 }
@@ -77,35 +87,51 @@ Methods.prototype.dumpInner = function (name, info, cfg) {
 Methods.prototype.dumpModifiers = function (info) {
   var html = ''
   var vis = typeof info.visibility === 'object'
-    ? info.visibility
+    ? JSON.parse(JSON.stringify(info.visibility))
     : [info.visibility]
-  var modifiers = JSON.parse(JSON.stringify(vis))
+  var modifiers = {
+    abstract: info.isAbstract,
+    final: info.isFinal,
+    [vis.join(' ')]: true,
+    static: info.isStatic,
+  }
+  /*
+  if (info.isAbstract) {
+    modifiers.push('abstract')
+  }
   if (info.isFinal) {
     modifiers.push('final')
   }
+  modifiers.push(vis.join('  '))
   if (info.isStatic) {
     modifiers.push('static')
   }
-  $.each(modifiers, function (i, modifier) {
-    html += '<span class="t_modifier_' + modifier + '">' + modifier + '</span> '
+  */
+  $.each(modifiers, function (modifier, isSet) {
+    if (isSet) {
+      html += '<span class="t_modifier_' + modifier + '">' + modifier + '</span> '
+    }
   })
   return html
 }
 
 Methods.prototype.dumpName = function (name, info, cfg) {
+  if (typeof info.phpDoc === 'undefined') {
+    console.warn('phpDoc missing for method ' + name, info)
+  }
   var titleParts = [
-    info.phpDoc.summary || '',
+    info.phpDoc?.summary || '',
     cfg.methodDescOutput
-      ? info.phpDoc.desc || ''
+      ? info.phpDoc?.desc || ''
       : '',
   ]
   var title = titleParts.join("\n\n").trim()
   return ' <span class="t_identifier"' +
     (cfg.phpDocOutput && title !== ''
-      ? ' title="' + title.escapeHtml() + '"'
+      ? ' title="' + this.valDumper.dumpPhpDocStr(title).escapeHtml() + '"'
       : ''
     ) +
-    '>' + name + '</span>'
+    '>' + this.valDumper.dumpPhpDocStr(name) + '</span>'
 }
 
 Methods.prototype.dumpParams = function (info, cfg) {
@@ -150,7 +176,7 @@ Methods.prototype.dumpParamName = function (info, cfg, $param) {
     (cfg.phpDocOutput && info.desc !== null
       ? ' title="' + info.desc.escapeHtml().replace('\n', ' ') + '"'
       : ''
-    ) + '>' + name.escapeHtml() + '</span>')
+    ) + '>' + this.valDumper.dumpPhpDocStr(name) + '</span>')
 }
 
 Methods.prototype.dumpParamDefault = function (defaultValue, $param) {

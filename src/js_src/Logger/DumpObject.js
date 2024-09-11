@@ -3,6 +3,7 @@ import mergeWith from 'lodash/mergeWith'
 import { Cases } from './Object/Cases.js'
 import { Constants } from './Object/Constants.js'
 import { Methods } from './Object/Methods.js'
+import { PhpDoc } from './Object/PhpDoc.js'
 import { Properties } from './Object/Properties.js'
 import { versionCompare } from './../versionCompare.js'
 
@@ -12,6 +13,7 @@ export function DumpObject (dump) {
   this.constants = new Constants(this.dumper)
   this.methods = new Methods(this.dumper)
   this.properties = new Properties(this.dumper)
+  this.phpDoc = new PhpDoc(this.dumper)
 
   this.sectionDumpers = {
     attributes : this.dumpAttributes.bind(this),
@@ -20,7 +22,7 @@ export function DumpObject (dump) {
     extends : this.dumpExtends.bind(this),
     implements : this.dumpImplements.bind(this),
     methods : this.methods.dump.bind(this.methods),
-    phpDoc : this.dumpPhpDoc.bind(this),
+    phpDoc : this.phpDoc.dump.bind(this.phpDoc),
     properties : this.properties.dump.bind(this.properties),
   }
 
@@ -118,7 +120,7 @@ DumpObject.prototype.dump = function (abs) {
   // console.info('dumpObject', abs)
   var html = ''
   var self = this
-  var strClassname = ''
+  var strClassName = ''
   var dumpOpts = this.dumper.getDumpOpts()
   try {
     abs.debugVersion = this.dumper.getRequestInfo().$container.data('meta').debugVersion
@@ -135,27 +137,27 @@ DumpObject.prototype.dump = function (abs) {
       // PhpDebugConsole < 3.1
       abs.implementsList = abs.implements
     }
-    strClassname = this.dumpClassname(abs)
+    strClassName = this.dumpClassName(abs)
     if (abs.isRecursion) {
-      return strClassname +
+      return strClassName +
         ' <span class="t_recursion">*RECURSION*</span>'
     }
     if (abs.isMaxDepth) {
-      return strClassname +
+      return strClassName +
         ' <span class="t_maxDepth">*MAX DEPTH*</span>'
     }
     if (abs.isExcluded) {
-      return strClassname +
+      return strClassName +
         ' <span class="excluded">(not inspected)</span>'
     }
     if (abs.cfgFlags & this.BRIEF && abs.implementsList.indexOf('UnitEnum') > -1) {
-      return strClassname
+      return strClassName
     }
     if (abs.sort.indexOf('inheritance') === 0) {
       dumpOpts.attribs.class.push('groupByInheritance')
     }
     html = this.dumpToString(abs) +
-      strClassname +
+      strClassName +
       '<dl class="object-inner">' +
         this.dumpInner(abs) +
       '</dl>'
@@ -180,10 +182,10 @@ DumpObject.prototype.dumpAttributes = function (abs) {
     html += '<dd class="attribute">'
     html += self.dumper.markupIdentifier(attribute.name)
     if (Object.keys(attribute.arguments).length) {
-      $.each(attribute.arguments, function (i, val) {
+      $.each(attribute.arguments, function (name, val) {
         args.push(
-          (i.match(/^\d+$/) === null
-            ? '<span class="t_parameter-name">' + i + '</span><span class="t_punct">:</span>'
+          (name.match(/^\d+$/) === null
+            ? '<span class="t_parameter-name">' + self.dumper.dumpPhpDocStr(name) + '</span><span class="t_punct">:</span>'
             : '') +
           self.dumper.dump(val)
         )
@@ -199,24 +201,24 @@ DumpObject.prototype.dumpAttributes = function (abs) {
     : ''
 }
 
-DumpObject.prototype.dumpClassname = function (abs) {
+DumpObject.prototype.dumpClassName = function (abs) {
   var phpDoc = abs.phpDoc || {}
-  var strClassname = abs.className
-  var title = ((phpDoc.summary || '') + '\n\n' + (phpDoc.desc || '')).trim()
+  var strClassName = abs.className
+  var title = this.dumper.dumpPhpDocStr(((phpDoc.summary || '') + '\n\n' + (phpDoc.desc || '')).trim())
   var phpDocOut = abs.cfgFlags & this.PHPDOC_OUTPUT
   var $span
   if (abs.implementsList.indexOf('UnitEnum') > -1) {
-    // strClassname += '::' + abs.properties.name.value
+    // strClassName += '::' + abs.properties.name.value
     $span = $('<span />', {
       class: 't_const',
-      html: this.dumper.markupIdentifier(strClassname + '::' + abs.properties.name.value)
+      html: this.dumper.markupIdentifier(strClassName + '::' + abs.properties.name.value)
     })
     if (title && title.length) {
       $span.attr('title', title)
     }
     return $span[0].outerHTML
   }
-  return this.dumper.markupIdentifier(strClassname, {
+  return this.dumper.markupIdentifier(strClassName, 'classname', 'span', {
     title: phpDocOut && title.length ? title : null
   })
 }
@@ -225,8 +227,8 @@ DumpObject.prototype.dumpExtends = function (abs) {
   var self = this
   return abs.extends && abs.extends.length
     ? '<dt>extends</dt>' +
-        abs.extends.map(function (classname) {
-          return '<dd class="extends">' + self.dumper.markupIdentifier(classname) + '</dd>'
+        abs.extends.map(function (className) {
+          return '<dd class="extends">' + self.dumper.markupIdentifier(className, 'classname') + '</dd>'
         }).join('')
     : ''
 }
@@ -240,10 +242,10 @@ DumpObject.prototype.dumpImplements = function (abs) {
     abs.interfacesCollapse = ['ArrayAccess', 'BackedEnum', 'Countable', 'Iterator', 'IteratorAggregate', 'UnitEnum']
   }
   return '<dt>implements</dt>' +
-    '<dd>' + this.buildImplementsTree(abs.implements, abs.interfacesCollapse) + '</dd>'
+    '<dd class="implements">' + this.buildImplementsTree(abs.implements, abs.interfacesCollapse) + '</dd>'
 }
 
-DumpObject.prototype.dumpInner = function  (abs) {
+DumpObject.prototype.dumpInner = function (abs) {
   var self = this
   var html = this.dumpModifiers(abs)
   if (typeof abs.sectionOrder === 'undefined') {
@@ -256,9 +258,17 @@ DumpObject.prototype.dumpInner = function  (abs) {
   return html
 }
 
-DumpObject.prototype.dumpModifiers = function  (abs) {
-  var modifiers = []
+DumpObject.prototype.dumpModifiers = function (abs) {
+  var modifiers = {
+    abstract: abs.isAbstract,
+    final: abs.isFinal,
+    interface: abs.isInterface,
+    readonly: abs.isReadOnly,
+    trait: abs.isTrait,
+  }
+  var haveModifier = false
   var html = '<dt class="modifiers">modifiers</dt>'
+  /*
   if (abs.isFinal) {
     modifiers.push('final')
   }
@@ -268,63 +278,16 @@ DumpObject.prototype.dumpModifiers = function  (abs) {
   if (modifiers.length === 0) {
     return ''
   }
-  $.each(modifiers, function (i, modifier) {
-    html += '<dd class="t_modifier_' + modifier + '">' + modifier + '</dt>'
+  */
+  $.each(modifiers, function (modifier, isSet) {
+    if (isSet) {
+      haveModifier = true
+      html += '<dd class="t_modifier_' + modifier + '">' + modifier + '</dd>'
+    }
   })
-  return html
-}
-
-DumpObject.prototype.dumpPhpDoc = function (abs) {
-  var count
-  var html = ''
-  var i
-  var i2
-  var info
-  var key
-  var tagEntries
-  var value
-  for (key in abs.phpDoc) {
-    tagEntries = abs.phpDoc[key]
-    if (!Array.isArray(tagEntries)) {
-      continue
-    }
-    for (i = 0, count = tagEntries.length; i < count; i++) {
-      info = tagEntries[i]
-      if (key === 'author') {
-        value = info.name
-        if (info.email) {
-          value += ' &lt;<a href="mailto:' + info.email + '">' + info.email + '</a>&gt;'
-        }
-        if (info.desc) {
-          value += ' ' + info.desc.escapeHtml()
-        }
-      } else if (key === 'link') {
-        value = '<a href="' + info.uri + '" target="_blank">' +
-          (info.desc || info.uri).escapeHtml() +
-          '</a>'
-      } else if (key === 'see' && info.uri) {
-        value = '<a href="' + info.uri + '" target="_blank">' +
-          (info.desc || info.uri).escapeHtml() +
-          '</a>'
-      } else {
-        value = ''
-        for (i2 in info) {
-          value += info[i2] === null
-            ? ''
-            : info[i2].escapeHtml() + ' '
-        }
-      }
-      html += '<dd class="phpDoc phpdoc-' + key + '">' +
-        '<span class="phpdoc-tag">' + key + '</span>' +
-        '<span class="t_operator">:</span> ' +
-        value +
-        '</dd>'
-    }
-  }
-  if (html.length) {
-    html = '<dt>phpDoc</dt>' + html
-  }
-  return html
+  return haveModifier
+    ? html
+    : ''
 }
 
 DumpObject.prototype.dumpToString = function (abs) {
@@ -376,7 +339,7 @@ DumpObject.prototype.buildImplementsTree = function (implementsObj, interfacesCo
         : k
       $span = $('<span />', {
         class: 'interface',
-        html: this.dumper.markupIdentifier(iface)
+        html: this.dumper.markupIdentifier(iface, 'classname')
       })
       if (interfacesCollapse.indexOf(iface) > -1) {
         $span.addClass('toggle-off')

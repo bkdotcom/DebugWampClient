@@ -3,7 +3,9 @@ import { sectionPrototype } from './SectionPrototype.js'
 
 export function Cases (valDumper) {
   this.valDumper = valDumper
+  sectionPrototype.valDumper = valDumper
 }
+
 var name
 for (name in sectionPrototype) {
   Cases.prototype[name] = sectionPrototype[name]

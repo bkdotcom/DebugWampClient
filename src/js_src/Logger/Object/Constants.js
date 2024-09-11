@@ -3,7 +3,9 @@ import { sectionPrototype } from './SectionPrototype.js'
 
 export function Constants (valDumper) {
   this.valDumper = valDumper
+  sectionPrototype.valDumper = valDumper
 }
+
 var name
 for (name in sectionPrototype) {
   Constants.prototype[name] = sectionPrototype[name]
@@ -44,8 +46,13 @@ Constants.prototype.dump = function (abs) {
 }
 
 Constants.prototype.dumpInner = function (name, info, cfg) {
+  var title = info.phpDoc?.summary || info.desc || null
   return this.dumpModifiers(info) +
-    '<span class="t_identifier"' + (cfg.phpDocOutput && info.desc ? ' title="' + info.desc.escapeHtml() + '"' : '') + '>' + name + '</span> ' +
+    '<span class="t_identifier"' + (cfg.phpDocOutput && title
+        ? ' title="' + this.valDumper.dumpPhpDocStr(title).escapeHtml() + '"'
+        : '') + '>' +
+      this.valDumper.dump(name, {addQuotes: false}) +
+    '</span> ' +
     '<span class="t_operator">=</span> ' +
     this.valDumper.dump(info.value)
 }

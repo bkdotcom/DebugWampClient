@@ -83,6 +83,17 @@ class WampClient
     }
 
     /**
+     * Output charData json
+     *
+     * @return void
+     */
+    public function actionCharData()
+    {
+        \header('Content-Type: application/json');
+        echo \json_encode($this->debug->getDump('base')->valDumper->charData);
+    }
+
+    /**
      * Output CSS
      *
      * @return void

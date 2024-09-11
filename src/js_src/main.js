@@ -23,12 +23,13 @@ var xdebug = initXdebug()
 
 $(function () {
   var hasConnected = false
+  var $root = $('#debug-cards')
 
   ui.init(config)
   /*
     init on #debug-cards vs body so we can stop event propagation before bubbles to body  (ie clipboard.js)
   */
-  $('#debug-cards').debugEnhance('init', {
+  $root.debugEnhance('init', {
     sidebar: true,
     useLocalStorage: false
   })
@@ -81,7 +82,7 @@ $(function () {
   PubSub.publish('wamp', 'connectionOpen')
 
   PubSub.subscribe('phpDebugConsoleConfig', function (vals) {
-    $('body').debugEnhance('setConfig', vals)
+    $root.debugEnhance('setConfig', vals)
   })
 
   config.checkPhpDebugConsole()

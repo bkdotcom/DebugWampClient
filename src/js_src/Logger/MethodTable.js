@@ -74,7 +74,7 @@ Table.prototype.buildBody = function (rows, tableInfo, onBuildRow) {
     if (tableInfo.haveObjRow) {
       $tr.append(
         rowInfo.class
-          ? $(this.dump.markupIdentifier(rowInfo.class, {}, 'td'))
+          ? $(this.dump.markupIdentifier(rowInfo.class, 'classname', 'td'))
             .attr('title', rowInfo.summary)
           : '<td class="t_undefined"></td>'
       )
@@ -142,7 +142,7 @@ Table.prototype.buildHeader = function (tableInfo) {
     info = tableInfo.columns[i]
     label = info.key
     if (typeof info.class !== 'undefined') {
-      label += ' ' + this.dump.markupIdentifier(info.class)
+      label += ' ' + this.dump.markupIdentifier(info.class, 'classname')
     }
     $theadTr.append(
       $('<th scope="col"></th>').html(label)

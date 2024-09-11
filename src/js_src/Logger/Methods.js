@@ -149,7 +149,7 @@ export var methods = {
     var $group = $('<li>', {
       class: 'empty expanded m_group'
     })
-    var $groupHeader = groupHeader(logEntry)
+    var $groupHeader = groupHeader(logEntry, info)
     var $groupBody = $('<ul>', {
       class: 'group-body'
     })
@@ -305,7 +305,6 @@ export var methods = {
     var $table = table.build(
       logEntry.args[0],
       logEntry.meta,
-      // 'table-bordered'
       logEntry.meta.inclContext
         ? tableAddContextRow
         : null
@@ -330,7 +329,7 @@ export var methods = {
       }, attribs)
     }
     /*
-      update card header to empasize error
+      update card header to emphasize error
     */
     if (meta.errorCat) {
       // console.warn('errorCat', meta.errorCat)
@@ -346,8 +345,8 @@ export var methods = {
         }
       }
     }
-    if (meta.uncollapse === false) {
-      attribs['data-uncollapse'] = 'false'
+    if (meta.uncollapse !== undefined) {
+      attribs['data-uncollapse'] = JSON.stringify(meta.uncollapse)
     }
     if (['assert', 'error', 'info', 'log', 'warn'].indexOf(method) > -1 && logEntry.args.length > 1) {
       /*
@@ -375,17 +374,17 @@ export var methods = {
         )
       )
       $node.find('.m_trace').debugEnhance()
-      if ($node.is('.error-fatal')) {
-        this.endOutput(logEntry, info)
-      }
     } else if (meta.context) {
-      console.log('context', meta.context)
+      // console.log('context', meta.context)
       $node.append(
         buildContext(meta.context, meta.line)
       )
     }
+    if ($node.is('.error-fatal')) {
+      this.endOutput(logEntry, info)
+    }
     return $node
-  }
+  } // end default
 }
 
 function buildImplementsList(obj) {
@@ -459,7 +458,7 @@ function tableAddContextRow ($tr, row, rowInfo, i) {
       }).append(
         [
           buildContext(rowInfo.context, row.line),
-          rowInfo.args.length
+          Array.isArray(rowInfo.args) && rowInfo.args.length
             ? '<hr />Arguments = ' + dump.dump(row.args)
             : ''
         ]
@@ -523,13 +522,9 @@ function getTab (info) {
 /**
  * Generates groupHeader HTML
  *
- * @param string method debug method
- * @param list   args   method's arguments
- * @param object meta   meta values
- *
  * @return jQuery obj
  */
-function groupHeader (logEntry) {
+function groupHeader (logEntry, requestInfo) {
   var i = 0
   var $header
   var argStr = ''
@@ -537,14 +532,16 @@ function groupHeader (logEntry) {
     ? logEntry.meta.argsAsParams
     : true
   var label = logEntry.args.shift()
+  label = logEntry.meta.isFuncName
+    ? dump.markupIdentifier(label, 'function')
+    : dump.dump(label).replace(new RegExp('^<span class="t_string">(.+)</span>$', 's'), '$1')
   for (i = 0; i < logEntry.args.length; i++) {
-    logEntry.args[i] = dump.dump(logEntry.args[i])
+    logEntry.args[i] = dump.dump(logEntry.args[i], {
+      requestInfo: requestInfo,
+    })
   }
   argStr = logEntry.args.join(', ')
   if (argsAsParams) {
-    if (logEntry.meta.isFuncName) {
-      label = dump.markupIdentifier(label)
-    }
     argStr = '<span class="group-label">' + label + '(</span>' +
       argStr +
       '<span class="group-label">)</span>'
@@ -633,7 +630,7 @@ function processSubstitutions (logEntry, opts) {
 }
 
 /**
- * Cooerce value to string
+ * Coerce value to string
  *
  * @param mixed $val value
  *
@@ -650,7 +647,7 @@ function substitutionAsString (val) {
       '<span class="t_punct">(</span>' + Object.keys(val).length + '<span class="t_punct">)</span>'
   }
   if (type[0] === 'object') {
-    return dump.markupIdentifier(val.className)
+    return dump.markupIdentifier(val.className, 'classname')
   }
   return dump.dump(val)
 }

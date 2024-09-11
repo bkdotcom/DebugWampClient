@@ -4,7 +4,9 @@ import { versionCompare } from './../../versionCompare.js'
 
 export function Properties (valDumper) {
   this.valDumper = valDumper
+  sectionPrototype.valDumper = valDumper
 }
+
 var name
 for (name in sectionPrototype) {
   Properties.prototype[name] = sectionPrototype[name]
@@ -14,6 +16,9 @@ Properties.prototype.dump = function (abs) {
   var cfg = {
     attributeOutput : abs.cfgFlags & this.valDumper.objectDumper.PROP_ATTRIBUTE_OUTPUT,
     isDynamicSupport : versionCompare(abs.debugVersion, '3.1') >= 0
+  }
+  if (abs.isInterface) {
+    return ''
   }
   var label = Object.keys(abs.properties).length
     ? 'properties'
@@ -32,6 +37,8 @@ Properties.prototype.addAttribs = function ($element, info, cfg) {
     'debuginfo-excluded': info.debugInfoExcluded,
     'debuginfo-value': info.valueFrom === 'debugInfo',
     forceShow: info.forceShow,
+    getHook: info.hooks.indexOf('get') > -1,
+    isDeprecated: info.isDeprecated,
     isDynamic: info.declaredLast === null &&
       info.valueFrom === 'value' &&
       cfg.objClassName !== 'stdClass' &&
@@ -39,8 +46,11 @@ Properties.prototype.addAttribs = function ($element, info, cfg) {
     isPromoted: info.isPromoted,
     isReadOnly: info.isReadOnly,
     isStatic: info.isStatic,
+    isVirtual: info.isVirtual,
+    isWriteOnly: info.isVirtual && info.hooks.indexOf('get') > -1,
     'private-ancestor': info.isPrivateAncestor,
-    property: true
+    property: true,
+    setHook: info.hooks.indexOf('set') > -1
   }
   $element.addClass(info.visibility).removeClass('debug')
   $.each(classes, function (classname, useClass) {
@@ -52,6 +62,7 @@ Properties.prototype.addAttribs = function ($element, info, cfg) {
 }
 
 Properties.prototype.dumpInner = function (name, info, cfg) {
+  var title = info.phpDoc?.summary || info.desc || null
   name = name.replace('debug.', '')
   return this.dumpModifiers(info) +
     (info.type
@@ -62,8 +73,8 @@ Properties.prototype.dumpInner = function (name, info, cfg) {
       addQuotes: /[\s\r\n]/.test(name) || name === '',
       attribs: {
         class: 't_identifier',
-        title: cfg.phpDocOutput && info.desc
-          ? info.desc
+        title: cfg.phpDocOutput && title
+          ? this.valDumper.dumpPhpDocStr(title).escapeHtml()
           : null
       }
     }) +

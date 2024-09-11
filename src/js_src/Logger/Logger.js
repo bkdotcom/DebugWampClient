@@ -23,7 +23,7 @@ export function processEntry (logEntry) {
     $node.attr('data-channel', meta.channel) // using attr so can use [data-channel="xxx"] selector
     if (meta.attribs && Object.keys(meta.attribs).length) {
       if (meta.attribs.class) {
-        $node.addClass(meta.attribs.class)
+        $node.addClass(Array.isArray(meta.attribs.class) ? meta.attribs.class.join(' ') : meta.attribs.class)
         delete meta.attribs.class
       }
       if (meta.attribs.id) {

@@ -13,16 +13,16 @@ export var sectionPrototype = {
     if (cfg.groupByInheritance === false) {
       return this.dumpItemsFiltered(abs[what], cfg)
     }
-    classes.forEach(function (classname) {
+    classes.forEach(function (className) {
       var info = {}
       var items = {}
       var name = ''
-      html += [abs.className, 'stdClass'].indexOf(classname) < 0
-        ? '<dd class="heading">Inherited from ' + self.valDumper.markupIdentifier(classname) + '</dd>'
+      html += [abs.className, 'stdClass'].indexOf(className) < 0
+        ? '<dd class="heading">Inherited from ' + self.valDumper.markupIdentifier(className) + '</dd>'
         : ''
       for (name in abs[what]) {
         info = abs[what][name]
-        if (!info.declaredLast || info.declaredLast === classname) {
+        if (!info.declaredLast || info.declaredLast === className) {
             items[name] = info
             delete abs[what][name]
         }
@@ -75,6 +75,7 @@ export var sectionPrototype = {
   addAttribs: function ($element, info, cfg) {
     if (cfg.attributeOutput && info.attributes && info.attributes.length) {
       $element.attr('data-attributes', JSON.stringify(info.attributes))
+      // $element.attr('data-chars', JSON.stringify(this.valDumper.stringDumper.charHighlight.findChars(JSON.stringify(info.attributes))))
     }
     if (!info.isInherited && info.declaredPrev) {
       $element.attr('data-declared-prev', info.declaredPrev)
