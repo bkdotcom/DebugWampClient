@@ -373,9 +373,9 @@
     this.dump = dump;
   }
 
-  Table.prototype.build = function (rows, meta, onBuildRow) {
+  Table.prototype.build = function (rows, meta, onBuildRow, info) {
     // console.warn('Table.build', meta, classname)
-    meta = $$1.extend({
+    var metaDefault = {
       attribs: {
         class: [
           'table-bordered',
@@ -384,25 +384,31 @@
         ]
       },
       caption: '',
-      tableInfo: {}
-    }, meta);
+      tableInfo: {
+        columns: [],
+        haveObjRow: false,
+        rows: [],
+      }
+    };
+    meta.tableInfo = $$1.extend(metaDefault.tableInfo, meta.tableInfo);
+    meta = $$1.extend(metaDefault, meta);
     if (meta.caption === null) {
       meta.caption = '';
     }
     $table = $$1('<table>' +
-      '<caption>' + meta.caption.escapeHtml() + '</caption>' +
+      (meta.caption.length ? '<caption>' + meta.caption.escapeHtml() + '</caption>' : '')+
       '<thead><tr><th>&nbsp;</th></tr></thead>' +
       '<tbody></tbody>' +
       '</table>'
     )
       .addClass(meta.attribs.class.join(' '));
     this.buildHeader(meta.tableInfo);
-    this.buildBody(rows, meta.tableInfo, onBuildRow);
+    this.buildBody(rows, meta.tableInfo, onBuildRow, info);
     this.buildFooter(meta.tableInfo);
     return $table
   };
 
-  Table.prototype.buildBody = function (rows, tableInfo, onBuildRow) {
+  Table.prototype.buildBody = function (rows, tableInfo, onBuildRow, info) {
     var i;
     var length;
     var i2;
@@ -430,7 +436,9 @@
       if (typeof rowKey === 'string' && rowKey.match(/^\d+$/) && Number.isSafeInteger(rowKey)) {
         rowKey = parseInt(rowKey, 10);
       }
-      parsed = this.dump.parseTag(this.dump.dump(rowKey));
+      parsed = this.dump.parseTag(this.dump.dump(rowKey, {
+        requestInfo: info,
+      }));
       $tr = $$1('<tr></tr>', rowInfo.attribs || {})
         .append(
           $$1('<th scope="row" class="t_key text-right"></th>')
@@ -455,7 +463,10 @@
           $('<td />').html(parsed.innerhtml).attr(parsed.attribs)
         )
         */
-        $tr.append(this.dump.dump(row[key], { tagName: 'td' }));
+        $tr.append(this.dump.dump(row[key], {
+          requestInfo: info,
+          tagName: 'td'
+        }));
       }
       if (onBuildRow) {
         $tr = onBuildRow($tr, row, rowInfo, rowKey);
@@ -2975,7 +2986,7 @@
 
   Cases.prototype.dumpInner = function (name, info, cfg) {
     var title = cfg.phpDocOutput
-      ? info.desc
+      ? info.phpDoc.summary || info.desc || null
       : null;
     var $element = $$1('<div></div>')
       .html('<span class="t_identifier">' + name + '</span>' +
@@ -2986,6 +2997,7 @@
         )
       );
     if (title && title.length) {
+      title = this.valDumper.dumpPhpDocStr(title);
       $element.find('.t_identifier').attr('title', title);
     }
     return $element[0].innerHTML
@@ -3474,10 +3486,13 @@
       property: true,
       setHook: info.hooks.indexOf('set') > -1
     };
-    $element.addClass(info.visibility).removeClass('debug');
-    $$1.each(classes, function (classname, useClass) {
+    var visibility = typeof info.visibility === 'object'
+      ? info.visibility.join(' ')
+      : info.visibility;
+    $element.addClass(visibility).removeClass('debug');
+    $$1.each(classes, function (className, useClass) {
       if (useClass) {
-        $element.addClass(classname);
+        $element.addClass(className);
       }
     });
     sectionPrototype.addAttribs($element, info, cfg);
@@ -3520,7 +3535,9 @@
       modifiers.push('static');
     }
     $$1.each(modifiers, function (i, modifier) {
-      html += '<span class="t_modifier_' + modifier + '">' + modifier + '</span> ';
+      var cssClass = 't_modifier_' + modifier;
+      modifier = modifier.replace('-set', '(set)');
+      html += '<span class="' + cssClass + '">' + modifier + '</span> ';
     });
     return html
   };
@@ -5049,11 +5066,12 @@
   };
 
   Dump.prototype.dumpConst = function (abs) {
-    var dumpOpts = this.getDumpOpts();
-    dumpOpts.attribs.title = abs.value !== this.UNDEFINED
-      ? 'value: ' + this.dump(abs.value)
-      : null;
-    return this.markupIdentifier(abs.name, 'const')
+    return this.dumpIdentifier({
+      backedValue: abs.value,
+      type: 'identifier',
+      typeMore: 'const',
+      value: abs.name,
+    })
   };
 
   Dump.prototype.dumpFloat = function (val, abs) {
@@ -5065,6 +5083,14 @@
       return 'NaN'
     }
     return val
+  };
+
+  Dump.prototype.dumpIdentifier = function (abs) {
+    var dumpOpts = this.getDumpOpts();
+    dumpOpts.attribs.title = [undefined, this.UNDEFINED].indexOf(abs.backedValue) < 0
+      ? 'value: ' + this.dump(abs.backedValue)
+      : null;
+    return this.markupIdentifier(abs.value, abs.typeMore)
   };
 
   Dump.prototype.dumpInt = function (val, abs) {
@@ -5228,7 +5254,7 @@
     }
     if (parts.identifier) {
       parts.identifier = this.dumpPhpDocStr(parts.identifier);
-      parts.identifier = '<span class="t_identifier">' + parts.identifier + '</span>';
+      parts.identifier = '<span class="t_name">' + parts.identifier + '</span>';
     }
     return [parts.className, parts.identifier].filter(function (val) {
       return val !== ''
@@ -5254,22 +5280,33 @@
   };
 
   var dump = new Dump();
+  var subRegex = new RegExp('%' +
+    '(?:' +
+    '[coO]|' + // c: css, o: obj with max info, O: obj w generic info
+    '[+-]?' + // sign specifier
+    '(?:[ 0]|\'.)?' + // padding specifier
+    '-?' + // alignment specifier
+    '\\d*' + // width specifier
+    '(?:\\.\\d+)?' + // precision specifier
+    '[difs]' +
+    ')', 'g');
   var table = new Table(dump);
 
   var methods = {
     alert: function (logEntry, info) {
-      var message;
-      var level = logEntry.meta.level || logEntry.meta.class;
-      var dismissible = logEntry.meta.dismissible;
       var $node = $$1('<div class="m_alert"></div>')
-        .addClass('alert-' + level)
+        .addClass('alert-' + (logEntry.meta.level || logEntry.meta.class))
         // .html(message)
         .attr('data-channel', logEntry.meta.channel); // using attr so can use [data-channel="xxx"] selector
-      if (logEntry.args.length > 1) {
-        processSubstitutions(logEntry);
-      }
-      message = logEntry.args[0];
-      $node.html(message);
+      var dismissible = logEntry.meta.dismissible;
+      var html = logEntry.args.length > 1
+        ? buildEntryNode(logEntry, info).html()
+        : dump.dump(logEntry.args[0], {
+          sanitize: logEntry.meta.sanitizeFirst,
+          tagName: null, // don't wrap value span
+          visualWhiteSpace: false,
+        });
+      $node.html(html);
       if (dismissible) {
         $node.prepend('<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
           '<span aria-hidden="true">&times;</span>' +
@@ -5558,7 +5595,8 @@
         logEntry.meta,
         logEntry.meta.inclContext
           ? tableAddContextRow
-          : null
+          : null,
+        info
       );
       return $$1('<li>', { class: 'm_' + logEntry.method }).append($table)
     },
@@ -5583,7 +5621,6 @@
         update card header to emphasize error
       */
       if (meta.errorCat) {
-        // console.warn('errorCat', meta.errorCat)
         attribs.class += ' error-' + meta.errorCat;
         if (!meta.isSuppressed) {
           if (method === 'error') {
@@ -5599,18 +5636,19 @@
       if (meta.uncollapse !== undefined) {
         attribs['data-uncollapse'] = JSON.stringify(meta.uncollapse);
       }
-      if (['assert', 'error', 'info', 'log', 'warn'].indexOf(method) > -1 && logEntry.args.length > 1) {
-        /*
-          update tab
-        */
-        if (method === 'error') {
-          getTab(info).addClass('has-error');
-        } else if (method === 'warn') {
-          getTab(info).addClass('has-warn');
-        } else if (method === 'assert') {
-          getTab(info).addClass('has-assert');
-        }
-        processSubstitutions(logEntry);
+      /*
+      if (['assert', 'error', 'info', 'log', 'warn'].indexOf(method) > -1 && logEntry.args.length > 1)) {
+      }
+      */
+      /*
+        update tab
+      */
+      if (method === 'error') {
+        getTab(info).addClass('has-error');
+      } else if (method === 'warn') {
+        getTab(info).addClass('has-warn');
+      } else if (method === 'assert') {
+        getTab(info).addClass('has-assert');
       }
       $node = buildEntryNode(logEntry, info);
       $node.attr(attribs);
@@ -5724,14 +5762,20 @@
     var glueAfterFirst = true;
     var args = logEntry.args;
     var numArgs = args.length;
-    var meta = $$1.extend({
+    var typeInfo;
+    var typeMore;
+    logEntry.meta = $$1.extend({
       sanitize: true,
       sanitizeFirst: null
     }, logEntry.meta);
-    var typeInfo;
-    var typeMore;
-    if (meta.sanitizeFirst === null) {
-      meta.sanitizeFirst = meta.sanitize;
+    if (logEntry.meta.sanitizeFirst === null) {
+      logEntry.meta.sanitizeFirst = logEntry.meta.sanitize;
+    }
+    // console.warn('buildEntryNode', JSON.parse(JSON.stringify(logEntry)))
+    if (numArgs > 1) {
+      processSubstitutions(logEntry);
+      args = logEntry.args;
+      numArgs = args.length;
     }
     if (typeof args[0] === 'string') {
       if (args[0].match(/[=:]\s*$/)) {
@@ -5751,8 +5795,8 @@
         addQuotes: i !== 0 || typeMore === 'numeric',
         requestInfo: requestInfo,
         sanitize: i === 0
-          ? meta.sanitizeFirst
-          : meta.sanitize,
+          ? logEntry.meta.sanitizeFirst
+          : logEntry.meta.sanitize,
         type: typeInfo[0],
         typeMore: typeInfo[1] || null,
         visualWhiteSpace: i !== 0
@@ -5785,7 +5829,9 @@
     var label = logEntry.args.shift();
     label = logEntry.meta.isFuncName
       ? dump.markupIdentifier(label, 'function')
-      : dump.dump(label).replace(new RegExp('^<span class="t_string">(.+)</span>$', 's'), '$1');
+      : dump.dump(label, {
+        requestInfo: requestInfo
+      }).replace(new RegExp('^<span class="t_string">(.+)</span>$', 's'), '$1');
     for (i = 0; i < logEntry.args.length; i++) {
       logEntry.args[i] = dump.dump(logEntry.args[i], {
         requestInfo: requestInfo,
@@ -5811,33 +5857,34 @@
     return $header
   }
 
+  function containsSubstitutions(logEntry)
+  {
+    if (logEntry.args.length < 2 || typeof logEntry.args[0] !== 'string') {
+      return false
+    }
+    return logEntry.args[0].match(subRegex) !== null
+  }
+
+
   /**
    * @param logEntry
    *
    * @return void
    */
   function processSubstitutions (logEntry, opts) {
-    var subRegex = '%' +
-      '(?:' +
-      '[coO]|' + // c: css, o: obj with max info, O: obj w generic info
-      '[+-]?' + // sign specifier
-      '(?:[ 0]|\'.)?' + // padding specifier
-      '-?' + // alignment specifier
-      '\\d*' + // width specifier
-      '(?:\\.\\d+)?' + // precision specifier
-      '[difs]' +
-      ')';
     var args = logEntry.args;
     var argLen = args.length;
-    var hasSubs = false;
     var index = 0;
     var typeCounts = {
       c: 0
     };
-    if (typeof args[0] !== 'string' || argLen < 2) {
+    if (containsSubstitutions(logEntry) === false) {
       return
     }
-    subRegex = new RegExp(subRegex, 'g');
+    args[0] = dump.dump(args[0], {
+      sanitize: logEntry.meta.sanitizeFirst,
+      tagName: null
+    });
     args[0] = args[0].replace(subRegex, function (match) {
       var replacement = match;
       var type = match.substr(-1);
@@ -5867,17 +5914,13 @@
       delete args[index]; // sets to undefined
       return replacement
     });
-    // using reduce to perform an array_sum
-    hasSubs = Object.values(typeCounts).reduce(function (acc, val) { return acc + val }, 0) > 0;
-    if (hasSubs) {
-      if (typeCounts.c) {
-        args[0] += '</span>';
-      }
-      logEntry.args = args.filter(function (val) {
-        return val !== undefined
-      });
-      logEntry.meta.sanitizeFirst = false;
+    if (typeCounts.c) {
+      args[0] += '</span>';
     }
+    logEntry.args = args.filter(function (val) {
+      return val !== undefined
+    });
+    logEntry.meta.sanitizeFirst = false;
   }
 
   /**

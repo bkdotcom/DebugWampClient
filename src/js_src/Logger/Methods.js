@@ -3,22 +3,33 @@ import { Table } from './methodTable.js'
 import { Dump } from './Dump.js'
 
 var dump = new Dump()
+var subRegex = new RegExp('%' +
+  '(?:' +
+  '[coO]|' + // c: css, o: obj with max info, O: obj w generic info
+  '[+-]?' + // sign specifier
+  '(?:[ 0]|\'.)?' + // padding specifier
+  '-?' + // alignment specifier
+  '\\d*' + // width specifier
+  '(?:\\.\\d+)?' + // precision specifier
+  '[difs]' +
+  ')', 'g')
 var table = new Table(dump)
 
 export var methods = {
   alert: function (logEntry, info) {
-    var message
-    var level = logEntry.meta.level || logEntry.meta.class
-    var dismissible = logEntry.meta.dismissible
     var $node = $('<div class="m_alert"></div>')
-      .addClass('alert-' + level)
+      .addClass('alert-' + (logEntry.meta.level || logEntry.meta.class))
       // .html(message)
       .attr('data-channel', logEntry.meta.channel) // using attr so can use [data-channel="xxx"] selector
-    if (logEntry.args.length > 1) {
-      processSubstitutions(logEntry)
-    }
-    message = logEntry.args[0]
-    $node.html(message)
+    var dismissible = logEntry.meta.dismissible
+    var html = logEntry.args.length > 1
+      ? buildEntryNode(logEntry, info).html()
+      : dump.dump(logEntry.args[0], {
+        sanitize: logEntry.meta.sanitizeFirst,
+        tagName: null, // don't wrap value span
+        visualWhiteSpace: false,
+      });
+    $node.html(html)
     if (dismissible) {
       $node.prepend('<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
         '<span aria-hidden="true">&times;</span>' +
@@ -307,7 +318,8 @@ export var methods = {
       logEntry.meta,
       logEntry.meta.inclContext
         ? tableAddContextRow
-        : null
+        : null,
+      info
     )
     return $('<li>', { class: 'm_' + logEntry.method }).append($table)
   },
@@ -332,7 +344,6 @@ export var methods = {
       update card header to emphasize error
     */
     if (meta.errorCat) {
-      // console.warn('errorCat', meta.errorCat)
       attribs.class += ' error-' + meta.errorCat
       if (!meta.isSuppressed) {
         if (method === 'error') {
@@ -348,18 +359,19 @@ export var methods = {
     if (meta.uncollapse !== undefined) {
       attribs['data-uncollapse'] = JSON.stringify(meta.uncollapse)
     }
-    if (['assert', 'error', 'info', 'log', 'warn'].indexOf(method) > -1 && logEntry.args.length > 1) {
-      /*
-        update tab
-      */
-      if (method === 'error') {
-        getTab(info).addClass('has-error')
-      } else if (method === 'warn') {
-        getTab(info).addClass('has-warn')
-      } else if (method === 'assert') {
-        getTab(info).addClass('has-assert')
-      }
-      processSubstitutions(logEntry)
+    /*
+    if (['assert', 'error', 'info', 'log', 'warn'].indexOf(method) > -1 && logEntry.args.length > 1)) {
+    }
+    */
+    /*
+      update tab
+    */
+    if (method === 'error') {
+      getTab(info).addClass('has-error')
+    } else if (method === 'warn') {
+      getTab(info).addClass('has-warn')
+    } else if (method === 'assert') {
+      getTab(info).addClass('has-assert')
     }
     $node = buildEntryNode(logEntry, info)
     $node.attr(attribs)
@@ -473,14 +485,20 @@ function buildEntryNode (logEntry, requestInfo) {
   var glueAfterFirst = true
   var args = logEntry.args
   var numArgs = args.length
-  var meta = $.extend({
+  var typeInfo
+  var typeMore
+  logEntry.meta = $.extend({
     sanitize: true,
     sanitizeFirst: null
   }, logEntry.meta)
-  var typeInfo
-  var typeMore
-  if (meta.sanitizeFirst === null) {
-    meta.sanitizeFirst = meta.sanitize
+  if (logEntry.meta.sanitizeFirst === null) {
+    logEntry.meta.sanitizeFirst = logEntry.meta.sanitize
+  }
+  // console.warn('buildEntryNode', JSON.parse(JSON.stringify(logEntry)))
+  if (numArgs > 1) {
+    processSubstitutions(logEntry)
+    args = logEntry.args
+    numArgs = args.length
   }
   if (typeof args[0] === 'string') {
     if (args[0].match(/[=:]\s*$/)) {
@@ -500,8 +518,8 @@ function buildEntryNode (logEntry, requestInfo) {
       addQuotes: i !== 0 || typeMore === 'numeric',
       requestInfo: requestInfo,
       sanitize: i === 0
-        ? meta.sanitizeFirst
-        : meta.sanitize,
+        ? logEntry.meta.sanitizeFirst
+        : logEntry.meta.sanitize,
       type: typeInfo[0],
       typeMore: typeInfo[1] || null,
       visualWhiteSpace: i !== 0
@@ -534,7 +552,9 @@ function groupHeader (logEntry, requestInfo) {
   var label = logEntry.args.shift()
   label = logEntry.meta.isFuncName
     ? dump.markupIdentifier(label, 'function')
-    : dump.dump(label).replace(new RegExp('^<span class="t_string">(.+)</span>$', 's'), '$1')
+    : dump.dump(label, {
+      requestInfo: requestInfo
+    }).replace(new RegExp('^<span class="t_string">(.+)</span>$', 's'), '$1')
   for (i = 0; i < logEntry.args.length; i++) {
     logEntry.args[i] = dump.dump(logEntry.args[i], {
       requestInfo: requestInfo,
@@ -560,33 +580,34 @@ function groupHeader (logEntry, requestInfo) {
   return $header
 }
 
+function containsSubstitutions(logEntry)
+{
+  if (logEntry.args.length < 2 || typeof logEntry.args[0] !== 'string') {
+    return false
+  }
+  return logEntry.args[0].match(subRegex) !== null
+}
+
+
 /**
  * @param logEntry
  *
  * @return void
  */
 function processSubstitutions (logEntry, opts) {
-  var subRegex = '%' +
-    '(?:' +
-    '[coO]|' + // c: css, o: obj with max info, O: obj w generic info
-    '[+-]?' + // sign specifier
-    '(?:[ 0]|\'.)?' + // padding specifier
-    '-?' + // alignment specifier
-    '\\d*' + // width specifier
-    '(?:\\.\\d+)?' + // precision specifier
-    '[difs]' +
-    ')'
   var args = logEntry.args
   var argLen = args.length
-  var hasSubs = false
   var index = 0
   var typeCounts = {
     c: 0
   }
-  if (typeof args[0] !== 'string' || argLen < 2) {
+  if (containsSubstitutions(logEntry) === false) {
     return
   }
-  subRegex = new RegExp(subRegex, 'g')
+  args[0] = dump.dump(args[0], {
+    sanitize: logEntry.meta.sanitizeFirst,
+    tagName: null
+  })
   args[0] = args[0].replace(subRegex, function (match) {
     var replacement = match
     var type = match.substr(-1)
@@ -616,17 +637,13 @@ function processSubstitutions (logEntry, opts) {
     delete args[index] // sets to undefined
     return replacement
   })
-  // using reduce to perform an array_sum
-  hasSubs = Object.values(typeCounts).reduce(function (acc, val) { return acc + val }, 0) > 0
-  if (hasSubs) {
-    if (typeCounts.c) {
-      args[0] += '</span>'
-    }
-    logEntry.args = args.filter(function (val) {
-      return val !== undefined
-    })
-    logEntry.meta.sanitizeFirst = false
+  if (typeCounts.c) {
+    args[0] += '</span>'
   }
+  logEntry.args = args.filter(function (val) {
+    return val !== undefined
+  })
+  logEntry.meta.sanitizeFirst = false
 }
 
 /**

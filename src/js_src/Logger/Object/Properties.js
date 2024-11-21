@@ -52,10 +52,13 @@ Properties.prototype.addAttribs = function ($element, info, cfg) {
     property: true,
     setHook: info.hooks.indexOf('set') > -1
   }
-  $element.addClass(info.visibility).removeClass('debug')
-  $.each(classes, function (classname, useClass) {
+  var visibility = typeof info.visibility === 'object'
+    ? info.visibility.join(' ')
+    : info.visibility
+  $element.addClass(visibility).removeClass('debug')
+  $.each(classes, function (className, useClass) {
     if (useClass) {
-      $element.addClass(classname)
+      $element.addClass(className)
     }
   })
   sectionPrototype.addAttribs($element, info, cfg)
@@ -98,7 +101,9 @@ Properties.prototype.dumpModifiers = function (info) {
     modifiers.push('static')
   }
   $.each(modifiers, function (i, modifier) {
-    html += '<span class="t_modifier_' + modifier + '">' + modifier + '</span> '
+    var cssClass = 't_modifier_' + modifier
+    modifier = modifier.replace('-set', '(set)')
+    html += '<span class="' + cssClass + '">' + modifier + '</span> '
   })
   return html
 }

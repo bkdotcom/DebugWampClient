@@ -6,9 +6,9 @@ export function Table (dump) {
   this.dump = dump
 }
 
-Table.prototype.build = function (rows, meta, onBuildRow) {
+Table.prototype.build = function (rows, meta, onBuildRow, info) {
   // console.warn('Table.build', meta, classname)
-  meta = $.extend({
+  var metaDefault = {
     attribs: {
       class: [
         'table-bordered',
@@ -17,25 +17,31 @@ Table.prototype.build = function (rows, meta, onBuildRow) {
       ]
     },
     caption: '',
-    tableInfo: {}
-  }, meta)
+    tableInfo: {
+      columns: [],
+      haveObjRow: false,
+      rows: [],
+    }
+  }
+  meta.tableInfo = $.extend(metaDefault.tableInfo, meta.tableInfo)
+  meta = $.extend(metaDefault, meta)
   if (meta.caption === null) {
     meta.caption = ''
   }
   $table = $('<table>' +
-    '<caption>' + meta.caption.escapeHtml() + '</caption>' +
+    (meta.caption.length ? '<caption>' + meta.caption.escapeHtml() + '</caption>' : '')+
     '<thead><tr><th>&nbsp;</th></tr></thead>' +
     '<tbody></tbody>' +
     '</table>'
   )
     .addClass(meta.attribs.class.join(' '))
   this.buildHeader(meta.tableInfo)
-  this.buildBody(rows, meta.tableInfo, onBuildRow)
+  this.buildBody(rows, meta.tableInfo, onBuildRow, info)
   this.buildFooter(meta.tableInfo)
   return $table
 }
 
-Table.prototype.buildBody = function (rows, tableInfo, onBuildRow) {
+Table.prototype.buildBody = function (rows, tableInfo, onBuildRow, info) {
   var i
   var length
   var i2
@@ -63,7 +69,9 @@ Table.prototype.buildBody = function (rows, tableInfo, onBuildRow) {
     if (typeof rowKey === 'string' && rowKey.match(/^\d+$/) && Number.isSafeInteger(rowKey)) {
       rowKey = parseInt(rowKey, 10)
     }
-    parsed = this.dump.parseTag(this.dump.dump(rowKey))
+    parsed = this.dump.parseTag(this.dump.dump(rowKey, {
+      requestInfo: info,
+    }))
     $tr = $('<tr></tr>', rowInfo.attribs || {})
       .append(
         $('<th scope="row" class="t_key text-right"></th>')
@@ -88,7 +96,10 @@ Table.prototype.buildBody = function (rows, tableInfo, onBuildRow) {
         $('<td />').html(parsed.innerhtml).attr(parsed.attribs)
       )
       */
-      $tr.append(this.dump.dump(row[key], { tagName: 'td' }))
+      $tr.append(this.dump.dump(row[key], {
+        requestInfo: info,
+        tagName: 'td'
+      }))
     }
     if (onBuildRow) {
       $tr = onBuildRow($tr, row, rowInfo, rowKey)

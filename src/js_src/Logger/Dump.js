@@ -251,11 +251,12 @@ Dump.prototype.dumpCallable = function (abs) {
 }
 
 Dump.prototype.dumpConst = function (abs) {
-  var dumpOpts = this.getDumpOpts()
-  dumpOpts.attribs.title = abs.value !== this.UNDEFINED
-    ? 'value: ' + this.dump(abs.value)
-    : null
-  return this.markupIdentifier(abs.name, 'const')
+  return this.dumpIdentifier({
+    backedValue: abs.value,
+    type: 'identifier',
+    typeMore: 'const',
+    value: abs.name,
+  })
 }
 
 Dump.prototype.dumpFloat = function (val, abs) {
@@ -267,6 +268,14 @@ Dump.prototype.dumpFloat = function (val, abs) {
     return 'NaN'
   }
   return val
+}
+
+Dump.prototype.dumpIdentifier = function (abs) {
+  var dumpOpts = this.getDumpOpts()
+  dumpOpts.attribs.title = [undefined, this.UNDEFINED].indexOf(abs.backedValue) < 0
+    ? 'value: ' + this.dump(abs.backedValue)
+    : null
+  return this.markupIdentifier(abs.value, abs.typeMore)
 }
 
 Dump.prototype.dumpInt = function (val, abs) {
@@ -430,7 +439,7 @@ Dump.prototype.markupIdentifier = function (val, what, tag, attribs) {
   }
   if (parts.identifier) {
     parts.identifier = this.dumpPhpDocStr(parts.identifier)
-    parts.identifier = '<span class="t_identifier">' + parts.identifier + '</span>'
+    parts.identifier = '<span class="t_name">' + parts.identifier + '</span>'
   }
   return [parts.className, parts.identifier].filter(function (val) {
     return val !== ''

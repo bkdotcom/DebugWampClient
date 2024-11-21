@@ -43,7 +43,7 @@ Cases.prototype.dump = function (abs) {
 
 Cases.prototype.dumpInner = function (name, info, cfg) {
   var title = cfg.phpDocOutput
-    ? info.desc
+    ? info.phpDoc.summary || info.desc || null
     : null
   var $element = $('<div></div>')
     .html('<span class="t_identifier">' + name + '</span>' +
@@ -54,6 +54,7 @@ Cases.prototype.dumpInner = function (name, info, cfg) {
       )
     )
   if (title && title.length) {
+    title = this.valDumper.dumpPhpDocStr(title)
     $element.find('.t_identifier').attr('title', title)
   }
   return $element[0].innerHTML
