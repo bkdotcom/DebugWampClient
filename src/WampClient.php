@@ -38,8 +38,8 @@ class WampClient
         $this->request = $debug->serverRequest;
         $this->cfg = \array_merge(array(
             'jquery' => '//ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js',
-            'bootstrapJs' => '//stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js',
-            'bootstrapCss' => '//stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css',
+            'bootstrapCss' => '//cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css',
+            'bootstrapJs' => '//cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js',
             'filepathScript' => __DIR__ . '/js/main.min.js',
         ), $cfg);
         $this->debug->addPlugin(new Highlight());
@@ -117,7 +117,7 @@ class WampClient
             $query['src']
             : null;
         $srcSanitized = __DIR__ . '/img/' . \str_replace('..', '', $src);
-        if (!$src || \file_exists($srcSanitized) === false) {
+        if (!$src || \is_file($srcSanitized) === false) {
             \header('HTTP/1.0 404 Not Found');
             return;
         }

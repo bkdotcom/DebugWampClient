@@ -1,17 +1,12 @@
-/**
- * see https://github.com/mishoo/UglifyJS2/blob/master/README.md#minify-options
- */
-
-// import babel from 'rollup-plugin-babel';
-import commonjs from 'rollup-plugin-commonjs'
-import legacy from 'rollup-plugin-legacy'
+import commonjs from '@rollup/plugin-commonjs';
+import legacy from '@rollup/plugin-legacy'
 // import nodePolyfills from 'rollup-plugin-node-polyfills'
-import resolve from 'rollup-plugin-node-resolve'
-import { uglify } from 'rollup-plugin-uglify'
+import { nodeResolve } from '@rollup/plugin-node-resolve'
+import terser from '@rollup/plugin-terser'
 
 var onwarn = function(message) {
   // autobahn... not much we can do
-  if (/Use of eval is strongly discouraged/.test(message)) {
+  if (/Use of eval in "node_modules\/autobahn-browser\/autobahn.min.js" is strongly discouraged/.test(message)) {
     return
   }
   console.error(message)
@@ -31,11 +26,8 @@ var tasks = [
       // sourcemap: 'inline',
     },
     plugins: plugins = [
-      // babel({
-        // exclude: ['node_modules/**'],
-      // }),
       // nodePolyfills(),
-      resolve({
+      nodeResolve({
         // jsnext: true,
         // main: true,
         mainFields: ['jsnext:main'],
@@ -62,11 +54,8 @@ var tasks = [
 
 if (process.env.NODE_ENV !== 'watch') {
   var plugins = [
-    // babel({
-      // exclude: ['node_modules/**'],
-    // }),
     // nodePolyfills(),
-    resolve({
+    nodeResolve({
       // jsnext: true,
       // main: true,
       mainFields: ['jsnext:main'],
@@ -87,11 +76,14 @@ if (process.env.NODE_ENV !== 'watch') {
       }
       */
     }),
+    /*
     uglify({
       compress: {
         drop_console: true
       }
     })
+    */
+    terser()
   ]
   tasks.push({
     input: 'src/js_src/main.js',

@@ -7,16 +7,14 @@ import { Xdebug } from './Xdebug/Xdebug.js'
 import { Config } from './Config.js'
 import { SocketWorker as Wamp } from './wamp/SocketWorker.js'
 
-var config = new Config(
-  {
-    url: 'ws://127.0.0.1:9090/',
-    realm: 'debug',
-    fontSize: '1em',
-    linkFiles: false,
-    linkFilesTemplate: 'subl://open?url=file://%file&line=%line'
-  },
-  'debugWampClient'
-)
+var config = new Config({
+  theme: 'auto',
+  url: 'ws://127.0.0.1:9090/',
+  realm: 'debug',
+  fontSize: '1em',
+  linkFiles: false,
+  linkFilesTemplate: 'subl://open?url=file://%file&line=%line'
+}, 'debugWampClient')
 
 initWamp()
 var xdebug = initXdebug()
@@ -63,7 +61,7 @@ $(function () {
       $('#debug-cards').prepend(
         '<div id="alert" class="alert alert-warning alert-dismissible closed">' +
           'Not connected to debug server' +
-          '<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>' +
+          '<button type="button" class="btn-close" data-dismiss="alert" aria-label="Close"></button>' +
         '</div>'
       )
       if (!config.haveSavedConfig && !hasConnected) {

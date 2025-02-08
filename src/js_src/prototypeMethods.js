@@ -46,9 +46,10 @@ String.prototype.escapeHtml = function () {
     '<': '&lt;',
     '>': '&gt;',
     '"': '&quot;',
-    "'": '&#039;'
+    // "'": '&#039;',
   }
-  return this.replace(/[&<>"']/g, function (m) { return map[m] })
+  var regex = new RegExp('[' + Object.keys(map).join('') + ']', 'g')
+  return this.replace(regex, function (m) { return map[m] })
 }
 
 String.prototype.parseHex = function () {

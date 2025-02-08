@@ -110,13 +110,13 @@ function getNodeInfo (meta) {
       '<div class="card mb-3 sticky working" id="' + meta.requestId + '">' +
         '<div class="card-header" data-toggle="collapse" data-target="#' + meta.requestId + ' &gt; .collapse">' +
           '<i class="fa fa-chevron-right"></i>' +
-          '<i class="fa fa-times float-right btn-remove-session"></i>' +
+          '<i class="fa fa-times float-end btn-remove-session"></i>' +
           '<div class="card-header-body">' +
             '<h3 class="card-title">Building Request&hellip;</h3>' +
             '<i class="fa fa-spinner fa-pulse fa-lg"></i>' +
           '</div>' +
         '</div>' +
-        '<div class="bg-white card-body collapse debug debug-enhanced-ui">' +
+        '<div class="card-body collapse debug debug-enhanced-ui" data-theme="' + 'dark' + '">' +
           '<header class="debug-bar debug-menu-bar">' +
             '<nav role="tablist">' +
               '<a class="active nav-link" data-target=".' + nameToClassname(channelNameRoot) + '" data-toggle="tab" role="tab"><i class="fa fa-list-ul"></i>Log</a>' +
@@ -166,6 +166,7 @@ function getNodeInfo (meta) {
 
 function addChannel (info, meta) {
   var $container = info.$container
+  var $debug = $container.find('.debug')
   var $channels = $container.find('.channels')
   var channelsChecked = []
   var channelsTab
@@ -212,11 +213,11 @@ function addChannel (info, meta) {
   $channels.find('input:checked').each(function () {
     channelsChecked.push($(this).val())
   })
-  $ul = $().debugEnhance('buildChannelList', channelsTab, info.channelNameRoot, channelsChecked)
 
+  $ul = $debug.debugEnhance('buildChannelList', channelsTab, info.channelNameRoot, channelsChecked)
   $channels.find('> ul').replaceWith($ul)
   $channels.show()
-  $container.find('.debug').trigger('channelAdded.debug')
+  $debug.trigger('channelAdded.debug')
   return true
 }
 

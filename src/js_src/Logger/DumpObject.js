@@ -203,23 +203,25 @@ DumpObject.prototype.dumpAttributes = function (abs) {
 
 DumpObject.prototype.dumpClassName = function (abs) {
   var phpDoc = abs.phpDoc || {}
-  var strClassName = abs.className
-  var title = this.dumper.dumpPhpDocStr(((phpDoc.summary || '') + '\n\n' + (phpDoc.desc || '')).trim())
   var phpDocOut = abs.cfgFlags & this.PHPDOC_OUTPUT
-  var $span
-  if (abs.implementsList.indexOf('UnitEnum') > -1) {
-    // strClassName += '::' + abs.properties.name.value
-    $span = $('<span />', {
-      class: 't_const',
-      html: this.dumper.markupIdentifier(strClassName + '::' + abs.properties.name.value)
-    })
-    if (title && title.length) {
-      $span.attr('title', title)
-    }
-    return $span[0].outerHTML
+  var isEnum = abs.implementsList.indexOf('UnitEnum') > -1
+  var title = isEnum && typeof abs.properties.value !== 'undefined'
+    ? 'value: ' + abs.properties.value.value
+    : ''
+  if (phpDocOut) {
+    phpDoc = ((phpDoc.summary || '') + '\n\n' + (phpDoc.desc || '')).trim()
+    title = title + "\n\n" + this.dumper.dumpPhpDocStr(phpDoc)
   }
-  return this.dumper.markupIdentifier(strClassName, 'classname', 'span', {
-    title: phpDocOut && title.length ? title : null
+  return this.dumper.dump({
+    attribs: {
+      title: title.trim(),
+    },
+    debug: this.dumper.ABSTRACTION,
+    type: 'identifier',
+    typeMore: isEnum ? 'const' : 'classname',
+    value: isEnum
+      ? abs.className + '::' + abs.properties.name.value
+      : abs.className,
   })
 }
 
@@ -228,7 +230,7 @@ DumpObject.prototype.dumpExtends = function (abs) {
   return abs.extends && abs.extends.length
     ? '<dt>extends</dt>' +
         abs.extends.map(function (className) {
-          return '<dd class="extends">' + self.dumper.markupIdentifier(className, 'classname') + '</dd>'
+          return '<dd class="extends t_identifier">' + self.dumper.markupIdentifier(className, 'classname') + '</dd>'
         }).join('')
     : ''
 }
@@ -263,22 +265,12 @@ DumpObject.prototype.dumpModifiers = function (abs) {
     abstract: abs.isAbstract,
     final: abs.isFinal,
     interface: abs.isInterface,
+    lazy: abs.isLazy,
     readonly: abs.isReadOnly,
     trait: abs.isTrait,
   }
   var haveModifier = false
   var html = '<dt class="modifiers">modifiers</dt>'
-  /*
-  if (abs.isFinal) {
-    modifiers.push('final')
-  }
-  if (abs.isReadOnly) {
-    modifiers.push('readonly')
-  }
-  if (modifiers.length === 0) {
-    return ''
-  }
-  */
   $.each(modifiers, function (modifier, isSet) {
     if (isSet) {
       haveModifier = true
@@ -338,7 +330,7 @@ DumpObject.prototype.buildImplementsTree = function (implementsObj, interfacesCo
         ? implementsObj[k]
         : k
       $span = $('<span />', {
-        class: 'interface',
+        class: 'interface t_identifier',
         html: this.dumper.markupIdentifier(iface, 'classname')
       })
       if (interfacesCollapse.indexOf(iface) > -1) {

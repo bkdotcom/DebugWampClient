@@ -1,6 +1,6 @@
 import $ from 'jquery' // external global
-import { DumpObject } from './dumpObject.js'
-import { DumpString } from './dumpString.js'
+import { DumpObject } from './DumpObject.js'
+import { DumpString } from './DumpString.js'
 
 var dumpOptStack = [
   /*
@@ -163,7 +163,9 @@ Dump.prototype.dumpArray = function (array, abs) {
   var i
   var key
   var keyShow
-  var keys = array.__debug_key_order__ || Object.keys(array)
+  var keys = typeof array === 'object'
+    ? array.__debug_key_order__ || Object.keys(array)
+    : [] // isMaxDepth or similar
   var length = keys.length
   var absKeys = typeof abs?.keys === 'object'
     ? abs.keys
@@ -247,7 +249,9 @@ Dump.prototype.dumpBool = function (val) {
 
 Dump.prototype.dumpCallable = function (abs) {
   return (!abs.hideType ? '<span class="t_type">callable</span> ' : '') +
-    this.markupIdentifier(abs, 'function')
+    '<span class="t_identifier" data-type-more="callable">' +
+    this.markupIdentifier(abs, 'function') +
+    '</span>'
 }
 
 Dump.prototype.dumpConst = function (abs) {
@@ -272,9 +276,9 @@ Dump.prototype.dumpFloat = function (val, abs) {
 
 Dump.prototype.dumpIdentifier = function (abs) {
   var dumpOpts = this.getDumpOpts()
-  dumpOpts.attribs.title = [undefined, this.UNDEFINED].indexOf(abs.backedValue) < 0
-    ? 'value: ' + this.dump(abs.backedValue)
-    : null
+  if (dumpOpts.attribs.title === undefined && [undefined, this.UNDEFINED].indexOf(abs.backedValue) >= 0) {
+    dumpOpts.attribs.title = 'value: ' + this.dump(abs.backedValue)
+  }
   return this.markupIdentifier(abs.value, abs.typeMore)
 }
 
@@ -404,7 +408,7 @@ Dump.prototype.parseIdentifier = function (val, what) {
     parts.className = matches[1]
     parts.operator = matches[2]
     parts.identifier = matches[3]
-  } else if (['const', 'function'].indexOf(what) > -1) {
+  } else if (['const', 'function', 'method'].indexOf(what) > -1) {
     matches = val.match(/^(.+\\)?(.+)$/)
     parts.className = ''
     parts.identifier = matches[2]

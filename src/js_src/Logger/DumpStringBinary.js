@@ -1,5 +1,3 @@
-import $ from 'jquery' // external global
-
 function chunkSplit(str, length, separator) {
   if (typeof separator === 'undefined') {
     separator = '\n'
@@ -44,7 +42,7 @@ DumpStringBinary.prototype.dumpBasic = function (abs) {
           : '<span class="binary">\\x' + chunk[1].replace(' ', ' \\x') + '</span>'
       }).join('')
     : '<span class="binary">'
-        + chunkSplit(abs.value, 3 * 32, '<br />').substring(0, -6)
+        + chunkSplit(abs.value, 3 * 32, '<br />').slice(0, -6)
         + '</span>'
 }
 
@@ -57,8 +55,13 @@ DumpStringBinary.prototype.dumpBrief = function (str, abs) {
 }
 
 DumpStringBinary.prototype.dumpPost = function (abs, tagName) {
+  var self = this
   return function (str) {
+    var parsed = self.dumpString.dumper.parseTag(str)
     var lis = []
+    if (parsed.tag === 'td') {
+      str = parsed.innerhtml
+    }
     if (abs.contentType) {
       lis.push('<li>mime type = <span class="content-type t_string">' + abs.contentType + '</span></li>')
     }

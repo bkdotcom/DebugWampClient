@@ -43,6 +43,8 @@ Properties.prototype.addAttribs = function ($element, info, cfg) {
       info.valueFrom === 'value' &&
       cfg.objClassName !== 'stdClass' &&
       cfg.isDynamicSupport,
+    isEager: info.isEager,
+    isFinal: info.isFinal,
     isPromoted: info.isPromoted,
     isReadOnly: info.isReadOnly,
     isStatic: info.isStatic,
@@ -69,7 +71,7 @@ Properties.prototype.dumpInner = function (name, info, cfg) {
   name = name.replace('debug.', '')
   return this.dumpModifiers(info) +
     (info.type
-      ? ' <span class="t_type">' + info.type + '</span>'
+      ? this.valDumper.objectDumper.markupType(info.type)
       : ''
     ) +
     ' ' + this.valDumper.dump(name, {
@@ -93,15 +95,29 @@ Properties.prototype.dumpModifiers = function (info) {
   var vis = typeof info.visibility === 'object'
     ? info.visibility
     : [info.visibility]
-  var modifiers = JSON.parse(JSON.stringify(vis))
-  if (info.isReadOnly) {
-    modifiers.push('readonly')
-  }
-  if (info.isStatic) {
-    modifiers.push('static')
-  }
-  $.each(modifiers, function (i, modifier) {
+  var modifiers = {}
+  info = $.extend({
+    isEager: null
+  }, info)
+  modifiers = $.extend(
+    {
+      eager: info.isEager,
+      final: info.isFinal,
+    },
+    Object.fromEntries(vis.map(function (key) {
+      // array_fill_keys
+      return [key, true]
+    })),
+    {
+      readOnly: info.isReadOnly,
+      static: info.isStatic,
+    }
+  )
+  $.each(modifiers, function (modifier, incl) {
     var cssClass = 't_modifier_' + modifier
+    if (!incl) {
+      return
+    }
     modifier = modifier.replace('-set', '(set)')
     html += '<span class="' + cssClass + '">' + modifier + '</span> '
   })

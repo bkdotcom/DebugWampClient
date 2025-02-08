@@ -58,9 +58,18 @@ Table.prototype.buildBody = function (rows, tableInfo, onBuildRow, info) {
   for (i = 0, length = rowKeys.length; i < length; i++) {
     rowKey = rowKeys[i]
     row = rows[rowKey]
-    rowInfo = typeof tableInfo.rows[rowKey] !== 'undefined'
-      ? tableInfo.rows[rowKey]
-      : {}
+    rowInfo = $.extend(
+      {},
+      typeof tableInfo.commonRowInfo !== 'undefined'
+        ? tableInfo.commonRowInfo
+        : {},
+      typeof tableInfo.rows[rowKey] !== 'undefined'
+        ? tableInfo.rows[rowKey]
+        : {},
+      {
+        requestInfo: info, //  so pass to onBuildRow (we want DOCUMENT_ROOT)
+      }
+    )
     if (rowInfo.key) {
       rowKey = rowInfo.key
     }
@@ -101,8 +110,9 @@ Table.prototype.buildBody = function (rows, tableInfo, onBuildRow, info) {
         tagName: 'td'
       }))
     }
-    if (onBuildRow) {
-      $tr = onBuildRow($tr, row, rowInfo, rowKey)
+
+    for (i2 = 0, length2 = onBuildRow.length; i2 < length2; i2++) {
+      $tr = onBuildRow[i2]($tr, row, rowInfo, rowKey)
     }
     $tbody.append($tr)
   }

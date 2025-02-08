@@ -1,5 +1,5 @@
 import $ from 'jquery' // external global
-import { Table } from './methodTable.js'
+import { Table } from './MethodTable.js'
 import { Dump } from './Dump.js'
 
 var dump = new Dump()
@@ -28,7 +28,7 @@ export var methods = {
         sanitize: logEntry.meta.sanitizeFirst,
         tagName: null, // don't wrap value span
         visualWhiteSpace: false,
-      });
+      })
     $node.html(html)
     if (dismissible) {
       $node.prepend('<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
@@ -42,6 +42,7 @@ export var methods = {
     info.$tabPane.find('> .tab-body > .debug-log-summary').before($node)
     $node.debugEnhance()
   },
+
   clear: function (logEntry, info) {
     var attribs = {
       class: 'm_clear',
@@ -117,6 +118,7 @@ export var methods = {
       return $('<li>', attribs).html(logEntry.args[0])
     }
   },
+
   endOutput: function (logEntry, info) {
     var $container = info.$container
     var responseCode = logEntry.meta.responseCode
@@ -132,6 +134,7 @@ export var methods = {
     }
     $container.trigger('endOutput')
   },
+
   errorNotConsoled: function (logEntry, info) {
     var $container = info.$container
     var $tabPane = info.$tabPane
@@ -156,6 +159,7 @@ export var methods = {
       $container.addClass('bg-warning')
     }
   },
+
   group: function (logEntry, info) {
     var $group = $('<li>', {
       class: 'empty expanded m_group'
@@ -181,9 +185,11 @@ export var methods = {
     nodes.push($groupBody)
     return $group
   },
+
   groupCollapsed: function (logEntry, info) {
     return this.group(logEntry, info).removeClass('expanded')
   },
+
   groupSummary: function (logEntry, info) {
     // see if priority already exists
     var priority = typeof logEntry.meta.priority !== 'undefined'
@@ -218,6 +224,7 @@ export var methods = {
     $node = $node.find('> ul')
     nodes.push($node)
   },
+
   groupEnd: function (logEntry, info) {
     var $tabPane = info.$tabPane
     var nodes = $tabPane.data('nodes')
@@ -254,10 +261,12 @@ export var methods = {
       $group.debugEnhance()
     }
   },
+
   groupUncollapse: function (logEntry, info) {
     var $groups = info.$node.parentsUntil('.debug-log-summary, .debug-log').add(info.$node).filter('.m_group')
     $groups.addClass('expanded')
   },
+
   meta: function (logEntry, info) {
     /*
       Information about request
@@ -304,28 +313,37 @@ export var methods = {
     }
     if (metaVals.REQUEST_TIME) {
       date = (new Date(metaVals.REQUEST_TIME * 1000)).toString().replace(/[A-Z]{3}-\d+/, '')
-      $cardHeaderBody.prepend('<span class="float-right">' + date + '</span>')
+      $cardHeaderBody.prepend('<span class="float-end">' + date + '</span>')
     }
   },
+
   profileEnd: function (logEntry, info) {
     // var $node = this.table(logEntry, info)
     // return $node.removeClass('m_log').addClass('m_profileEnd')
     return this.table(logEntry, info)
   },
+
   table: function (logEntry, info) {
-    var $table = table.build(
-      logEntry.args[0],
-      logEntry.meta,
-      logEntry.meta.inclContext
-        ? tableAddContextRow
-        : null,
-      info
-    )
-    return $('<li>', { class: 'm_' + logEntry.method }).append($table)
+    var onBuildRow = []
+    if (logEntry.method === 'trace') {
+      onBuildRow.push(tableTraceRow)
+    }
+    if (logEntry.meta.inclContext) {
+      onBuildRow.push(tableAddContextRow)
+    }
+    return $('<li>', { class: 'm_' + logEntry.method })
+      .append(table.build(
+        logEntry.args[0],
+        logEntry.meta,
+        onBuildRow,
+        info
+      ))
   },
+
   trace: function (logEntry, info) {
     return this.table(logEntry, info)
   },
+
   default: function (logEntry, info) {
     var attribs = {
       class: 'm_' + logEntry.method
@@ -381,8 +399,8 @@ export var methods = {
           methods.trace({
             method: 'trace',
             args: [meta.trace],
-            meta: meta
-          }).attr('data-detect-files', 'true')
+            meta: meta,
+          }, info).attr('data-detect-files', 'true')
         )
       )
       $node.find('.m_trace').debugEnhance()
@@ -399,84 +417,19 @@ export var methods = {
   } // end default
 }
 
-function buildImplementsList(obj) {
-  var list = []
-  var key
-  var val
-  for (key in obj) {
-    val = obj[key]
-    if (typeof val === 'string') {
-      list.push(val)
-      continue
-    }
-    list.push(key)
-    list = list.concat(buildImplementsList(val))
-  }
-  return list
-}
-
-function buildTitle (metaVals) {
-  var title = ''
-  if (metaVals.HTTPS === 'on') {
-    title += '<i class="fa fa-lock fa-lg"></i> '
-  }
-  if (metaVals.REQUEST_METHOD) {
-    title += metaVals.REQUEST_METHOD + ' '
-  }
-  if (metaVals.HTTP_HOST) {
-    title += '<span class="http-host">' + metaVals.HTTP_HOST + '</span>'
-  }
-  if (metaVals.REQUEST_URI) {
-    title += '<span class="request-uri">' + metaVals.REQUEST_URI + '</span>'
-  }
-  return title
-}
-
 function buildContext (context, lineNumber) {
   var keys = Object.keys(context || {}) // .map(function(val){return parseInt(val)}),
   var start = Math.min.apply(null, keys)
   return $('<pre>', {
     class: 'highlight line-numbers',
     'data-line': lineNumber,
-    'data-start': start
+    'data-start': start,
+    'data-line-offset': start,
   }).append(
     $('<code>', {
       class: 'language-php'
     }).text(Object.values(context).join(''))
   )
-}
-
-function tableAddContextRow ($tr, row, rowInfo, i) {
-  // var keys = Object.keys(row.context || {}) // .map(function(val){return parseInt(val)}),
-  // var start = Math.min.apply(null, keys)
-  if (!rowInfo.context) {
-    return $tr
-  }
-  i = parseInt(i, 10)
-  $tr.attr('data-toggle', 'next')
-  if (i === 0) {
-    $tr.addClass('expanded')
-  }
-  return [
-    $tr,
-    $('<tr>', {
-      class: 'context',
-      style: i === 0
-        ? 'display:table-row;'
-        : null
-    }).append(
-      $('<td>', {
-        colspan: 4
-      }).append(
-        [
-          buildContext(rowInfo.context, row.line),
-          Array.isArray(rowInfo.args) && rowInfo.args.length
-            ? '<hr />Arguments = ' + dump.dump(row.args)
-            : ''
-        ]
-      )
-    )
-  ]
 }
 
 function buildEntryNode (logEntry, requestInfo) {
@@ -530,6 +483,47 @@ function buildEntryNode (logEntry, requestInfo) {
     : $('<li>').html(args[0] + ' ' + args.slice(1).join(glue))
 }
 
+function buildImplementsList(obj) {
+  var list = []
+  var key
+  var val
+  for (key in obj) {
+    val = obj[key]
+    if (typeof val === 'string') {
+      list.push(val)
+      continue
+    }
+    list.push(key)
+    list = list.concat(buildImplementsList(val))
+  }
+  return list
+}
+
+function buildTitle (metaVals) {
+  var title = ''
+  if (metaVals.HTTPS === 'on') {
+    title += '<i class="fa fa-lock fa-lg"></i> '
+  }
+  if (metaVals.REQUEST_METHOD) {
+    title += metaVals.REQUEST_METHOD + ' '
+  }
+  if (metaVals.HTTP_HOST) {
+    title += '<span class="http-host">' + metaVals.HTTP_HOST + '</span>'
+  }
+  if (metaVals.REQUEST_URI) {
+    title += '<span class="request-uri">' + metaVals.REQUEST_URI + '</span>'
+  }
+  return title
+}
+
+function containsSubstitutions(logEntry)
+{
+  if (logEntry.args.length < 2 || typeof logEntry.args[0] !== 'string') {
+    return false
+  }
+  return logEntry.args[0].match(subRegex) !== null
+}
+
 function getTab (info) {
   var classname = 'debug-tab-' + info.channelNameTop.toLowerCase().replace(/\W+/g, '-')
   return classname === 'debug-tab-general'
@@ -580,14 +574,37 @@ function groupHeader (logEntry, requestInfo) {
   return $header
 }
 
-function containsSubstitutions(logEntry)
-{
-  if (logEntry.args.length < 2 || typeof logEntry.args[0] !== 'string') {
-    return false
-  }
-  return logEntry.args[0].match(subRegex) !== null
+function markupFilePath(filePath, commonPrefix, docRoot) {
+  var fileParts = parseFilePath(filePath, commonPrefix, docRoot)
+  return (fileParts.docRoot ? '<span class="file-docroot">DOCUMENT_ROOT</span>' : '')
+    + (fileParts.relPathCommon ? '<span class="file-basepath">' + dump.dump(fileParts.relPathCommon, {tagName:null}) + '</span>' : '')
+    + (fileParts.relPath ? '<span class="file-relpath">' + dump.dump(fileParts.relPath, {tagName:null}) + '</span>' : '')
+    + '<span class="file-basename">' + dump.dump(fileParts.baseName, {tagName:null}) + '</span>'
 }
 
+function parseFilePath (filePath, commonPrefix, docRoot) {
+  var baseName = filePath.match(/[^\/]+$/)[0]
+  var containsDocRoot = filePath.indexOf(docRoot) === 0
+  var basePath = ''
+  var relPath = filePath.slice(0, 0 - baseName.length)
+  var maxLen = Math.max.apply(null, [
+    commonPrefix ? commonPrefix.length : 0,
+    containsDocRoot ? docRoot.length : 0,
+  ])
+  if (maxLen) {
+    basePath = relPath.substring(0, maxLen)
+    relPath = relPath.substring(maxLen)
+    if (containsDocRoot) {
+      basePath = basePath.substring(docRoot.length)
+    }
+  }
+  return {
+    docRoot: containsDocRoot ? docRoot : '',
+    relPathCommon: basePath,
+    relPath: relPath,
+    baseName: baseName,
+  }
+}
 
 /**
  * @param logEntry
@@ -664,7 +681,87 @@ function substitutionAsString (val) {
       '<span class="t_punct">(</span>' + Object.keys(val).length + '<span class="t_punct">)</span>'
   }
   if (type[0] === 'object') {
-    return dump.markupIdentifier(val.className, 'classname')
+    return substitutionObjectAsString(val)
   }
   return dump.dump(val)
+}
+
+function substitutionObjectAsString (abs) {
+  if (abs.stringified) {
+    return abs.stringified
+  }
+  if (abs.methods.__toString.returnValue) {
+    return abs.methods.__toString.returnValue
+  }
+  return dump.markupIdentifier(val.className, 'classname')
+}
+
+function tableAddContextRow ($tr, row, rowInfo, i) {
+  // var keys = Object.keys(row.context || {}) // .map(function(val){return parseInt(val)}),
+  // var start = Math.min.apply(null, keys)
+  if (!rowInfo.context) {
+    return $tr
+  }
+  i = parseInt(i, 10)
+  $tr.attr('data-toggle', 'next')
+  if (i === 0) {
+    $tr.addClass('expanded')
+  }
+  return [
+    $tr,
+    $('<tr>', {
+      class: 'context',
+      style: i === 0
+        ? 'display:table-row;'
+        : null
+    }).append(
+      $('<td>', {
+        colspan: 4
+      }).append(
+        [
+          buildContext(rowInfo.context, row.line),
+          Array.isArray(rowInfo.args) && rowInfo.args.length
+            ? '<hr />Arguments = ' + dump.dump(row.args)
+            : ''
+        ]
+      )
+    )
+  ]
+}
+
+function tableTraceRow ($tr, row, rowInfo, i) {
+  // var tr = $tr[0].outerHTML
+  var docRoot = rowInfo.requestInfo.$container.data('meta').DOCUMENT_ROOT || ''
+  var filePath = markupFilePath(row.file, rowInfo.commonFilePrefix, docRoot)
+  var method = row.function ? dump.markupIdentifier(row.function, 'method') : ''
+
+  /*
+  tr = tr.replace(
+    '<td class="t_string">' + row.file + '</td>',
+    '<td class="no-quotes t_string">'
+      + (fileParts.docRoot ? '<span class="file-docroot">DOCUMENT_ROOT</span>' : '')
+      + (fileParts.relPathCommon ? '<span class="file-basepath">' + fileParts.relPathCommon + '</span>' : '')
+      + (fileParts.relPath ? '<span class="file-relpath">' + fileParts.relPath + '</span>' : '')
+      + '<span class="file-basename">' + fileParts.baseName + '</span>'
+      + '</td>'
+  )
+  if (fileParts.docRoot) {
+    tr = tr.replace(
+        '<tr>',
+        '<tr data-file="' + row.file.escapeHtml() + '">'
+    )
+  }
+  tr = tr.replace(
+    '<td class="t_string">' + row.function.escapeHtml() + '</td>',
+    '<td class="no-quotes t_identifier t_string">' + dump.markupIdentifier(row.function, 'method') + '</td>'
+  )
+  */
+
+  $tr.find('td.t_string').eq(0).html(filePath).addClass('no-quotes')
+  if (filePath.indexOf('DOCUMENT_ROOT') >= 0) {
+    $tr.attr('data-file', row.file)
+  }
+  $tr.find('td.t_string').eq(1).html(method).addClass('no-quotes t_identifier')
+
+  return $tr
 }

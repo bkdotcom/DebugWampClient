@@ -9,6 +9,10 @@ export function Config (defaults, localStorageKey) {
   this.config = extend({}, defaults, storedConfig || {})
   this.localStorageKey = localStorageKey
   this.haveSavedConfig = typeof storedConfig === 'object'
+  this.themeUpdate()
+  window.matchMedia('(prefers-color-scheme: dark)').onchange = function (e) {
+    this.themeUpdate()
+  }
 }
 
 Config.prototype.get = function (key) {
@@ -19,13 +23,6 @@ Config.prototype.get = function (key) {
     ? this.config[key]
     : null
 }
-
-/*
-Config.prototype.isDefault = function (key)
-{
-  return this.config[key] === this.defaults[key]
-}
-*/
 
 Config.prototype.set = function (key, val) {
   var configWas = JSON.parse(JSON.stringify(this.config))
@@ -55,7 +52,9 @@ Config.prototype.set = function (key, val) {
     }
   }
   setLocalStorageItem(this.localStorageKey, setVals)
+
   this.haveSavedConfig = true
+  this.themeUpdate()
 }
 
 Config.prototype.setDefault = function (key, val) {
@@ -105,6 +104,20 @@ Config.prototype.checkPhpDebugConsole = function (vals) {
       linkFilesTemplate: this.config.linkFilesTemplate
     })
   }
+}
+
+Config.prototype.themeGet = function () {
+  var theme = this.config.theme
+  if (theme === 'auto') {
+    theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  }
+  return theme
+}
+
+Config.prototype.themeUpdate = function () {
+  var theme = this.themeGet()
+  $('html').attr('data-bs-theme', theme)
+  $('.debug').attr('data-theme', theme)
 }
 
 function setLocalStorageItem (key, val) {

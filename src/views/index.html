@@ -1,55 +1,60 @@
 <!DOCTYPE html>
-<html>
+<html data-bs-theme="light">
 <head>
 	<title>PHPDebugConsole</title>
 	<script src="{{jquery}}"></script>
 	<script src="{{bootstrapJs}}" crossorigin="anonymous"></script>
 	<link href="{{bootstrapCss}}" crossorigin="anonymous" rel="stylesheet" />
 	<link id="wampClientCss" rel="stylesheet" href="?action=css" />
-	<link rel="icon" type="image/png" sizes="32x32" href="?action=img&amp;src=favicon-32x32.png" />
-	<link rel="icon" type="image/png" sizes="16x16" href="?action=img&amp;src=favicon-16x16.png" />
+	<link rel="icon" type="image/png" sizes="32x32" href="?action=img&amp;src=favicon-32x32.png" media="(prefers-color-scheme: light)" />
+	<link rel="icon" type="image/png" sizes="16x16" href="?action=img&amp;src=favicon-16x16.png" media="(prefers-color-scheme: light)" />
+	<link rel="icon" type="image/png" sizes="32x32" href="?action=img&amp;src=favicon-dark-32x32.png" media="(prefers-color-scheme: dark)" />
+	<link rel="icon" type="image/png" sizes="16x16" href="?action=img&amp;src=favicon-dark-16x16.png" media="(prefers-color-scheme: dark)" />
 </head>
 <body>
 
-	<nav class="navbar navbar-expand-sm navbar-light bg-light fixed-top">
-		<!-- Brand and toggle get grouped for better mobile display -->
-		<span class="navbar-brand">PHPDebugConsole</span>
-
-		<!-- Collect the nav links, forms, and other content for toggling -->
-		<div class="collapse navbar-collapse" id="navbar-collapse">
-			<ul class="navbar-nav mr-auto">
-				<li class="nav-item active">
-			        <!--<a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>-->
-					<button accesskey="c" type="button" class="btn btn-link clear" title="Clear the console [c]"><i class="fa fa-ban"></i></button>
-				</li>
-			</ul>
-			<a accesskey="s" class="settings-toggle" data-toggle="modal" href="#modal-settings" role="button" title="settings [s]"><i class="fa fa-cog"></i></a>
-		</div><!-- /.navbar-collapse -->
-	</nav>
+    <nav class="navbar navbar-expand-sm bg-body-secondary fixed-top">
+        <div class="container-fluid g-0">
+            <span class="navbar-brand" href="#">PHPDebugConsole</span>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-sm-0">
+                    <li class="nav-item active">
+                        <button accesskey="c" class="btn btn-link clear" role="button" title="Clear the console [c]"><i class="fa fa-ban" type="button"></i></button>
+                    </li>
+                </ul>
+                <div class="d-flex">
+                    <button accesskey="s" class="btn btn-link" data-bs-toggle="modal" data-bs-target="#modal-settings" role="button" title="settings [s]" type=""button"><i class="fa fa-cog"></i></button>
+                </div>
+            </div> <!-- /.navbar-collapse -->
+        </div> <!-- /.container-fluid -->
+    </nav>
 
 	<div id="debug-cards" class="container-fluid">
         <div id="alert" class="alert alert-info alert-dismissible connecting">
             Connecting to debug server&hellip;
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <button type="button" class="btn-close" data-dismiss="alert" aria-label="Close"></button>
         </div>
 	</div>
 
-	<form class="modal fade" id="modal-settings" tabindex="-1" role="dialog" aria-labelledby="modal-settings-title">
+	<form class="modal" id="modal-settings" tabindex="-1" role="dialog" aria-labelledby="modal-settings-title">
 		<div class="modal-dialog modal-lg" role="document">
 			<div class="modal-content">
 				<div class="modal-header">
 					<h4 class="modal-title" id="modal-settings-title">Settings</h4>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-				</div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
 				<div class="modal-body">
 
-					<div class="form-group form-row">
+                    <div class="row mb-3">
 						<label for="wsUrl" class="col-3 col-form-label">Websocket Url</label>
 						<div class="col-9">
 							<input type="url" name="wsUrl" id="wsUrl" class="form-control" placeholder="ws://" />
 						</div>
 					</div>
-					<div class="form-group form-row">
+					<div class="row mb-3">
 						<label for="realm" class="col-3 col-form-label">Realm</label>
 						<div class="col-9">
 							<input type="text" name="realm" id="realm" class="form-control" />
@@ -58,26 +63,41 @@
 
 					<hr />
 
-					<div class="form-group form-row">
+                    <div class="row mb-3">
+                        <div class="offset-3 col-9">
+                            <div class="dropdown">
+                                <input type="hidden" id="theme" />
+                                <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fa fa-auto"></i> Theme
+                                </button>
+                                <ul class="dropdown-menu" id="theme-options">
+                                    <li><button class="dropdown-item" type="button" value="auto"><i class="fa fa-adjust"></i> Auto</button></li>
+                                    <li><button class="dropdown-item" type="button" value="light"><i class="fa fa-sun-o"></i> Light</button></li>
+                                    <li><button class="dropdown-item" type="button" value="dark"><i class="fa fa-moon-o"></i> Dark</button></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
 						<label for="font-size" class="col-3 col-form-label">Font Size</label>
 						<div class="col-3">
 							<input type="text" name="realm" id="font-size" class="form-control" />
 						</div>
 					</div>
 
-					<div class="form-group form-row">
-						<div class="checkbox offset-3 col-9">
-							<label>
-								<input type="checkbox" id="link-files" /> Create file links
-							</label>
-							<span class="form-text text-muted">
+					<div class="row mb-3">
+						<div class="form-check offset-3 col-9">
+                            <input class="form-check-input" type="checkbox" id="link-files" />
+							<label class="form-check-label" for="link-files">Create file links</label>
+							<div class="form-text text-muted">
 								Filepaths become clickable.  Open directly in your IDE / text editor.
 								<span class="text-muted">(PhpStorm, Sublime / TextMate / VSCode / etc)</span>
-							</span>
+                            </div>
 						</div>
 					</div>
 
-					<div class="form-group form-row">
+					<div class="row mb-3">
 						<label class="col-3 col-form-label" for="link-files-template">Link Template</label>
 						<div class="col-9">
 							<input type="text" name="link-files-template" id="link-files-template" class="form-control" />
@@ -94,12 +114,31 @@
 
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-light" data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
 					<button type="submit" class="btn btn-primary">Apply</button>
 				</div>
 			</div><!-- /.modal-content -->
 		</div><!-- /.modal-dialog -->
 	</form><!-- /.modal -->
+
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h1 class="modal-title fs-5" id="exampleModalLabel">Modal title</h1>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              ...
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              <button type="button" class="btn btn-primary">Save changes</button>
+            </div>
+          </div>
+        </div>
+    </div>
+
 
     <script src="?action=script"></script>
 
