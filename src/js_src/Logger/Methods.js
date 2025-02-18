@@ -127,7 +127,8 @@ export var methods = {
     $container.find('.card-header .fa-spinner').remove()
     $container.find('.debug > .fa-spinner').remove()
     if (responseCode && responseCode + '' !== '200') {
-      $container.find('.card-title').append(' <span class="label label-default" title="Response Code">' + responseCode + '</span>')
+      $container.find('.card-title .response-code').remove() 
+      $container.find('.card-title').append(' <span class="label label-default response-code" title="Response Code">' + responseCode + '</span>')
       if (responseCode.toString().match(/^5/)) {
         $container.addClass('bg-danger')
       }
@@ -575,7 +576,7 @@ function groupHeader (logEntry, requestInfo) {
 }
 
 function markupFilePath(filePath, commonPrefix, docRoot) {
-  var fileParts = parseFilePath(filePath, commonPrefix, docRoot)
+  var fileParts = parseFilePath(filePath || '', commonPrefix, docRoot)
   return (fileParts.docRoot ? '<span class="file-docroot">DOCUMENT_ROOT</span>' : '')
     + (fileParts.relPathCommon ? '<span class="file-basepath">' + dump.dump(fileParts.relPathCommon, {tagName:null}) + '</span>' : '')
     + (fileParts.relPath ? '<span class="file-relpath">' + dump.dump(fileParts.relPath, {tagName:null}) + '</span>' : '')
@@ -583,7 +584,7 @@ function markupFilePath(filePath, commonPrefix, docRoot) {
 }
 
 function parseFilePath (filePath, commonPrefix, docRoot) {
-  var baseName = filePath.match(/[^\/]+$/)[0]
+  var baseName = (filePath.match(/[^\/]+$/) || [''])[0]
   var containsDocRoot = filePath.indexOf(docRoot) === 0
   var basePath = ''
   var relPath = filePath.slice(0, 0 - baseName.length)

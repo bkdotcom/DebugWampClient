@@ -7,7 +7,7 @@ export function Table (dump) {
 }
 
 Table.prototype.build = function (rows, meta, onBuildRow, info) {
-  // console.warn('Table.build', meta, classname)
+  // console.warn('Table.build', JSON.parse(JSON.stringify(meta)))
   var metaDefault = {
     attribs: {
       class: [
@@ -46,10 +46,8 @@ Table.prototype.buildBody = function (rows, tableInfo, onBuildRow, info) {
   var length
   var i2
   var length2
-  var parsed
   var rowKeys = rows.__debug_key_order__ || Object.keys(rows)
   var rowKey
-  var key
   var row
   var rowInfo
   var $tbody = $table.find('> tbody')
@@ -78,44 +76,55 @@ Table.prototype.buildBody = function (rows, tableInfo, onBuildRow, info) {
     if (typeof rowKey === 'string' && rowKey.match(/^\d+$/) && Number.isSafeInteger(rowKey)) {
       rowKey = parseInt(rowKey, 10)
     }
-    parsed = this.dump.parseTag(this.dump.dump(rowKey, {
-      requestInfo: info,
-    }))
-    $tr = $('<tr></tr>', rowInfo.attribs || {})
-      .append(
-        $('<th scope="row" class="t_key text-right"></th>')
-          .addClass(/^\d+$/.test(rowKey) ? 't_int' : parsed.attribs.class.join(' '))
-          .html(parsed.innerhtml)
-      )
 
-    if (tableInfo.haveObjRow) {
-      $tr.append(
-        rowInfo.class
-          ? $(this.dump.markupIdentifier(rowInfo.class, 'classname', 'td'))
-            .attr('title', rowInfo.summary)
-          : '<td class="t_undefined"></td>'
-      )
-    }
-    for (i2 = 0, length2 = tableInfo.columns.length; i2 < length2; i2++) {
-      key = tableInfo.columns[i2].key
-      /*
-      parsed = this.dump.parseTag(this.dump.dump(row[key], true))
-      parsed.attribs.class = parsed.attribs.class.join(' ')
-      $tr.append(
-        $('<td />').html(parsed.innerhtml).attr(parsed.attribs)
-      )
-      */
-      $tr.append(this.dump.dump(row[key], {
-        requestInfo: info,
-        tagName: 'td'
-      }))
-    }
-
+    $tr = this.buildRow(row, rowInfo, rowKey, tableInfo)
     for (i2 = 0, length2 = onBuildRow.length; i2 < length2; i2++) {
       $tr = onBuildRow[i2]($tr, row, rowInfo, rowKey)
     }
     $tbody.append($tr)
   }
+}
+
+Table.prototype.buildRow = function (row, rowInfo, rowKey, tableInfo) {
+  var i
+  var length
+  var colInfo
+  var key
+  var parsed = this.dump.parseTag(this.dump.dump(rowKey, {
+    requestInfo: rowInfo.requestInfo,
+  }))
+  var td
+  var $tr = $('<tr></tr>', rowInfo.attribs || {})
+    .append(
+      $('<th scope="row" class="t_key text-right"></th>')
+        .addClass(/^\d+$/.test(rowKey) ? 't_int' : parsed.attribs.class.join(' '))
+        .html(parsed.innerhtml)
+    )
+
+  if (tableInfo.haveObjRow) {
+    $tr.append(
+      rowInfo.class
+        ? $(this.dump.markupIdentifier(rowInfo.class, 'classname', 'td'))
+          .attr('title', rowInfo.summary)
+        : '<td class="t_undefined"></td>'
+    )
+  }
+  for (i = 0, length = tableInfo.columns.length; i < length; i++) {
+    colInfo = tableInfo.columns[i]
+    key = colInfo.key
+    td = this.dump.dump(row[key], {
+      attribs: colInfo.attribs || {},
+      requestInfo: rowInfo.requestInfo,
+      tagName: 'td',
+    })
+    if (row[key] === true && colInfo.trueAs !== null) {
+      td = td.replace('>true<', '>' + colInfo.trueAs + '<')
+    } else if (row[key] === false && colInfo.falseAs !== null) {
+      td = td.replace('>false<', '>' + colInfo.falseAs + '<')
+    }
+    $tr.append(td)
+  }
+  return $tr
 }
 
 /*
@@ -133,8 +142,14 @@ Table.prototype.buildFooter = function (tableInfo) {
     colHasTotal = typeof info.total !== 'undefined'
     haveTotal = haveTotal || colHasTotal
     if (colHasTotal) {
-      info.total = parseFloat(info.total.toFixed(6), 10)
-      cells.push(this.dump.dump(info.total, { tagName: 'td' }))
+      if (!isNaN(parseFloat(info.total)) && isFinite(info.total)) {
+        // isNumeric
+        info.total = parseFloat(info.total.toFixed(6), 10)
+      }
+      cells.push(this.dump.dump(info.total, {
+        attribs: info.attribs,
+        tagName: 'td',
+      }))
       continue
     }
     cells.push('<td></td>')

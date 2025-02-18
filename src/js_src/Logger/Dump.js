@@ -66,7 +66,7 @@ Dump.prototype.dump = function (val, opts) {
     type: null,
     typeMore: null,
     visualWhiteSpace: true
-  }, opts || {})
+  }, JSON.parse(JSON.stringify(opts || {})))
   var tagName
   var type // = this.getType(val)
   var method // = 'dump' + type[0].ucfirst()
@@ -75,7 +75,9 @@ Dump.prototype.dump = function (val, opts) {
     dumpOpts.type = type[0]
     dumpOpts.typeMore = type[1]
   }
-  if (typeof dumpOpts.attribs.class === 'string') {
+  if (typeof dumpOpts.attribs.class === 'undefined') {
+    dumpOpts.attribs.class = []
+  } else if (typeof dumpOpts.attribs.class === 'string') {
     dumpOpts.attribs.class = [dumpOpts.attribs.class]
   }
   dumpOptStack.push(dumpOpts)

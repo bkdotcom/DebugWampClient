@@ -72,14 +72,15 @@ function tabValues (abs, dumper) {
 function tabValuesFinish (vals, abs, dumper) {
   switch (abs.typeMore) {
     case 'base64':
-      // vals.labelDecoded = 'decoded'
       vals.labelRaw = 'base64'
       if (abs.strlen) {
         vals.valRaw += '<span class="maxlen">&hellip; ' + (abs.strlen - abs.value.length) + ' more bytes (not logged)</span>'
       }
       break
+    case 'form':
+      vals.labelRaw = 'form'
+      break
     case 'json':
-      // vals.labelDecoded = 'decoded'
       vals.labelRaw = 'json'
       if (abs.prettified || abs.strlen) {
         abs.typeMore = null // unset typeMore to prevent loop

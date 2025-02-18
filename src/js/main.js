@@ -388,7 +388,7 @@
   }
 
   Table.prototype.build = function (rows, meta, onBuildRow, info) {
-    // console.warn('Table.build', meta, classname)
+    // console.warn('Table.build', JSON.parse(JSON.stringify(meta)))
     var metaDefault = {
       attribs: {
         class: [
@@ -427,10 +427,8 @@
     var length;
     var i2;
     var length2;
-    var parsed;
     var rowKeys = rows.__debug_key_order__ || Object.keys(rows);
     var rowKey;
-    var key;
     var row;
     var rowInfo;
     var $tbody = $table.find('> tbody');
@@ -459,44 +457,55 @@
       if (typeof rowKey === 'string' && rowKey.match(/^\d+$/) && Number.isSafeInteger(rowKey)) {
         rowKey = parseInt(rowKey, 10);
       }
-      parsed = this.dump.parseTag(this.dump.dump(rowKey, {
-        requestInfo: info,
-      }));
-      $tr = $$1('<tr></tr>', rowInfo.attribs || {})
-        .append(
-          $$1('<th scope="row" class="t_key text-right"></th>')
-            .addClass(/^\d+$/.test(rowKey) ? 't_int' : parsed.attribs.class.join(' '))
-            .html(parsed.innerhtml)
-        );
 
-      if (tableInfo.haveObjRow) {
-        $tr.append(
-          rowInfo.class
-            ? $$1(this.dump.markupIdentifier(rowInfo.class, 'classname', 'td'))
-              .attr('title', rowInfo.summary)
-            : '<td class="t_undefined"></td>'
-        );
-      }
-      for (i2 = 0, length2 = tableInfo.columns.length; i2 < length2; i2++) {
-        key = tableInfo.columns[i2].key;
-        /*
-        parsed = this.dump.parseTag(this.dump.dump(row[key], true))
-        parsed.attribs.class = parsed.attribs.class.join(' ')
-        $tr.append(
-          $('<td />').html(parsed.innerhtml).attr(parsed.attribs)
-        )
-        */
-        $tr.append(this.dump.dump(row[key], {
-          requestInfo: info,
-          tagName: 'td'
-        }));
-      }
-
+      $tr = this.buildRow(row, rowInfo, rowKey, tableInfo);
       for (i2 = 0, length2 = onBuildRow.length; i2 < length2; i2++) {
         $tr = onBuildRow[i2]($tr, row, rowInfo, rowKey);
       }
       $tbody.append($tr);
     }
+  };
+
+  Table.prototype.buildRow = function (row, rowInfo, rowKey, tableInfo) {
+    var i;
+    var length;
+    var colInfo;
+    var key;
+    var parsed = this.dump.parseTag(this.dump.dump(rowKey, {
+      requestInfo: rowInfo.requestInfo,
+    }));
+    var td;
+    var $tr = $$1('<tr></tr>', rowInfo.attribs || {})
+      .append(
+        $$1('<th scope="row" class="t_key text-right"></th>')
+          .addClass(/^\d+$/.test(rowKey) ? 't_int' : parsed.attribs.class.join(' '))
+          .html(parsed.innerhtml)
+      );
+
+    if (tableInfo.haveObjRow) {
+      $tr.append(
+        rowInfo.class
+          ? $$1(this.dump.markupIdentifier(rowInfo.class, 'classname', 'td'))
+            .attr('title', rowInfo.summary)
+          : '<td class="t_undefined"></td>'
+      );
+    }
+    for (i = 0, length = tableInfo.columns.length; i < length; i++) {
+      colInfo = tableInfo.columns[i];
+      key = colInfo.key;
+      td = this.dump.dump(row[key], {
+        attribs: colInfo.attribs || {},
+        requestInfo: rowInfo.requestInfo,
+        tagName: 'td',
+      });
+      if (row[key] === true && colInfo.trueAs !== null) {
+        td = td.replace('>true<', '>' + colInfo.trueAs + '<');
+      } else if (row[key] === false && colInfo.falseAs !== null) {
+        td = td.replace('>false<', '>' + colInfo.falseAs + '<');
+      }
+      $tr.append(td);
+    }
+    return $tr
   };
 
   /*
@@ -514,8 +523,14 @@
       colHasTotal = typeof info.total !== 'undefined';
       haveTotal = haveTotal || colHasTotal;
       if (colHasTotal) {
-        info.total = parseFloat(info.total.toFixed(6), 10);
-        cells.push(this.dump.dump(info.total, { tagName: 'td' }));
+        if (!isNaN(parseFloat(info.total)) && isFinite(info.total)) {
+          // isNumeric
+          info.total = parseFloat(info.total.toFixed(6), 10);
+        }
+        cells.push(this.dump.dump(info.total, {
+          attribs: info.attribs,
+          tagName: 'td',
+        }));
         continue
       }
       cells.push('<td></td>');
@@ -4372,6 +4387,11 @@
     var tagEntries;
     for (tagName in abs.phpDoc) {
       tagEntries = abs.phpDoc[tagName];
+      if (tagName === 'package') {
+        tagEntries.tagName = tagName;
+        html += this.dumpTag(tagEntries);
+        continue
+      }
       if (!Array.isArray(tagEntries)) {
         continue
       }
@@ -4721,12 +4741,6 @@
     var strClassName = '';
     var dumpOpts = this.dumper.getDumpOpts();
     try {
-      if (this.dumper.getRequestInfo().$container.data('meta') === undefined) {
-        console.warn('meta is undefined!!!', {
-          requestInfo: this.dumper.getRequestInfo(),
-          data: this.dumper.getRequestInfo().$container.data(),
-        });
-      }
       abs.debugVersion = this.dumper.getRequestInfo().$container.data('meta').debugVersion;
       if (typeof abs.cfgFlags === 'undefined') {
         abs.cfgFlags = 0x1FFFFFF & ~this.BRIEF;
@@ -5269,14 +5283,15 @@
   function tabValuesFinish (vals, abs, dumper) {
     switch (abs.typeMore) {
       case 'base64':
-        // vals.labelDecoded = 'decoded'
         vals.labelRaw = 'base64';
         if (abs.strlen) {
           vals.valRaw += '<span class="maxlen">&hellip; ' + (abs.strlen - abs.value.length) + ' more bytes (not logged)</span>';
         }
         break
+      case 'form':
+        vals.labelRaw = 'form';
+        break
       case 'json':
-        // vals.labelDecoded = 'decoded'
         vals.labelRaw = 'json';
         if (abs.prettified || abs.strlen) {
           abs.typeMore = null; // unset typeMore to prevent loop
@@ -5859,7 +5874,7 @@
   };
 
   DumpString.prototype.isEncoded = function (val) {
-    return ['base64', 'json', 'serialized'].indexOf(val.typeMore) > -1
+    return ['base64', 'form', 'json', 'serialized'].indexOf(val.typeMore) > -1
   };
 
   /**
@@ -5954,7 +5969,7 @@
       type: null,
       typeMore: null,
       visualWhiteSpace: true
-    }, opts || {});
+    }, JSON.parse(JSON.stringify(opts || {})));
     var tagName;
     var type; // = this.getType(val)
     var method; // = 'dump' + type[0].ucfirst()
@@ -5963,7 +5978,9 @@
       dumpOpts.type = type[0];
       dumpOpts.typeMore = type[1];
     }
-    if (typeof dumpOpts.attribs.class === 'string') {
+    if (typeof dumpOpts.attribs.class === 'undefined') {
+      dumpOpts.attribs.class = [];
+    } else if (typeof dumpOpts.attribs.class === 'string') {
       dumpOpts.attribs.class = [dumpOpts.attribs.class];
     }
     dumpOptStack.push(dumpOpts);
@@ -6481,7 +6498,8 @@
       $container.find('.card-header .fa-spinner').remove();
       $container.find('.debug > .fa-spinner').remove();
       if (responseCode && responseCode + '' !== '200') {
-        $container.find('.card-title').append(' <span class="label label-default" title="Response Code">' + responseCode + '</span>');
+        $container.find('.card-title .response-code').remove(); 
+        $container.find('.card-title').append(' <span class="label label-default response-code" title="Response Code">' + responseCode + '</span>');
         if (responseCode.toString().match(/^5/)) {
           $container.addClass('bg-danger');
         }
@@ -6929,7 +6947,7 @@
   }
 
   function markupFilePath(filePath, commonPrefix, docRoot) {
-    var fileParts = parseFilePath(filePath, commonPrefix, docRoot);
+    var fileParts = parseFilePath(filePath || '', commonPrefix, docRoot);
     return (fileParts.docRoot ? '<span class="file-docroot">DOCUMENT_ROOT</span>' : '')
       + (fileParts.relPathCommon ? '<span class="file-basepath">' + dump.dump(fileParts.relPathCommon, {tagName:null}) + '</span>' : '')
       + (fileParts.relPath ? '<span class="file-relpath">' + dump.dump(fileParts.relPath, {tagName:null}) + '</span>' : '')
@@ -6937,7 +6955,7 @@
   }
 
   function parseFilePath (filePath, commonPrefix, docRoot) {
-    var baseName = filePath.match(/[^\/]+$/)[0];
+    var baseName = (filePath.match(/[^\/]+$/) || [''])[0];
     var containsDocRoot = filePath.indexOf(docRoot) === 0;
     var basePath = '';
     var relPath = filePath.slice(0, 0 - baseName.length);

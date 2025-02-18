@@ -113,7 +113,7 @@ DumpString.prototype.helper = function (val) {
 }
 
 DumpString.prototype.isEncoded = function (val) {
-  return ['base64', 'json', 'serialized'].indexOf(val.typeMore) > -1
+  return ['base64', 'form', 'json', 'serialized'].indexOf(val.typeMore) > -1
 }
 
 /**

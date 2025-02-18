@@ -13,6 +13,11 @@ PhpDoc.prototype.dump = function (abs) {
   var tagEntries
   for (tagName in abs.phpDoc) {
     tagEntries = abs.phpDoc[tagName]
+    if (tagName === 'package') {
+      tagEntries.tagName = tagName
+      html += this.dumpTag(tagEntries)
+      continue
+    }
     if (!Array.isArray(tagEntries)) {
       continue
     }
