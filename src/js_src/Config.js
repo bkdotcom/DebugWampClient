@@ -1,3 +1,4 @@
+import $ from 'zest' // external global
 import PubSub from './PubSub.js'
 import { extend } from './extend.js'
 

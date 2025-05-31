@@ -1,4 +1,4 @@
-import $ from 'jquery' // external global
+import $ from 'zest' // external global
 import { sectionPrototype } from './SectionPrototype.js'
 
 export function Cases (valDumper) {

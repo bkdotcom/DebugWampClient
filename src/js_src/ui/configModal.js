@@ -1,4 +1,4 @@
-import $ from 'jquery' // external global
+import $ from 'zest' // external global
 import { updateCssProperty } from './Css.js'
 
 export function init (config) {

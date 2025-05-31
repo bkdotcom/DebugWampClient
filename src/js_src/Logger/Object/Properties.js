@@ -1,4 +1,4 @@
-import $ from 'jquery' // external global
+import $ from 'zest' // external global
 import { sectionPrototype } from './SectionPrototype.js'
 import { versionCompare } from './../../versionCompare.js'
 
@@ -58,11 +58,7 @@ Properties.prototype.addAttribs = function ($element, info, cfg) {
     ? info.visibility.join(' ')
     : info.visibility
   $element.addClass(visibility).removeClass('debug')
-  $.each(classes, function (className, useClass) {
-    if (useClass) {
-      $element.addClass(className)
-    }
-  })
+    .toggleClass(classes)
   sectionPrototype.addAttribs($element, info, cfg)
 }
 
@@ -81,7 +77,8 @@ Properties.prototype.dumpInner = function (name, info, cfg) {
         title: cfg.phpDocOutput && title
           ? this.valDumper.dumpPhpDocStr(title).escapeHtml()
           : null
-      }
+      },
+      charHighlightTrim: true,
     }) +
     (info.value !== this.valDumper.UNDEFINED
       ? ' <span class="t_operator">=</span> ' +
@@ -113,7 +110,7 @@ Properties.prototype.dumpModifiers = function (info) {
       static: info.isStatic,
     }
   )
-  $.each(modifiers, function (modifier, incl) {
+  $.each(modifiers, function (incl, modifier) {
     var cssClass = 't_modifier_' + modifier
     if (!incl) {
       return

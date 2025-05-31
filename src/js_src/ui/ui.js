@@ -1,4 +1,4 @@
-import $ from 'jquery' // external global
+import $ from 'zest' // external global
 import * as configModal from './configModal.js'
 import { updateCssProperty } from './Css.js'
 
@@ -78,9 +78,9 @@ export function init (config) {
     var $icon = $card.find('.card-header .' + classCollapsed + ', .card-header .' + classExpanded)
     $icon.toggleClass(classExpanded + ' ' + classCollapsed)
     $card.toggleClass('expanded')
-    if (e.type === 'shown') {
-      $cardHeader.css('top', navbarHeight + 'px')
-      $cardBody.find('> .debug-menu-bar').css('top', (
+    if (e.type === 'shown.bs.collapse') {
+      $cardHeader.style('top', navbarHeight + 'px')
+      $cardBody.find('> .debug-menu-bar').style('top', (
         navbarHeight +
         $cardHeader.outerHeight()
       ) + 'px')
@@ -90,16 +90,12 @@ export function init (config) {
   })
 
   // close btn on card-header clicked
-  $('body').on('click', '.btn-remove-session', function (e) {
+  $('body').on('click', '.btn-remove-session', function () {
     $(this).closest('.card').trigger('removed.debug.card')
   })
 
   $(window).on('scroll', debounce(function () {
-    // console.group('scroll')
-    $cardsInViewport.filter('.expanded').each(function () {
-      positionSidebar($(this))
-    })
-    // console.groupEnd()
+    $cardsInViewport.filter('.expanded').each(positionSidebar)
   }, 50))
 
   $('body').on('open.debug.sidebar', function (e) {
@@ -108,7 +104,7 @@ export function init (config) {
     var $card = $sidebar.closest('.card')
     var sidebarContentHeight = $sidebar.find('.sidebar-content').height()
     // var minHeight = Math.max(sidebarContentHeight + 8, 200)
-    $card.find('.card-body > .tab-panes > .tab-pane').css({
+    $card.find('.card-body > .tab-panes > .tab-pane').style({
       minHeight: sidebarContentHeight + 'px'
     })
     positionSidebar($card)
@@ -126,16 +122,8 @@ export function init (config) {
   $('body').on('click', '.card-header[data-toggle=collapse]', function () {
     var $target = $($(this).data('target'))
     navbarHeight = $('nav.navbar').outerHeight()
-    $target.collapse('toggle')
+    new bootstrap.Collapse($target[0]) //formerly $target.collapse('toggle')  with jQuery
   })
-
-  /*
-  $('body').on('click', '.sidebar-tab', function (e){
-    var $card = $(e.target).closest('.card')
-    var sidebarIsOpen = $card.find('.debug-sidebar.show').length > 0
-    $card.debugEnhance('sidebar', sidebarIsOpen ? 'close' : 'open')
-  })
-  */
 
   $('body').on('mouseenter', '.sidebar-trigger', function () {
     $(this).closest('.card').debugEnhance('sidebar', 'open')
@@ -176,9 +164,10 @@ function onBodyClick (e) {
 }
 
 function positionSidebar ($card) {
+  $card = $($card)
   var $cardBody = $card.find('.card-body')
   var $sidebar = $card.find('.debug-sidebar')
-  // var scrollTop = $(window).scrollTop()
+
   var cardOffset = $card[0].getBoundingClientRect().top
   var isSticky = cardOffset <= navbarHeight
   // for height calculations, we will consider menubar as part of header vs body
@@ -186,19 +175,18 @@ function positionSidebar ($card) {
   var bodyHeight = $cardBody.outerHeight() - menubarHeight
   var bodyOffset = $cardBody[0].getBoundingClientRect().top + menubarHeight
   var headerHeight = bodyOffset - cardOffset + menubarHeight
-  // var headerHeight = $card.find('> .card-header').outerHeight() + menubarHeight
   var heightVis = bodyOffset + bodyHeight - headerHeight
   var heightHidden = bodyHeight - heightVis
   var contentHeight = $sidebar.find('.sidebar-content').height()
   // var sidebarTopFixed = navbarHeight + headerHeight
-  var sidebarTop = heightHidden + (parseInt($('body').css('paddingTop')) - navbarHeight)
+  var sidebarTop = heightHidden + (parseInt($('body').style('paddingTop')) - navbarHeight)
 
   $sidebar.attr('style', '')
   if (isSticky) {
-    if (contentHeight > heightVis && $sidebar.hasClass('show')) {
+    if ((contentHeight > heightVis) && $sidebar.hasClass('show')) {
       sidebarTop -= contentHeight - heightVis + 8
     }
-    $sidebar.css({
+    $sidebar.style({
       // position: 'fixed', // sticky would be nice, but still visible when docked off to the left
       // top: topSidebarFixed + 'px', // position: fixed
       top: sidebarTop + 'px' // position absolute

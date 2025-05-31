@@ -1,5 +1,3 @@
-import $ from 'jquery' // external global
-
 export function PhpDoc (valDumper) {
   this.valDumper = valDumper
 }

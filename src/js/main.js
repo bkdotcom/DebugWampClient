@@ -1,4 +1,4 @@
-(function ($$1) {
+(function ($) {
   'use strict';
 
   var PubSub = (function () {
@@ -56,11 +56,13 @@
     };
   }
 
+  /*
   if (!String.prototype.trim) {
     String.prototype.trim = function () {
       return this.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '')
-    };
+    }
   }
+  */
   if (!Object.keys) {
     Object.keys = function (o) {
       if (o !== Object(o)) {
@@ -126,57 +128,57 @@
     cssRule.style[ruleCamel] = value;
   }
 
-  function init$1 (config) {
-    $$1('#link-files').on('change', function () {
-      var isChecked = $$1(this).prop('checked');
-      var $templateGroup = $$1('#link-files-template').closest('.form-group');
+  function init$3 (config) {
+    $('#link-files').on('change', function () {
+      var isChecked = $(this).prop('checked');
+      var $templateGroup = $('#link-files-template').closest('.form-group');
       isChecked
         ? $templateGroup.slideDown()
         : $templateGroup.slideUp();
     }).trigger('change');
 
-    $$1('#modal-settings').on('submit', function (e) {
+    $('#modal-settings').on('submit', function (e) {
       e.preventDefault();
       config.set({
-        theme: $$1('#theme').val(),
-        url: $$1('#wsUrl').val(),
-        realm: $$1('#realm').val(),
-        fontSize: $$1('#font-size').val(),
-        linkFiles: $$1('#link-files').prop('checked'),
-        linkFilesTemplate: $$1('#link-files-template').val()
+        theme: $('#theme').val(),
+        url: $('#wsUrl').val(),
+        realm: $('#realm').val(),
+        fontSize: $('#font-size').val(),
+        linkFiles: $('#link-files').prop('checked'),
+        linkFilesTemplate: $('#link-files-template').val()
       });
-      $$1(this).modal('hide');
+      $(this).modal('hide');
     });
 
-    $$1('#modal-settings').on('hide.bs.modal', function (e) {
+    $('#modal-settings').on('hide.bs.modal', function (e) {
       updateCssProperty('wampClientCss', '#debug-cards', 'font-size', config.get('fontSize'));
     });
 
-    $$1('#modal-settings').on('show.bs.modal', function (e) {
-      $$1('#theme').val(config.get('theme')).trigger('change');
-      $$1('#wsUrl').val(config.get('url'));
-      $$1('#realm').val(config.get('realm'));
-      $$1('#font-size').val(config.get('fontSize'));
-      $$1('#link-files').prop('checked', config.get('linkFiles')).trigger('change');
-      $$1('#link-files-template').val(config.get('linkFilesTemplate'));
+    $('#modal-settings').on('show.bs.modal', function (e) {
+      $('#theme').val(config.get('theme')).trigger('change');
+      $('#wsUrl').val(config.get('url'));
+      $('#realm').val(config.get('realm'));
+      $('#font-size').val(config.get('fontSize'));
+      $('#link-files').prop('checked', config.get('linkFiles')).trigger('change');
+      $('#link-files-template').val(config.get('linkFilesTemplate'));
     });
 
-    $$1('#theme-options').on('click', 'button', function () {
-      $$1('#theme').val($$1(this).val()).trigger('change');
+    $('#theme-options').on('click', 'button', function () {
+      $('#theme').val($(this).val()).trigger('change');
     });
 
-    $$1('#theme').on('change', function (e) {
-      var val = $$1(this).val();
+    $('#theme').on('change', function (e) {
+      var val = $(this).val();
       var $icon;
-      $$1('#theme-options .dropdown-item').each(function () {
-        var isOption = $$1(this).val() === val;
-        $$1(this).toggleClass('active', isOption);
+      $('#theme-options .dropdown-item').each(function () {
+        var isOption = $(this).val() === val;
+        $(this).toggleClass('active', isOption);
         if (isOption) {
-          $icon = $$1(this).find('i').clone();
+          $icon = $(this).find('i').clone();
         }
       });
-      $$1('#theme-options').prev().find('i').remove();
-      $$1('#theme-options').prev().prepend($icon);
+      $('#theme-options').prev().find('i').remove();
+      $('#theme-options').prev().prepend($icon);
     });
   }
 
@@ -184,9 +186,9 @@
   var classExpanded = 'fa-chevron-down';
   var timeoutHandler;
   var navbarHeight; // = $('nav.navbar').outerHeight()
-  var $cardsInViewport = $$1();
+  var $cardsInViewport = $();
 
-  function init (config) {
+  function init$2 (config) {
     var io = new IntersectionObserver(
       function (entries) {
         // console.log('IntersectionObserver update', entries)
@@ -211,19 +213,19 @@
       }
     );
 
-    $$1('.navbar .clear').on('click', function () {
+    $('.navbar .clear').on('click', function () {
       console.time('clear');
-      $$1('#debug-cards > .card').not('.working').trigger('removed.debug.card');
+      $('#debug-cards > .card').not('.working').trigger('removed.debug.card');
       console.timeEnd('clear');
     });
 
-    $$1('#debug-cards').on('added.debug.card', function (e) {
+    $('#debug-cards').on('added.debug.card', function (e) {
       // console.warn('card added', e.target, e)
       io.observe(e.target);
     });
-    $$1('#debug-cards').on('removed.debug.card', function (e) {
+    $('#debug-cards').on('removed.debug.card', function (e) {
       // console.warn('card removed', e.target, e)
-      var $card = $$1(e.target);
+      var $card = $(e.target);
       io.unobserve(e.target);
       $cardsInViewport = $cardsInViewport.not(e.target);
       if ($card.hasClass('working')) {
@@ -232,7 +234,7 @@
       $card.remove();
     });
 
-    $$1('body').on('mouseup', function (e) {
+    $('body').on('mouseup', function (e) {
       if (timeoutHandler) {
         e.preventDefault();
         clearInterval(timeoutHandler);
@@ -241,24 +243,24 @@
     });
 
     // test for long-press of main clear button
-    $$1('.clear').on('mousedown', function (e) {
+    $('.clear').on('mousedown', function (e) {
       timeoutHandler = setTimeout(function () {
         // has been long pressed (3 seconds)
         // clear all (incl working)
-        $$1('#debug-cards > .card').trigger('removed.debug.card');
+        $('#debug-cards > .card').trigger('removed.debug.card');
       }, 2000);
     });
 
-    $$1('body').on('shown.bs.collapse hidden.bs.collapse', '.card-body', function (e) {
-      var $cardBody = $$1(this);
+    $('body').on('shown.bs.collapse hidden.bs.collapse', '.card-body', function (e) {
+      var $cardBody = $(this);
       var $card = $cardBody.closest('.card');
       var $cardHeader = $card.find('> .card-header');
       var $icon = $card.find('.card-header .' + classCollapsed + ', .card-header .' + classExpanded);
       $icon.toggleClass(classExpanded + ' ' + classCollapsed);
       $card.toggleClass('expanded');
-      if (e.type === 'shown') {
-        $cardHeader.css('top', navbarHeight + 'px');
-        $cardBody.find('> .debug-menu-bar').css('top', (
+      if (e.type === 'shown.bs.collapse') {
+        $cardHeader.style('top', navbarHeight + 'px');
+        $cardBody.find('> .debug-menu-bar').style('top', (
           navbarHeight +
           $cardHeader.outerHeight()
         ) + 'px');
@@ -268,68 +270,56 @@
     });
 
     // close btn on card-header clicked
-    $$1('body').on('click', '.btn-remove-session', function (e) {
-      $$1(this).closest('.card').trigger('removed.debug.card');
+    $('body').on('click', '.btn-remove-session', function () {
+      $(this).closest('.card').trigger('removed.debug.card');
     });
 
-    $$1(window).on('scroll', debounce(function () {
-      // console.group('scroll')
-      $cardsInViewport.filter('.expanded').each(function () {
-        positionSidebar($$1(this));
-      });
-      // console.groupEnd()
+    $(window).on('scroll', debounce(function () {
+      $cardsInViewport.filter('.expanded').each(positionSidebar);
     }, 50));
 
-    $$1('body').on('open.debug.sidebar', function (e) {
+    $('body').on('open.debug.sidebar', function (e) {
       // console.warn('open.debug.sidebar')
-      var $sidebar = $$1(e.target);
+      var $sidebar = $(e.target);
       var $card = $sidebar.closest('.card');
       var sidebarContentHeight = $sidebar.find('.sidebar-content').height();
       // var minHeight = Math.max(sidebarContentHeight + 8, 200)
-      $card.find('.card-body > .tab-panes > .tab-pane').css({
+      $card.find('.card-body > .tab-panes > .tab-pane').style({
         minHeight: sidebarContentHeight + 'px'
       });
       positionSidebar($card);
-      $$1('body').on('click', onBodyClick);
+      $('body').on('click', onBodyClick);
     });
 
-    $$1('body').on('close.debug.sidebar', function (e) {
+    $('body').on('close.debug.sidebar', function (e) {
       // remove minHeight
-      var $card = $$1(e.target).closest('.card');
+      var $card = $(e.target).closest('.card');
       positionSidebar($card);
       // $card.find('.card-body .tab-pane').attr('style', '')
-      $$1('body').off('click', onBodyClick);
+      $('body').off('click', onBodyClick);
     });
 
-    $$1('body').on('click', '.card-header[data-toggle=collapse]', function () {
-      var $target = $$1($$1(this).data('target'));
-      navbarHeight = $$1('nav.navbar').outerHeight();
-      $target.collapse('toggle');
+    $('body').on('click', '.card-header[data-toggle=collapse]', function () {
+      var $target = $($(this).data('target'));
+      navbarHeight = $('nav.navbar').outerHeight();
+      new bootstrap.Collapse($target[0]); //formerly $target.collapse('toggle')  with jQuery
     });
 
-    /*
-    $('body').on('click', '.sidebar-tab', function (e){
-      var $card = $(e.target).closest('.card')
-      var sidebarIsOpen = $card.find('.debug-sidebar.show').length > 0
-      $card.debugEnhance('sidebar', sidebarIsOpen ? 'close' : 'open')
-    })
-    */
-
-    $$1('body').on('mouseenter', '.sidebar-trigger', function () {
-      $$1(this).closest('.card').debugEnhance('sidebar', 'open');
+    $('body').on('mouseenter', '.sidebar-trigger', function () {
+      $(this).closest('.card').debugEnhance('sidebar', 'open');
     });
 
-    $$1('body').on('mouseleave', '.debug-sidebar', function () {
-      $$1(this).closest('.card').debugEnhance('sidebar', 'close');
+    $('body').on('mouseleave', '.debug-sidebar', function () {
+      $(this).closest('.card').debugEnhance('sidebar', 'close');
     });
 
     updateCssProperty('wampClientCss', '.debug', 'font-size', 'inherit');
     updateCssProperty('wampClientCss', '#debug-cards', 'font-size', config.get('fontSize'));
 
-    init$1(config);
+    init$3(config);
 
     // note:  navbar may not yet be at final height
-    navbarHeight = $$1('nav.navbar').outerHeight();
+    navbarHeight = $('nav.navbar').outerHeight();
   }
 
   function debounce (fn, ms) {
@@ -344,15 +334,16 @@
   }
 
   function onBodyClick (e) {
-    if ($$1(e.target).closest('.debug-sidebar').length === 0) {
-      $$1('.debug-sidebar.show').closest('.card').debugEnhance('sidebar', 'close');
+    if ($(e.target).closest('.debug-sidebar').length === 0) {
+      $('.debug-sidebar.show').closest('.card').debugEnhance('sidebar', 'close');
     }
   }
 
   function positionSidebar ($card) {
+    $card = $($card);
     var $cardBody = $card.find('.card-body');
     var $sidebar = $card.find('.debug-sidebar');
-    // var scrollTop = $(window).scrollTop()
+
     var cardOffset = $card[0].getBoundingClientRect().top;
     var isSticky = cardOffset <= navbarHeight;
     // for height calculations, we will consider menubar as part of header vs body
@@ -360,19 +351,18 @@
     var bodyHeight = $cardBody.outerHeight() - menubarHeight;
     var bodyOffset = $cardBody[0].getBoundingClientRect().top + menubarHeight;
     var headerHeight = bodyOffset - cardOffset + menubarHeight;
-    // var headerHeight = $card.find('> .card-header').outerHeight() + menubarHeight
     var heightVis = bodyOffset + bodyHeight - headerHeight;
     var heightHidden = bodyHeight - heightVis;
     var contentHeight = $sidebar.find('.sidebar-content').height();
     // var sidebarTopFixed = navbarHeight + headerHeight
-    var sidebarTop = heightHidden + (parseInt($$1('body').css('paddingTop')) - navbarHeight);
+    var sidebarTop = heightHidden + (parseInt($('body').style('paddingTop')) - navbarHeight);
 
     $sidebar.attr('style', '');
     if (isSticky) {
-      if (contentHeight > heightVis && $sidebar.hasClass('show')) {
+      if ((contentHeight > heightVis) && $sidebar.hasClass('show')) {
         sidebarTop -= contentHeight - heightVis + 8;
       }
-      $sidebar.css({
+      $sidebar.style({
         // position: 'fixed', // sticky would be nice, but still visible when docked off to the left
         // top: topSidebarFixed + 'px', // position: fixed
         top: sidebarTop + 'px' // position absolute
@@ -404,12 +394,12 @@
         rows: [],
       }
     };
-    meta.tableInfo = $$1.extend(metaDefault.tableInfo, meta.tableInfo);
-    meta = $$1.extend(metaDefault, meta);
+    meta.tableInfo = $.extend(metaDefault.tableInfo, meta.tableInfo);
+    meta = $.extend(metaDefault, meta);
     if (meta.caption === null) {
       meta.caption = '';
     }
-    $table = $$1('<table>' +
+    $table = $('<table>' +
       (meta.caption.length ? '<caption>' + meta.caption.escapeHtml() + '</caption>' : '')+
       '<thead><tr><th>&nbsp;</th></tr></thead>' +
       '<tbody></tbody>' +
@@ -437,7 +427,7 @@
     for (i = 0, length = rowKeys.length; i < length; i++) {
       rowKey = rowKeys[i];
       row = rows[rowKey];
-      rowInfo = $$1.extend(
+      rowInfo = $.extend(
         {},
         typeof tableInfo.commonRowInfo !== 'undefined'
           ? tableInfo.commonRowInfo
@@ -475,9 +465,9 @@
       requestInfo: rowInfo.requestInfo,
     }));
     var td;
-    var $tr = $$1('<tr></tr>', rowInfo.attribs || {})
+    var $tr = $('<tr></tr>', rowInfo.attribs || {})
       .append(
-        $$1('<th scope="row" class="t_key text-right"></th>')
+        $('<th scope="row" class="t_key text-right"></th>')
           .addClass(/^\d+$/.test(rowKey) ? 't_int' : parsed.attribs.class.join(' '))
           .html(parsed.innerhtml)
       );
@@ -485,7 +475,7 @@
     if (tableInfo.haveObjRow) {
       $tr.append(
         rowInfo.class
-          ? $$1(this.dump.markupIdentifier(rowInfo.class, 'classname', 'td'))
+          ? $(this.dump.markupIdentifier(rowInfo.class, 'classname', 'td'))
             .attr('title', rowInfo.summary)
           : '<td class="t_undefined"></td>'
       );
@@ -562,7 +552,7 @@
         label += ' ' + this.dump.markupIdentifier(info.class, 'classname');
       }
       $theadTr.append(
-        $$1('<th scope="col"></th>').html(label)
+        $('<th scope="col"></th>').html(label)
       );
     }
   };
@@ -3900,6 +3890,12 @@
   var mergeWithExports = requireMergeWith();
   var mergeWith = /*@__PURE__*/getDefaultExportFromCjs(mergeWithExports);
 
+  function replaceTokens (str, data) {
+    return str.replace(/\{([^}]+)\}/g, (match, key) => {
+      return data[key] || match
+    })
+  }
+
   var sectionPrototype = {
     dumpItems: function (abs, what, cfg) {
       var self = this;
@@ -3958,7 +3954,7 @@
           ? info.visibility
           : [info.visibility];
         info.isInherited = info.declaredLast && info.declaredLast !== cfg.objClassName;
-        info.isPrivateAncestor = $.inArray('private', vis) >= 0 && info.isInherited;
+        info.isPrivateAncestor = vis.indexOf('private') >= 0 && info.isInherited;
         if (info.isPrivateAncestor) {
             info.isInherited = false;
         }
@@ -4000,11 +3996,15 @@
       if (methodsHave.length < 1) {
         return ''
       }
-      methods = methodsHave.join(' and ');
-      methods = methodsHave.length === 1
-        ? 'a ' + methods + ' method'
-        : methods + ' methods';
-      return '<dd class="magic info">This object has ' + methods + '</dd>'
+     var label = methodsHave.length === 1
+        ? replaceTokens(this.valDumper.config.dict.get('object.methods.magic.1'), {
+          method: methodsHave[0]
+        })
+        : replaceTokens(this.valDumper.config.dict.get('object.methods.magic.2'), {
+          method1: methodsHave[0],
+          method2: methodsHave[1],
+        });
+      return '<dd class="magic info">' + label + '</dd>'
     },
   };
 
@@ -4051,7 +4051,7 @@
     var title = cfg.phpDocOutput
       ? info.phpDoc.summary || info.desc || null
       : null;
-    var $element = $$1('<div></div>')
+    var $element = $('<div></div>')
       .html('<span class="t_identifier">' + name + '</span>' +
         (info.value !== this.valDumper.UNDEFINED
           ? ' <span class="t_operator">=</span> ' +
@@ -4079,15 +4079,12 @@
   Constants.prototype.addAttribs = function ($element, info, cfg) {
     var classes = {
       constant: true,
+      debug: false,
       isFinal: info.isFinal,
       'private-ancestor': info.isPrivateAncestor
     };
-    $element.addClass(info.visibility).removeClass('debug');
-    $$1.each(classes, function (classname, useClass) {
-      if (useClass) {
-        $element.addClass(classname);
-      }
-    });
+    $element.addClass(info.visibility)
+      .toggleClass(classes);
     sectionPrototype.addAttribs($element, info, cfg);
   };
 
@@ -4131,7 +4128,7 @@
     if (info.isFinal) {
       modifiers.push('final');
     }
-    $$1.each(modifiers, function (i, modifier) {
+    $.each(modifiers, function (modifier) {
       html += '<span class="t_modifier_' + modifier + '">' + modifier + '</span> ';
     });
     return html
@@ -4149,18 +4146,15 @@
 
   Methods.prototype.addAttribs = function ($element, info, cfg) {
     var classes = {
+      debug: false,
       method: true,
       isDeprecated: info.isDeprecated,
       isFinal: info.isFinal,
       isStatic: info.isStatic
     };
     var self = this;
-    $element.addClass(info.visibility).removeClass('debug');
-    $$1.each(classes, function (className, useClass) {
-      if (useClass) {
-        $element.addClass(className);
-      }
-    });
+    $element.addClass(info.visibility)
+      .toggleClass(classes);
     sectionPrototype.addAttribs($element, info, cfg);
     if (info.implements && info.implements.length) {
       $element.attr('data-implements', info.implements);
@@ -4208,7 +4202,7 @@
       this.dumpReturn(info, cfg) +
       this.dumpStaticVars(info, cfg) +
       (name === '__toString'
-        ? '<h3>return value</h3>' +
+        ? '<h3>' + this.valDumper.config.dict.get('object.methods.return-value') + '</h3>' +
             '<ul class="list-unstyled"><li>' +
             this.valDumper.dump(info.returnValue, {
               attribs: {
@@ -4231,19 +4225,7 @@
       [vis.join(' ')]: true,
       static: info.isStatic,
     };
-    /*
-    if (info.isAbstract) {
-      modifiers.push('abstract')
-    }
-    if (info.isFinal) {
-      modifiers.push('final')
-    }
-    modifiers.push(vis.join('  '))
-    if (info.isStatic) {
-      modifiers.push('static')
-    }
-    */
-    $$1.each(modifiers, function (modifier, isSet) {
+    $.each(modifiers, function (isSet, modifier) {
       if (isSet) {
         html += '<span class="t_modifier_' + modifier + '">' + modifier + '</span> ';
       }
@@ -4273,11 +4255,11 @@
   Methods.prototype.dumpParams = function (info, cfg) {
     var self = this;
     var params = [];
-    $$1.each(info.params, function (i, info) {
-      var $param = $$1('<span />', {
+    $.each(info.params, function (info) {
+      var $param = $('<span />', {
         class: 'parameter'
       });
-      info = $$1.extend({
+      info = $.extend({
         desc: null,
         defaultValue: self.valDumper.UNDEFINED
       }, info);
@@ -4323,7 +4305,7 @@
       defaultValue = defaultValue.replace('\n', ' ');
     }
     $param.append(' <span class="t_operator">=</span> ' +
-      $$1(this.valDumper.dump(defaultValue))
+      $(this.valDumper.dump(defaultValue))
         .addClass('t_parameter-default')[0].outerHTML
     );
   };
@@ -4347,9 +4329,9 @@
     if (!cfg.staticVarOutput || typeof info.staticVars === 'undefined' || info.staticVars.length < 1) {
         return ''
     }
-    html = '<h3>static variables</h3>';
+    html = '<h3>' + this.valDumper.config.dict.get('object.methods.static-variables') + '</h3>';
     html += '<ul class="list-unstyled">';
-    $$1.each(info.staticVars, function (name, value) {
+    $.each(info.staticVars, function (value, name) {
       html += '<li>' +
         self.valDumper.dump(name, {
           addQuotes : false,
@@ -4559,12 +4541,8 @@
     var visibility = typeof info.visibility === 'object'
       ? info.visibility.join(' ')
       : info.visibility;
-    $element.addClass(visibility).removeClass('debug');
-    $$1.each(classes, function (className, useClass) {
-      if (useClass) {
-        $element.addClass(className);
-      }
-    });
+    $element.addClass(visibility).removeClass('debug')
+      .toggleClass(classes);
     sectionPrototype.addAttribs($element, info, cfg);
   };
 
@@ -4583,7 +4561,8 @@
           title: cfg.phpDocOutput && title
             ? this.valDumper.dumpPhpDocStr(title).escapeHtml()
             : null
-        }
+        },
+        charHighlightTrim: true,
       }) +
       (info.value !== this.valDumper.UNDEFINED
         ? ' <span class="t_operator">=</span> ' +
@@ -4598,10 +4577,10 @@
       ? info.visibility
       : [info.visibility];
     var modifiers = {};
-    info = $$1.extend({
+    info = $.extend({
       isEager: null
     }, info);
-    modifiers = $$1.extend(
+    modifiers = $.extend(
       {
         eager: info.isEager,
         final: info.isFinal,
@@ -4615,7 +4594,7 @@
         static: info.isStatic,
       }
     );
-    $$1.each(modifiers, function (modifier, incl) {
+    $.each(modifiers, function (incl, modifier) {
       var cssClass = 't_modifier_' + modifier;
       if (!incl) {
         return
@@ -4740,8 +4719,9 @@
     var html = '';
     var strClassName = '';
     var dumpOpts = this.dumper.getDumpOpts();
+    var $container = this.dumper.getRequestInfo().$container;
     try {
-      abs.debugVersion = this.dumper.getRequestInfo().$container.data('meta').debugVersion;
+      abs.debugVersion = $container.data('meta').debugVersion;
       if (typeof abs.cfgFlags === 'undefined') {
         abs.cfgFlags = 0x1FFFFFF & ~this.BRIEF;
       }
@@ -4795,12 +4775,12 @@
     if ((abs.cfgFlags & this.OBJ_ATTRIBUTE_OUTPUT) !== this.OBJ_ATTRIBUTE_OUTPUT) {
       return ''
     }
-    $$1.each(abs.attributes, function (key, attribute) {
+    $.each(abs.attributes, function (attribute) {
       args = [];
       html += '<dd class="attribute">';
       html += self.dumper.markupIdentifier(attribute.name);
       if (Object.keys(attribute.arguments).length) {
-        $$1.each(attribute.arguments, function (name, val) {
+        $.each(attribute.arguments, function (val, name) {
           args.push(
             (name.match(/^\d+$/) === null
               ? '<span class="t_parameter-name">' + self.dumper.dumpPhpDocStr(name) + '</span><span class="t_punct">:</span>'
@@ -4889,7 +4869,7 @@
     };
     var haveModifier = false;
     var html = '<dt class="modifiers">modifiers</dt>';
-    $$1.each(modifiers, function (modifier, isSet) {
+    $.each(modifiers, function (isSet, modifier) {
       if (isSet) {
         haveModifier = true;
         html += '<dd class="t_modifier_' + modifier + '">' + modifier + '</dd>';
@@ -4925,7 +4905,7 @@
       val = val.substring(0, 100);
       valAppend = '&hellip; <i>(' + (len - 100) + ' more bytes)</i>';
     }
-    $toStringDump = $$1(this.dumper.dump(val));
+    $toStringDump = $(this.dumper.dump(val));
     title = (!abs.stringified ? '__toString() : ' : '') + $toStringDump.prop('title');
     if (title === '__toString() : ') {
       title = '__toString()';
@@ -4947,7 +4927,7 @@
         iface = typeof implementsObj[k] === 'string'
           ? implementsObj[k]
           : k;
-        $span = $$1('<span />', {
+        $span = $('<span />', {
           class: 'interface t_identifier',
           html: this.dumper.markupIdentifier(iface, 'classname')
         });
@@ -4982,7 +4962,7 @@
       })
     );
     if (Object.keys(attribs).length > 0) {
-      type = $$1('<span></span>').attr(attribs).html(type)[0].outerHTML;
+      type = $('<span></span>').attr(attribs).html(type)[0].outerHTML;
     }
     return type
   };
@@ -5230,7 +5210,7 @@
     tabs = this.buildTabsAndPanes(abs);
     dumpOpts.tagName = null;
 
-    return $$1('<' + tagName + '>', {
+    return $('<' + tagName + '>', {
       class: 'string-encoded tabs-container',
       'data-type-more': abs.typeMore
     }).html('\n' +
@@ -5274,7 +5254,7 @@
     return tabValuesFinish({
       labelDecoded: 'decoded',
       labelRaw: 'raw',
-      valRaw: $$1('<span />', attribs).html(
+      valRaw: $('<span />', attribs).html(
         dumper.dump(abs.value, { tagName: null })
       )[0].outerHTML
     }, abs, dumper)
@@ -5724,20 +5704,20 @@
     })
   };
 
-  CharHighlight.prototype.highlight = function (str) {
+  CharHighlight.prototype.highlight = function (str, highlightTrim) {
     var self = this;
     if (typeof str !== 'string') {
       return str
     }
-    return str.replace(this.charRegex, function (char) {
-      var info = $$1.extend({
+    str = str.replace(this.charRegex, function (char) {
+      var info = $.extend({
         char: char,
         class: 'unicode',
         codePoint: char.codePointAt(0).toString(16),
         desc: '',
         replaceWith: char,
       }, self.charData[char]);
-      return $$1('<span></span>', {
+      return $('<span></span>', {
         class: info.class,
         'data-abbr': info.abbr
           ? info.abbr
@@ -5753,7 +5733,14 @@
         }).join(': '),
         html: info.replaceWith
       })[0].outerHTML
-    })
+    });
+    if (highlightTrim) {
+      str = str.replace(/(^\s+|\s+$)/g, function (match) {
+        var substr = match.replace(' ' , '<span class="ws_s"> </span>');
+        return '<span class="char-ws" title="whitespace">' + substr + '</span>'
+      });
+    }
+    return str
   };
 
   CharHighlight.prototype.buildCharRegex = function () {
@@ -5777,7 +5764,7 @@
 
   DumpString.prototype.dump = function (val, abs) {
     var dumpOpts = this.dumper.getDumpOpts();
-    if ($$1.isNumeric(val)) {
+    if ($.isNumeric(val)) {
       this.dumper.checkTimestamp(val, abs);
     }
     val = abs
@@ -5795,7 +5782,7 @@
       val = val.escapeHtml();
     }
     if (opts.charHighlight) {
-      val = this.charHighlight.highlight(val);
+      val = this.charHighlight.highlight(val, opts.charHighlightTrim);
     }
     if (opts.visualWhiteSpace) {
       val = visualWhiteSpace(val);
@@ -5811,7 +5798,7 @@
     if (abs.typeMore === 'classname') {
       val = this.dumper.markupIdentifier(abs.value, 'classname');
       parsed = this.dumper.parseTag(val);
-      $$1.extend(dumpOpts.attribs, parsed.attribs);
+      $.extend(dumpOpts.attribs, parsed.attribs);
       return parsed.innerhtml
     }
     val = this.helper(abs.value);
@@ -5826,7 +5813,7 @@
     }
     if (abs.prettifiedTag) {
       dumpOpts.postDump = function (val, dumpOpts) {
-        return $$1('<span />', {
+        return $('<span />', {
           class: 'value-container',
           'data-type': dumpOpts.type,
           html: '<span class="prettified">(prettified)</span> '
@@ -5918,7 +5905,8 @@
     */
   ];
 
-  var Dump = function () {
+  var Dump = function (config) {
+    this.config = config; // phpDebugConsole config... so we have access to dict/translations
     this.objectDumper = new DumpObject(this);
     this.stringDumper = new DumpString(this);
     this.ABSTRACTION = '\x00debug\x00'.parseHex();
@@ -5939,14 +5927,14 @@
     dumpOpts = this.getDumpOpts();
     dumpOpts.postDump = function (dumped, opts) {
       if (opts.tagName === 'td') {
-        opts.attribs.class = 't_' + opts.type;
-        return $$1('<td />', {
+        opts.attribs.class.push('t_' + opts.type);
+        return $('<td />', {
           class: 'timestamp value-container',
           title: date,
-          html: $$1('<span />', opts.attribs).html(val)
+          html: $('<span />', opts.attribs).html(val)
         })
       }
-      return $$1('<span />', {
+      return $('<span />', {
         class: 'timestamp value-container',
         title: date,
         html: dumped
@@ -5955,13 +5943,13 @@
   };
 
   Dump.prototype.dump = function (val, opts) {
-    var $wrap;
-    var dumpOpts = $$1.extend({
+    var dumpOpts = $.extend({
       addQuotes: true,
       attribs: {
         class: []
       },
       charHighlight: true,
+      charHighlightTrim: false,
       postDump: null, // set to function
       requestInfo: null,
       sanitize: true,
@@ -5969,7 +5957,7 @@
       type: null,
       typeMore: null,
       visualWhiteSpace: true
-    }, JSON.parse(JSON.stringify(opts || {})));
+    }, opts || {});
     var tagName;
     var type; // = this.getType(val)
     var method; // = 'dump' + type[0].ucfirst()
@@ -5981,7 +5969,7 @@
     if (typeof dumpOpts.attribs.class === 'undefined') {
       dumpOpts.attribs.class = [];
     } else if (typeof dumpOpts.attribs.class === 'string') {
-      dumpOpts.attribs.class = [dumpOpts.attribs.class];
+      dumpOpts.attribs.class = dumpOpts.attribs.class.split(' ');
     }
     dumpOptStack.push(dumpOpts);
     method = 'dump' + dumpOpts.type.ucfirst();
@@ -6002,15 +5990,7 @@
       if (dumpOpts.typeMore && dumpOpts.typeMore !== 'abstraction') {
         dumpOpts.attribs['data-type-more'] = dumpOpts.typeMore.replace(/\0/g, '');
       }
-      $wrap = $$1('<' + tagName + ' />')
-        .addClass(dumpOpts.attribs.class.join(' '));
-      delete dumpOpts.attribs.class;
-      $wrap.attr(dumpOpts.attribs);
-      if (typeof dumpOpts.attribs.style !== 'undefined') {
-        // .attr() doesn't apply style when single object passed
-        $wrap.attr('style', dumpOpts.attribs.style);
-      }
-      val = $wrap.html(val)[0].outerHTML;
+      val = this.createElement(tagName, dumpOpts.attribs, val)[0].outerHTML;
     }
     if (dumpOpts.postDump) {
       val = dumpOpts.postDump(val, dumpOpts);
@@ -6019,6 +5999,21 @@
       }
     }
     return val
+  };
+
+  /**
+   * issues with (jQuery) $element.attr({})
+   * doesn't handle style (when passed as value in single object param)
+   * doesn't handle class array
+   * deleting class from attribs leads to other problems
+   */
+  Dump.prototype.createElement = function (tagName, attribs, innerHtml) {
+    var $el = $('<' + tagName + ' />')
+      .attr(attribs);
+    if (typeof innerHtml !== 'undefined') {
+      $el.html(innerHtml);
+    }
+    return $el
   };
 
   Dump.prototype.dumpAbstraction = function (abs) {
@@ -6044,7 +6039,7 @@
       }
     }
     if (abs.options) {
-      $$1.extend(dumpOpts, abs.options);
+      $.extend(dumpOpts, abs.options);
     }
     if (simpleTypes.indexOf(abs.type) > -1) {
       value = abs.value;
@@ -6075,7 +6070,7 @@
     var absKeys = typeof abs?.keys === 'object'
       ? abs.keys
       : {};
-    var dumpOpts = $$1.extend({
+    var dumpOpts = $.extend({
       asFileTree: false,
       expand: null,
       isMaxDepth: false,
@@ -6129,14 +6124,15 @@
   };
 
   Dump.prototype.dumpArrayValue = function (key, val, withKey) {
-    var $key = $$1('<span></span>');
+    var $key = $('<span></span>');
     if (withKey === false) {
       return this.dump(val, { tagName: 'li' })
     }
     $key
       .addClass('t_key')
       .html(this.dump(key, {
-        tagName : null
+        charHighlightTrim: true,
+        tagName : null,
       }));
     if (/^\d+$/.test(key)) {
       $key.addClass('t_int');
@@ -6270,7 +6266,7 @@
       if (val === this.UNDEFINED) {
         return ['undefined', null]
       }
-      if ($$1.isNumeric(val)) {
+      if ($.isNumeric(val)) {
         return ['string', 'numeric']
       }
       return ['string', null]
@@ -6338,10 +6334,10 @@
           parts.className;
       }
       attribs.class = 'classname';
-      parts.className = $$1('<' + tag + '/>', attribs).html(parts.className)[0].outerHTML;
+      parts.className = $('<' + tag + '/>', attribs).html(parts.className)[0].outerHTML;
     } else if (parts.namespace) {
       attribs.class = 'namespace';
-      parts.className = $$1('<' + tag + '/>', attribs).html(parts.namespace)[0].outerHTML;
+      parts.className = $('<' + tag + '/>', attribs).html(parts.namespace)[0].outerHTML;
     }
     if (parts.operator) {
       parts.operator = '<span class="t_operator">' + parts.operator.escapeHtml() + '</span>';
@@ -6356,13 +6352,13 @@
   };
 
   Dump.prototype.parseTag = function parseTag (html) {
-    var $node = $$1(html);
+    var $node = $(html);
     var parsed = {
       tag: $node[0].tagName.toLowerCase(),
       attribs: {},
       innerhtml: $node[0].innerHTML
     };
-    $$1.each($node[0].attributes, function () {
+    $.each($node[0].attributes, function () {
       if (this.specified) {
         parsed.attribs[this.name] = this.value;
       }
@@ -6373,7 +6369,7 @@
     return parsed
   };
 
-  var dump = new Dump();
+  var dump;
   var subRegex = new RegExp('%' +
     '(?:' +
     '[coO]|' + // c: css, o: obj with max info, O: obj w generic info
@@ -6384,11 +6380,16 @@
     '(?:\\.\\d+)?' + // precision specifier
     '[difs]' +
     ')', 'g');
-  var table = new Table(dump);
+  var table;
+
+  const init$1 = function (config) {
+    dump = new Dump(config);
+    table = new Table(dump);
+  };
 
   var methods = {
     alert: function (logEntry, info) {
-      var $node = $$1('<div class="m_alert"></div>')
+      var $node = $('<div class="m_alert"></div>')
         .addClass('alert-' + (logEntry.meta.level || logEntry.meta.class))
         // .html(message)
         .attr('data-channel', logEntry.meta.channel); // using attr so can use [data-channel="xxx"] selector
@@ -6421,7 +6422,7 @@
         'data-line': logEntry.meta.line
       };
       var channelFilter = function () {
-        return $$1(this).data('channel') === logEntry.meta.channel
+        return $(this).data('channel') === logEntry.meta.channel
       };
       var flags = logEntry.meta.flags;
       var i;
@@ -6454,7 +6455,7 @@
       }
       if (flags.summary) {
         $tabPane.find('.debug-log-summary > .m_groupSummary').each(function () {
-          $remove = $$1(this)
+          $remove = $(this)
             .find('*')
             .not($curTreeSummary)
             .filter(channelFilter);
@@ -6486,7 +6487,7 @@
           info.$node = $tabPane.find('.debug-log');
         }
         info.$node = $curNodeLog;
-        return $$1('<li>', attribs).html(logEntry.args[0])
+        return $('<li>', attribs).html(logEntry.args[0])
       }
     },
 
@@ -6498,7 +6499,7 @@
       $container.find('.card-header .fa-spinner').remove();
       $container.find('.debug > .fa-spinner').remove();
       if (responseCode && responseCode + '' !== '200') {
-        $container.find('.card-title .response-code').remove(); 
+        $container.find('.card-title .response-code').remove();
         $container.find('.card-title').append(' <span class="label label-default response-code" title="Response Code">' + responseCode + '</span>');
         if (responseCode.toString().match(/^5/)) {
           $container.addClass('bg-danger');
@@ -6512,7 +6513,7 @@
       var $tabPane = info.$tabPane;
       var $node = $tabPane.find('.alert.error-summary');
       if (!$node.length) {
-        $node = $$1('<div class="alert alert-error error-summary">' +
+        $node = $('<div class="alert alert-error error-summary">' +
           '<h3><i class="fa fa-lg fa-times-circle"></i> Error(s) not consoled</h3>' +
           '<ul class="list-unstyled">' +
           '</ul>' +
@@ -6533,11 +6534,11 @@
     },
 
     group: function (logEntry, info) {
-      var $group = $$1('<li>', {
+      var $group = $('<li>', {
         class: 'empty expanded m_group'
       });
       var $groupHeader = groupHeader(logEntry, info);
-      var $groupBody = $$1('<ul>', {
+      var $groupBody = $('<ul>', {
         class: 'group-body'
       });
       var nodes = info.$tabPane.data('nodes');
@@ -6571,21 +6572,21 @@
       var $tabPane = info.$tabPane;
       var nodes = $tabPane.data('nodes');
       $tabPane.find('.debug-log-summary .m_groupSummary').each(function () {
-        var priorityCur = $$1(this).data('priority');
+        var priorityCur = $(this).data('priority');
         if (priorityCur === priority) {
-          $node = $$1(this);
+          $node = $(this);
           return false // break
         } else if (priority > priorityCur) {
-          $node = $$1('<li>')
+          $node = $('<li>')
             .addClass('m_groupSummary')
             .data('priority', priority)
             .html('<ul class="group-body"></ul>');
-          $$1(this).before($node);
+          $(this).before($node);
           return false // break
         }
       });
       if (!$node) {
-        $node = $$1('<li>')
+        $node = $('<li>')
           .addClass('m_groupSummary')
           .data('priority', priority)
           .html('<ul class="group-body"></ul>');
@@ -6620,7 +6621,7 @@
       } else if ($group.hasClass('ungroup')) {
         var $children = $group.find('> ul.group-body > li');
         var $groupLabel = $group.find('> .group-header > .group-label');
-        var $li = $$1('<li></li>').data($group.data());
+        var $li = $('<li></li>').data($group.data());
         if ($children.length === 0) {
           $group.replaceWith(
             $li.html($groupLabel.html())
@@ -6654,7 +6655,7 @@
       var classDefinition;
       if (isInit) {
         info.$container.data('classDefinitions', {});
-        info.$container.data('meta', $$1.extend({
+        info.$container.data('meta', $.extend({
           debugVersion: meta.debugVersion,
           requestId: meta.requestId,
         }, metaVals));
@@ -6674,11 +6675,11 @@
         $title.html(title);
       }
       if (metaVals.classDefinitions) {
-        for (k in metaVals.classDefinitions) {
+        for (k in  metaVals.classDefinitions) {
           classDefinition = metaVals.classDefinitions[k];
           classDefinition.implementsList = buildImplementsList(classDefinition.implements);
-          if (k.substr(0, 6) === '_b64_:') {
-            k = atob(k.substr(6));
+          if (k.substring(0, 6) === '_b64_:') {
+            k = atob(k.substring(6));
           }
           info.$container.data('classDefinitions')[k] = classDefinition;
         }
@@ -6703,7 +6704,7 @@
       if (logEntry.meta.inclContext) {
         onBuildRow.push(tableAddContextRow);
       }
-      return $$1('<li>', { class: 'm_' + logEntry.method })
+      return $('<li>', { class: 'm_' + logEntry.method })
         .append(table.build(
           logEntry.args[0],
           logEntry.meta,
@@ -6725,7 +6726,7 @@
       var method = logEntry.method;
       var meta = logEntry.meta;
       if (meta.file && meta.channel !== info.channelNameRoot + '.phpError') {
-        attribs = $$1.extend({
+        attribs = $.extend({
           'data-file': meta.file,
           'data-line': meta.line
         }, attribs);
@@ -6767,7 +6768,7 @@
       $node.attr(attribs);
       if (meta.trace && meta.trace.length > 1) {
         $node.append(
-          $$1('<ul>', { class: 'list-unstyled no-indent' }).append(
+          $('<ul>', { class: 'list-unstyled no-indent' }).append(
             methods.trace({
               method: 'trace',
               args: [meta.trace],
@@ -6792,13 +6793,13 @@
   function buildContext (context, lineNumber) {
     var keys = Object.keys(context || {}); // .map(function(val){return parseInt(val)}),
     var start = Math.min.apply(null, keys);
-    return $$1('<pre>', {
+    return $('<pre>', {
       class: 'highlight line-numbers',
       'data-line': lineNumber,
       'data-start': start,
       'data-line-offset': start,
     }).append(
-      $$1('<code>', {
+      $('<code>', {
         class: 'language-php'
       }).text(Object.values(context).join(''))
     )
@@ -6812,7 +6813,7 @@
     var numArgs = args.length;
     var typeInfo;
     var typeMore;
-    logEntry.meta = $$1.extend({
+    logEntry.meta = $.extend({
       sanitize: true,
       sanitizeFirst: null
     }, logEntry.meta);
@@ -6829,7 +6830,7 @@
       if (args[0].match(/[=:]\s*$/)) {
         // first arg ends with '=' or ':'
         glueAfterFirst = false;
-        args[0] = $$1.trim(args[0]) + ' ';
+        args[0] = args[0].trim() + ' ';
       } else if (numArgs === 2) {
         glue = ' = ';
       }
@@ -6851,8 +6852,8 @@
       });
     }
     return glueAfterFirst
-      ? $$1('<li>').html(args.join(glue))
-      : $$1('<li>').html(args[0] + ' ' + args.slice(1).join(glue))
+      ? $('<li>').html(args.join(glue))
+      : $('<li>').html(args[0] + ' ' + args.slice(1).join(glue))
   }
 
   function buildImplementsList(obj) {
@@ -6888,8 +6889,7 @@
     return title
   }
 
-  function containsSubstitutions(logEntry)
-  {
+  function containsSubstitutions (logEntry) {
     if (logEntry.args.length < 2 || typeof logEntry.args[0] !== 'string') {
       return false
     }
@@ -6897,16 +6897,16 @@
   }
 
   function getTab (info) {
-    var classname = 'debug-tab-' + info.channelNameTop.toLowerCase().replace(/\W+/g, '-');
+    var classname = 'debug-tab-' + info.channelKeyTop.toLowerCase().replace(/\W+/g, '-');
     return classname === 'debug-tab-general'
-      ? $$1()
+      ? $()
       : info.$container.find('.debug-menu-bar .nav-link[data-toggle=tab][data-target=".' + classname + '"]')
   }
 
   /**
    * Generates groupHeader HTML
    *
-   * @return jQuery obj
+   * @return jQuery/zest obj
    */
   function groupHeader (logEntry, requestInfo) {
     var i = 0;
@@ -6937,7 +6937,7 @@
         argStr;
       argStr = argStr.replace(/:<\/span> $/, '</span>');
     }
-    $header = $$1('<div class="group-header">' +
+    $header = $('<div class="group-header">' +
       argStr +
       '</div>');
     if (typeof logEntry.meta.boldLabel === 'undefined' || logEntry.meta.boldLabel) {
@@ -7081,13 +7081,13 @@
     }
     return [
       $tr,
-      $$1('<tr>', {
+      $('<tr>', {
         class: 'context',
         style: i === 0
           ? 'display:table-row;'
           : null
       }).append(
-        $$1('<td>', {
+        $('<td>', {
           colspan: 4
         }).append(
           [
@@ -7138,12 +7138,16 @@
     return $tr
   }
 
+  const init = function (config) {
+    init$1(config);
+  };
+
   function processEntry (logEntry) {
     // console.log(JSON.parse(JSON.stringify(logEntry)))
     var meta = logEntry.meta;
     var info = getNodeInfo(meta);
     var channelsTab = info.channels.filter(function (channelInfo) {
-      return channelInfo.name === info.channelNameTop || channelInfo.name.indexOf(info.channelNameTop + '.') === 0
+      return channelInfo.Key === info.channelKeyTop || channelInfo.key.indexOf(info.channelKeyTop + '.') === 0
     });
     var $node;
 
@@ -7164,7 +7168,7 @@
           delete meta.attribs.class;
         }
         if (meta.attribs.id) {
-          meta.attribs.id = buildId(meta);
+          meta.attribs.id = buildId(meta, null, ['group', 'groupCollapsed'].includes(logEntry.method) ? 'group' : null);
         }
         $node.attr(meta.attribs);
       }
@@ -7172,9 +7176,9 @@
         $node.data('icon', meta.icon);
       }
       if (
-        channelsTab.length > 1 &&
-        info.channelName !== info.channelNameRoot + '.phpError' &&
-        !info.$container.find('.channels input[value="' + info.channelName + '"]').prop('checked')
+        channelsTab.length > 0 &&
+        info.channelKey !== info.channelKeyRoot + '.phpError' &&
+        !info.$container.find('.channels input[value="' + info.channelKey + '"]').prop('checked')
       ) {
         $node.addClass('filter-hidden');
       }
@@ -7199,53 +7203,53 @@
     var i;
     if (logEntry.meta.format === 'html') {
       if (typeof logEntry.args === 'object') {
-        $node = $$1('<li />', { class: 'm_' + method });
+        $node = $('<li />', { class: 'm_' + method });
         for (i = 0; i < logEntry.args.length; i++) {
           $node.append(logEntry.args[i]);
         }
         return $node
       }
-      $node = $$1(logEntry.args);
+      $node = $(logEntry.args);
       if (!$node.is('.m_' + method)) {
-        $node = $$1('<li />', { class: 'm_' + method }).html(logEntry.args);
+        $node = $('<li />', { class: 'm_' + method }).html(logEntry.args);
       }
       return $node
     }
-    if (methods[method]) {
-      return methods[method](logEntry, info)
-    }
-    return methods.default(logEntry, info)
+    return methods[method]
+      ? methods[method](logEntry, info)
+      : methods.default(logEntry, info)
   }
 
   function getNodeInfo (meta) {
-    var $container = $$1('#' + meta.requestId);
+    var $container = $('#request_' + meta.requestId);
     var $debug;
     var $node;
     var $tabPane;
-    var channelNameRoot = $container.find('.debug').data('channelNameRoot') || meta.channelNameRoot || 'general';
-    var channelName = meta.channel || channelNameRoot;
-    var channelSplit = channelName.split('.');
+    var channelKeyRoot = $container.find('.debug').data('channelKeyRoot') || meta.channelKeyRoot || 'general';
+    var channelKey = meta.channel || channelKeyRoot;
+    var channelKeySplit = channelKey.split('.');
     var info = {
       $container: $container,
       $node: null,
       $tabPane: null,
-      channelName: channelName,
-      channelNameRoot: channelNameRoot,
-      channelNameTop: channelSplit.shift(), // ie channelName of tab
-      channels: []
+      channelKey: channelKey,
+      channelKeyRoot: channelKeyRoot,
+      channelKeyTop: channelKeySplit.shift(), // ie channelKey of tab
+      channelName: meta.channelName || meta.channel || channelKeyRoot,
+      channels: [],
     };
     if ($container.length) {
       $tabPane = getTabPane(info, meta);
       $node = $tabPane.data('nodes').slice(-1)[0] || $tabPane.find('> .debug-log');
       if (meta.appendGroup) {
-        $node = $tabPane.find('#' + buildId(meta, meta.appendGroup) + ' > .group-body');
+        $node = $tabPane.find('#' + buildId(meta, meta.appendGroup, 'group') + ' > .group-body');
       }
     } else {
       // create
       //   header and card are separate so we can sticky the header
-      $container = $$1('' +
-        '<div class="card mb-3 sticky working" id="' + meta.requestId + '">' +
-          '<div class="card-header" data-toggle="collapse" data-target="#' + meta.requestId + ' &gt; .collapse">' +
+      $container = $('' +
+        '<div class="card mb-3 sticky working" id="request_' + meta.requestId + '">' +
+          '<div class="card-header" data-toggle="collapse" data-target="#request_' + meta.requestId + ' &gt; .collapse">' +
             '<i class="fa fa-chevron-right"></i>' +
             '<i class="fa fa-times float-end btn-remove-session"></i>' +
             '<div class="card-header-body">' +
@@ -7256,11 +7260,11 @@
           '<div class="card-body collapse debug debug-enhanced-ui" data-theme="' + 'dark' + '">' +
             '<header class="debug-bar debug-menu-bar">' +
               '<nav role="tablist">' +
-                '<a class="active nav-link" data-target=".' + nameToClassname$1(channelNameRoot) + '" data-toggle="tab" role="tab"><i class="fa fa-list-ul"></i>Log</a>' +
+                '<a class="active nav-link" data-target=".' + keyToClassname(channelKeyRoot) + '" data-toggle="tab" role="tab"><i class="fa fa-list-ul"></i>Log</a>' +
               '</nav>' +
             '</header>' +
             '<div class="tab-panes">' +
-              '<div class="active ' + nameToClassname$1(channelNameRoot) + ' tab-pane tab-primary" role="tabpanel">' +
+              '<div class="active ' + keyToClassname(channelKeyRoot) + ' tab-pane tab-primary" role="tabpanel">' +
                 '<div class="sidebar-trigger"></div>' +
                 '<div class="tab-body">' +
                   '<ul class="debug-log-summary group-body"></ul>' +
@@ -7275,7 +7279,7 @@
       );
       $debug = $container.find('.debug');
       $debug.data('channels', []);
-      $debug.data('channelNameRoot', channelNameRoot);
+      $debug.data('channelKeyRoot', channelKeyRoot);
       $debug.debugEnhance('sidebar', 'add');
       $debug.debugEnhance('sidebar', 'close');
       // $debug.find('nav').data('tabPanes', $debug.find('.tab-panes'))
@@ -7288,10 +7292,10 @@
       $tabPane.data('options', {
         sidebar: true
       });
-      $$1('#debug-cards').append($container);
+      $('#debug-cards').append($container);
       $container.trigger('added.debug.card');
     }
-    $$1.extend(info, {
+    $.extend(info, {
       $container: $container,
       $node: $node,
       $tabPane: $tabPane,
@@ -7308,22 +7312,26 @@
     var channelsChecked = [];
     var channelsTab;
     var $ul;
-    if (info.channelName === info.channelNameRoot + '.phpError' || haveChannel(info.channelName, info.channels)) {
+    if (info.channelKey === info.channelKeyRoot + '.phpError' || haveChannel(info.channelKey, info.channels)) {
       return false
     }
     /*
-    console.info('adding channel', {
+    console.warn('adding channel', {
+      key: info.channelKey,
       name: info.channelName,
       icon: meta.channelIcon,
-      show: meta.channelShow
+      show: meta.channelShow,
+      channelKeyRoot: info.channelKeyRoot,
+      // info: info,
     })
     */
     info.channels.push({
-      name: info.channelName,
+      key: info.channelKey,
       icon: meta.channelIcon,
-      show: meta.channelShow
+      name: info.channelName,
+      show: meta.channelShow,
     });
-    if (info.channelName !== info.channelNameRoot && info.channelName.indexOf(info.channelNameRoot + '.') !== 0) {
+    if (info.channelKey !== info.channelKeyRoot && info.channelKey.indexOf(info.channelKeyRoot + '.') !== 0) {
       // not main tab
       return true
     }
@@ -7332,7 +7340,7 @@
       only interested in main tab's channels
     */
     channelsTab = info.channels.filter(function (channel) {
-      return channel.name === info.channelNameRoot || channel.name.indexOf(info.channelNameRoot + '.') === 0
+      return channel.key === info.channelKeyRoot || channel.key.indexOf(info.channelKeyRoot + '.') === 0
     });
     if (channelsTab.length < 2) {
       return true
@@ -7342,16 +7350,16 @@
     */
     if (channelsTab.length === 2) {
       // checkboxes weren't added when there was only one...
-      channelsChecked.push(channelsTab[0].name);
+      channelsChecked.push(channelsTab[0].key);
     }
     if (meta.channelShow) {
-      channelsChecked.push(info.channelName);
+      channelsChecked.push(info.channelKey);
     }
     $channels.find('input:checked').each(function () {
-      channelsChecked.push($$1(this).val());
+      channelsChecked.push($(this).val());
     });
 
-    $ul = $debug.debugEnhance('buildChannelList', channelsTab, info.channelNameRoot, channelsChecked);
+    $ul = $debug.debugEnhance('buildChannelList', channelsTab, info.channelKeyRoot, channelsChecked);
     $channels.find('> ul').replaceWith($ul);
     $channels.show();
     $debug.trigger('channelAdded.debug');
@@ -7365,8 +7373,9 @@
     var $input = $ul.find('input[value=' + logEntry.meta.errorCat + ']');
     var $label = $input.closest('label');
     var $badge = $label.find('.badge');
-    var order = ['fatal', 'warning', 'deprecated', 'notice', 'strict'];
     var count = 1;
+    var dict = $('#debug-cards').data('config').dict;
+    var order = ['fatal', 'warning', 'deprecated', 'notice', 'strict'];
     var i = 0;
     var rows = [];
     if ($input.length) {
@@ -7375,12 +7384,12 @@
       $badge.text(count);
     } else {
       $ul.append(
-        $$1('<li>'
+        $('<li>'
         ).append(
-          $$1('<label>', {
+          $('<label>', {
             class: 'toggle active'
           }).append(
-            $$1('<input>', {
+            $('<input>', {
               type: 'checkbox',
               checked: true,
               'data-toggle': 'error',
@@ -7388,14 +7397,14 @@
               value: logEntry.meta.errorCat
             })
           ).append(
-            logEntry.meta.errorCat + ' <span class="badge">' + 1 + '</span>'
+            dict.get('error.cat.' + logEntry.meta.errorCat) + ' <span class="badge">' + 1 + '</span>'
           )
         )
       );
       rows = $ul.find('> li');
       rows.sort(function (liA, liB) {
-        var liAindex = order.indexOf($$1(liA).find('input').val());
-        var liBindex = order.indexOf($$1(liB).find('input').val());
+        var liAindex = order.indexOf($(liA).find('input').val());
+        var liBindex = order.indexOf($(liB).find('input').val());
         return liAindex > liBindex ? 1 : -1
       });
       for (i = 0; i < rows.length; ++i) {
@@ -7410,8 +7419,8 @@
     var length = $navLinks.length;
     var sort = $link.data('sort');
     var text = $link.text().trim();
-    $navLinks.each(function (i, node) {
-      var $navLink = $$1(this);
+    $navLinks.each(function (node, i) {
+      var $navLink = $(this);
       var curSort = $navLink.data('sort');
       var curText = $navLink.text().trim();
       var cmp = (function () {
@@ -7425,19 +7434,19 @@
         return curText.localeCompare(text)
       })();
       if (cmp > 0) {
-        $$1(this).before($link);
+        $(this).before($link);
         return false // break
       }
       if (i + 1 === length) {
         // we're on last tab..  insert now or never
-        $$1(this).after($link);
+        $(this).after($link);
       }
     });
   }
 
   function getTabPane (info, meta) {
-    // console.log('getTabPane', info.channelNameTop, info.$container.data('channelNameRoot'))
-    var classname = nameToClassname$1(info.channelNameTop);
+    // console.log('getTabPane', info.channelKeyTop, info.$container.data('channelKeyRoot'))
+    var classname = keyToClassname(info.channelKeyTop);
     var $tabPanes = info.$container.find('> .debug > .tab-panes');
     var $tabPane = $tabPanes.find('> .' + classname);
     var $link;
@@ -7445,27 +7454,27 @@
       return $tabPane
     }
     meta.channelSort = meta.channelSort || 0;
-    $link = $$1('<a>', {
+    $link = $('<a>', {
       class: 'nav-link',
       'data-sort': meta.channelSort,
       'data-target': '.' + classname,
       'data-toggle': 'tab',
       role: 'tab',
-      html: info.channelNameTop
+      html: info.channelName,
     });
     if (meta.channelIcon) {
       $link.prepend(
         meta.channelIcon.match('<')
-          ? $$1(meta.channelIcon)
-          : $$1('<i>').addClass(meta.channelIcon)
+          ? $(meta.channelIcon)
+          : $('<i>').addClass(meta.channelIcon)
       );
     }
     addTab(info, $link);
-    $tabPane = $$1('<div>', {
+    $tabPane = $('<div>', {
       class: 'tab-pane ' + classname,
       role: 'tabpanel'
     })
-      .append($$1('<div>', {
+      .append($('<div>', {
         class: 'tab-body',
         html: '<ul class="debug-log-summary group-body"></ul>' +
           '<hr />' +
@@ -7487,7 +7496,7 @@
     /*
       Update error filters
     */
-    if (['error', 'warn'].indexOf(method) > -1 && logEntry.meta.channel === info.channelNameRoot + '.phpError') {
+    if (['error', 'warn'].indexOf(method) > -1 && logEntry.meta.channel === info.channelKeyRoot + '.phpError') {
       addError(logEntry, info);
       return
     }
@@ -7514,66 +7523,78 @@
     }
   }
 
-  function nameToClassname$1 (name) {
-    return 'debug-tab-' + name.toLowerCase().replace(/\W+/g, '-')
+  function keyToClassname (key) {
+    return 'debug-tab-' + key.toLowerCase().replace(/\W+/g, '-')
   }
 
-  function haveChannel (channelName, channels) {
+  function haveChannel (channelKey, channels) {
     // channels.indexOf(channelName) > -1
     var i;
     var len = channels.length;
     var channel;
     for (i = 0; i < len; i++) {
       channel = channels[i];
-      if (channel.name === channelName) {
+      if (channel.key === channelKey) {
         return true
       }
     }
     return false
   }
 
-  function buildId (meta, id) {
+  function buildId (meta, id, prefix) {
     id = id || meta.attribs.id;
-    id = id.replace(/\W+/g, '-');
+
     if (id.indexOf(meta.requestId) !== 0) {
+      // ensure id is unique per request
       id = meta.requestId + '_' + id;
     }
+
+    if (prefix) {
+      id = prefix + '_' + id;
+    }
+
+    // id must begin with a letter (a-z or A-Z)
+    id = id.replace(/^[^A-Za-z]+/, '')
+      // note that ":" and "." are  allowed chars but not practical... removing
+      .replace(/[^a-zA-Z0-9_\-]+/, '_')
+      .replace(/_+/, '_');
+
     return id
   }
 
   function Xdebug(pubSub) {
-  	var self = this;
-    var $root = $$1('#debug-cards');
-  	this.pubSub = pubSub;
+    var self = this;
+    var $root = $('#debug-cards');
+    this.pubSub = pubSub;
     this.contextMsgReceived = null;
     this.contextTimer = null;
-  	$root.on('click', '.xdebug-commands .btn[data-cmd]', function () {
-  		var cmd = $$1(this).data('cmd');
-      var appId = $$1(this).closest('.card-body').find('.xdebug').data('appId');
-      $$1(this).blur();
+    $root.on('click', '.xdebug-commands .btn[data-cmd]', function () {
+      var cmd = $(this).data('cmd');
+      var appId = $(this).closest('.card-body').find('.xdebug').data('appId');
+      $(this).blur();
       self.sendCmd(appId, cmd);
-  	});
+    });
     $root.on('click', '.xdebug-menu-bar .btn[data-target]', function () {
-      var $node = $$1(this).closest('.card-body').find($$1(this).data('target'));
-      $$1(this).blur();
+      var $node = $(this).closest('.card-body').find($(this).data('target'));
+      $(this).blur();
       self.scrollIntoView($node);
     });
     $root.on('expanded.debug.array expanded.debug.object', '.max-depth', function (e) {
-      var appId = $$1(this).closest('.card-body').find('.xdebug').data('appId');
+      var appId = $(this).closest('.card-body').find('.xdebug').data('appId');
       // console.log('xdebug expanded .max-depth', this)
-      $$1(this).find('.array-inner, .object-inner').html(
+      $(this).find('.array-inner, .object-inner').html(
         '<i class="fa fa-spinner fa-pulse fa-lg"></i>'
       );
       self.sendCmd(
         appId,
         'property_get',
         {
-          n: $$1(this).data('fullname')
+          n: $(this).data('fullname')
         }
       );
     });
     $root.on('shown.bs.collapse', '.card-body', function (e) {
-      var $menuBar = $$1(this).find('.xdebug-menu-bar');
+      var $menuBar = $(this).find('.xdebug-menu-bar');
       self.positionToolbar($menuBar);
     });
     $root.on('endOutput', '.card', function (e) {
@@ -7592,9 +7613,9 @@
 
   Xdebug.prototype.positionToolbar = function($menuBar) {
     var $card = $menuBar.closest('.card');
-    $menuBar.css('top',
+    $menuBar.style('top',
       (
-        $$1('nav.navbar').outerHeight() +
+        $('nav.navbar').outerHeight() +
         $card.find('> .card-header').outerHeight() +
         $card.find('> .card-body > .debug-menu-bar').outerHeight()
       ) + 'px'
@@ -7640,8 +7661,8 @@
         if (['property_get', 'property_value'].indexOf(meta.command) > -1) {
           $node = methods.default(logEntry, nodeInfo).find('> *'); // array = span, object = div
           // find  open .max-depth where data-fullname = meta.fullname
-          $node2 = nodeInfo.$node.find('.max-depth.expanded').filter(function (i, nodeTemp) {
-            return $$1(nodeTemp).data('fullname') === meta.fullname
+          $node2 = nodeInfo.$node.find('.max-depth.expanded').filter(function (nodeTemp) {
+            return $(nodeTemp).data('fullname') === meta.fullname
           });
           $node2.replaceWith($node);
           $node.debugEnhance().debugEnhance('expand');
@@ -7673,9 +7694,9 @@
   Xdebug.prototype.getNodeInfo = function (appId) {
     var id = 'xdebug';
     // var $container = $('#' + id)
-    var $container = $$1('#debug-cards .card.working').filter(function () {
-      var dataCard = $$1(this).data() || {};
-      var dataXdebug = $$1(this).find('.xdebug').data() || {};
+    var $container = $('#debug-cards .card.working').filter(function () {
+      var dataCard = $(this).data() || {};
+      var dataXdebug = $(this).find('.xdebug').data() || {};
       if (dataXdebug.appId === appId) {
         // xdebug appId match
         return true
@@ -7694,7 +7715,7 @@
       Step 1: find or create primary container (card)
     */
     if ($container.length === 0) {
-      $container = $$1('' +
+      $container = $('' +
         '<div class="card mb-3 sticky" id="' + id + '">' +
           '<div class="card-header" data-toggle="collapse" data-target="#' + id + ' &gt; .collapse">' +
             '<i class="fa fa-chevron-right"></i>' +
@@ -7706,7 +7727,7 @@
           '</div>' +
           '<div class="bg-white card-body collapse debug debug-enhanced-ui">' +
             '<header class="debug-bar debug-menu-bar">' +
-          	/*
+            /*
               '<nav role="tablist">' +
                 '<a class="active nav-link" data-target=".' + nameToClassname(channelNameRoot) + '" data-toggle="tab" role="tab"><i class="fa fa-list-ul"></i>Log</a>' +
               '</nav>' +
@@ -7725,14 +7746,14 @@
           '</div>' +
         '</div>'
       );
-  	  $$1('#debug-cards').append($container);
+      $('#debug-cards').append($container);
     }
     /*
       Step 2: find or create xdebug area
     */
     $xdebug = $container.find('.xdebug');
     if ($xdebug.length === 0) {
-      $menuBar = $$1('' +
+      $menuBar = $('' +
         '<header class="debug-bar xdebug-menu-bar">' +
           '<div class="btn-toolbar" role="toolbar" aria-label="Xdebug">' +
             '<div class="btn-group xdebug-commands mr-2" role="group" aria-label="Xdebug Commands">' +
@@ -7749,7 +7770,7 @@
            '</div>' +
         '</header>'
       );
-      $xdebug = $$1('<ul class="xdebug group-body"></ul>');
+      $xdebug = $('<ul class="xdebug group-body"></ul>');
       $xdebug.data('appId', appId);
       $container.find('.debug > header').after($menuBar);
       $container.find('.tab-primary .tab-body').append($xdebug);
@@ -7765,16 +7786,16 @@
   };
 
   Xdebug.prototype.remove = function ($container) {
-    $container = $$1($container);
+    $container = $($container);
     $container.find('.xdebug-menu-bar').remove();
     $container.find('.xdebug.group-body').remove();
   };
 
   Xdebug.prototype.scrollIntoView = function (node) {
-    var toolbarBottom = $$1(node).closest('.card-body').find('.xdebug-menu-bar')[0].getBoundingClientRect().bottom;
+    var toolbarBottom = $(node).closest('.card-body').find('.xdebug-menu-bar')[0].getBoundingClientRect().bottom;
     var nodePos;
     var adjustY;
-    node = $$1(node)[0];
+    node = $(node)[0];
     nodePos = node.getBoundingClientRect();
     adjustY = nodePos.top - toolbarBottom;
     /*
@@ -8877,11 +8898,10 @@
   initWamp();
   var xdebug = initXdebug();
 
-  $$1(function () {
+  $(function () {
     var hasConnected = false;
-    var $root = $$1('#debug-cards');
+    var $root = $('#debug-cards');
 
-    init(config);
     /*
       init on #debug-cards vs body so we can stop event propagation before bubbles to body  (ie clipboard.js)
     */
@@ -8889,6 +8909,9 @@
       sidebar: true,
       useLocalStorage: false
     });
+
+    init$2(config);
+    init($root.data('config'));
 
     PubSub.subscribe('wamp', function (cmd, data) {
       var logEntry = {};
@@ -8912,22 +8935,22 @@
         // myWorker.postMessage('getMsg') // request next msg
         PubSub.publish('wamp', 'getMsg');
       } else if (cmd === 'connectionClosed') {
-        $$1('#alert.connecting').remove();
-        if ($$1('#alert.closed').length) {
+        $('#alert.connecting').remove();
+        if ($('#alert.closed').length) {
           return
         }
-        $$1('#debug-cards').prepend(
+        $('#debug-cards').prepend(
           '<div id="alert" class="alert alert-warning alert-dismissible closed">' +
             'Not connected to debug server' +
             '<button type="button" class="btn-close" data-dismiss="alert" aria-label="Close"></button>' +
           '</div>'
         );
         if (!config.haveSavedConfig && !hasConnected) {
-          $$1('#modal-settings').modal('show');
+          $('#modal-settings').modal('show');
         }
       } else if (cmd === 'connectionOpened') {
         hasConnected = true;
-        $$1('#alert').remove();
+        $('#alert').remove();
       }
     });
 
@@ -8952,4 +8975,4 @@
     return new Xdebug(PubSub)
   }
 
-})(window.jQuery);
+})(window.zest);

@@ -1,4 +1,4 @@
-import $ from 'jquery' // external global
+import $ from 'zest' // external global
 import base64 from 'base64-arraybuffer'
 import { DumpStringBinary } from './DumpStringBinary'
 import { DumpStringEncoded } from './DumpStringEncoded'
@@ -34,7 +34,7 @@ DumpString.prototype.doDump = function (val) {
     val = val.escapeHtml()
   }
   if (opts.charHighlight) {
-    val = this.charHighlight.highlight(val)
+    val = this.charHighlight.highlight(val, opts.charHighlightTrim)
   }
   if (opts.visualWhiteSpace) {
     val = visualWhiteSpace(val)

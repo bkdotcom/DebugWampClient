@@ -1,4 +1,4 @@
-import $ from 'jquery' // external global
+import $ from 'zest' // external global
 
 export function DumpStringEncoded (dumpString) {
   this.dumpString = dumpString

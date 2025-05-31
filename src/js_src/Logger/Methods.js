@@ -1,8 +1,8 @@
-import $ from 'jquery' // external global
+import $ from 'zest' // external global
 import { Table } from './MethodTable.js'
 import { Dump } from './Dump.js'
 
-var dump = new Dump()
+var dump
 var subRegex = new RegExp('%' +
   '(?:' +
   '[coO]|' + // c: css, o: obj with max info, O: obj w generic info
@@ -13,7 +13,12 @@ var subRegex = new RegExp('%' +
   '(?:\\.\\d+)?' + // precision specifier
   '[difs]' +
   ')', 'g')
-var table = new Table(dump)
+var table
+
+export const init = function (config) {
+  dump = new Dump(config)
+  table = new Table(dump)
+}
 
 export var methods = {
   alert: function (logEntry, info) {
@@ -127,7 +132,7 @@ export var methods = {
     $container.find('.card-header .fa-spinner').remove()
     $container.find('.debug > .fa-spinner').remove()
     if (responseCode && responseCode + '' !== '200') {
-      $container.find('.card-title .response-code').remove() 
+      $container.find('.card-title .response-code').remove()
       $container.find('.card-title').append(' <span class="label label-default response-code" title="Response Code">' + responseCode + '</span>')
       if (responseCode.toString().match(/^5/)) {
         $container.addClass('bg-danger')
@@ -303,11 +308,11 @@ export var methods = {
       $title.html(title)
     }
     if (metaVals.classDefinitions) {
-      for (k in metaVals.classDefinitions) {
+      for (k in  metaVals.classDefinitions) {
         classDefinition = metaVals.classDefinitions[k]
         classDefinition.implementsList = buildImplementsList(classDefinition.implements)
-        if (k.substr(0, 6) === '_b64_:') {
-          k = atob(k.substr(6))
+        if (k.substring(0, 6) === '_b64_:') {
+          k = atob(k.substring(6))
         }
         info.$container.data('classDefinitions')[k] = classDefinition
       }
@@ -458,7 +463,7 @@ function buildEntryNode (logEntry, requestInfo) {
     if (args[0].match(/[=:]\s*$/)) {
       // first arg ends with '=' or ':'
       glueAfterFirst = false
-      args[0] = $.trim(args[0]) + ' '
+      args[0] = args[0].trim() + ' '
     } else if (numArgs === 2) {
       glue = ' = '
     }
@@ -517,8 +522,7 @@ function buildTitle (metaVals) {
   return title
 }
 
-function containsSubstitutions(logEntry)
-{
+function containsSubstitutions (logEntry) {
   if (logEntry.args.length < 2 || typeof logEntry.args[0] !== 'string') {
     return false
   }
@@ -526,7 +530,7 @@ function containsSubstitutions(logEntry)
 }
 
 function getTab (info) {
-  var classname = 'debug-tab-' + info.channelNameTop.toLowerCase().replace(/\W+/g, '-')
+  var classname = 'debug-tab-' + info.channelKeyTop.toLowerCase().replace(/\W+/g, '-')
   return classname === 'debug-tab-general'
     ? $()
     : info.$container.find('.debug-menu-bar .nav-link[data-toggle=tab][data-target=".' + classname + '"]')
@@ -535,7 +539,7 @@ function getTab (info) {
 /**
  * Generates groupHeader HTML
  *
- * @return jQuery obj
+ * @return jQuery/zest obj
  */
 function groupHeader (logEntry, requestInfo) {
   var i = 0

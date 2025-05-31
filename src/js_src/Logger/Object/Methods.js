@@ -1,4 +1,4 @@
-import $ from 'jquery' // external global
+import $ from 'zest' // external global
 import { sectionPrototype } from './SectionPrototype.js'
 
 export function Methods (valDumper) {
@@ -13,18 +13,15 @@ for (name in sectionPrototype) {
 
 Methods.prototype.addAttribs = function ($element, info, cfg) {
   var classes = {
+    debug: false,
     method: true,
     isDeprecated: info.isDeprecated,
     isFinal: info.isFinal,
     isStatic: info.isStatic
   }
   var self = this
-  $element.addClass(info.visibility).removeClass('debug')
-  $.each(classes, function (className, useClass) {
-    if (useClass) {
-      $element.addClass(className)
-    }
-  })
+  $element.addClass(info.visibility)
+    .toggleClass(classes)
   sectionPrototype.addAttribs($element, info, cfg)
   if (info.implements && info.implements.length) {
     $element.attr('data-implements', info.implements)
@@ -72,7 +69,7 @@ Methods.prototype.dumpInner = function (name, info, cfg) {
     this.dumpReturn(info, cfg) +
     this.dumpStaticVars(info, cfg) +
     (name === '__toString'
-      ? '<h3>return value</h3>' +
+      ? '<h3>' + this.valDumper.config.dict.get('object.methods.return-value') + '</h3>' +
           '<ul class="list-unstyled"><li>' +
           this.valDumper.dump(info.returnValue, {
             attribs: {
@@ -95,19 +92,7 @@ Methods.prototype.dumpModifiers = function (info) {
     [vis.join(' ')]: true,
     static: info.isStatic,
   }
-  /*
-  if (info.isAbstract) {
-    modifiers.push('abstract')
-  }
-  if (info.isFinal) {
-    modifiers.push('final')
-  }
-  modifiers.push(vis.join('  '))
-  if (info.isStatic) {
-    modifiers.push('static')
-  }
-  */
-  $.each(modifiers, function (modifier, isSet) {
+  $.each(modifiers, function (isSet, modifier) {
     if (isSet) {
       html += '<span class="t_modifier_' + modifier + '">' + modifier + '</span> '
     }
@@ -137,7 +122,7 @@ Methods.prototype.dumpName = function (name, info, cfg) {
 Methods.prototype.dumpParams = function (info, cfg) {
   var self = this
   var params = []
-  $.each(info.params, function (i, info) {
+  $.each(info.params, function (info) {
     var $param = $('<span />', {
       class: 'parameter'
     })
@@ -211,9 +196,9 @@ Methods.prototype.dumpStaticVars = function (info, cfg) {
   if (!cfg.staticVarOutput || typeof info.staticVars === 'undefined' || info.staticVars.length < 1) {
       return ''
   }
-  html = '<h3>static variables</h3>'
+  html = '<h3>' + this.valDumper.config.dict.get('object.methods.static-variables') + '</h3>'
   html += '<ul class="list-unstyled">'
-  $.each(info.staticVars, function (name, value) {
+  $.each(info.staticVars, function (value, name) {
     html += '<li>' +
       self.valDumper.dump(name, {
         addQuotes : false,

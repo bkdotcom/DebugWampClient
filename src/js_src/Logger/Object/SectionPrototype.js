@@ -1,3 +1,11 @@
+import $ from 'zest' // external global
+
+function replaceTokens (str, data) {
+  return str.replace(/\{([^}]+)\}/g, (match, key) => {
+    return data[key] || match
+  })
+}
+
 export var sectionPrototype = {
   dumpItems: function (abs, what, cfg) {
     var self = this
@@ -56,7 +64,7 @@ export var sectionPrototype = {
         ? info.visibility
         : [info.visibility]
       info.isInherited = info.declaredLast && info.declaredLast !== cfg.objClassName
-      info.isPrivateAncestor = $.inArray('private', vis) >= 0 && info.isInherited
+      info.isPrivateAncestor = vis.indexOf('private') >= 0 && info.isInherited
       if (info.isPrivateAncestor) {
           info.isInherited = false
       }
@@ -98,10 +106,14 @@ export var sectionPrototype = {
     if (methodsHave.length < 1) {
       return ''
     }
-    methods = methodsHave.join(' and ')
-    methods = methodsHave.length === 1
-      ? 'a ' + methods + ' method'
-      : methods + ' methods'
-    return '<dd class="magic info">This object has ' + methods + '</dd>'
+   var label = methodsHave.length === 1
+      ? replaceTokens(this.valDumper.config.dict.get('object.methods.magic.1'), {
+        method: methodsHave[0]
+      })
+      : replaceTokens(this.valDumper.config.dict.get('object.methods.magic.2'), {
+        method1: methodsHave[0],
+        method2: methodsHave[1],
+      })
+    return '<dd class="magic info">' + label + '</dd>'
   },
 }

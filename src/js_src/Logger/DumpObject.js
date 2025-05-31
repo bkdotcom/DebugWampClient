@@ -1,4 +1,4 @@
-import $ from 'jquery' // external global
+import $ from 'zest' // external global
 import mergeWith from 'lodash/mergeWith'
 import { Cases } from './Object/Cases.js'
 import { Constants } from './Object/Constants.js'
@@ -119,11 +119,11 @@ function sort(obj, sortBy) {
 DumpObject.prototype.dump = function (abs) {
   // console.info('dumpObject', abs)
   var html = ''
-  var self = this
   var strClassName = ''
   var dumpOpts = this.dumper.getDumpOpts()
+  var $container = this.dumper.getRequestInfo().$container
   try {
-    abs.debugVersion = this.dumper.getRequestInfo().$container.data('meta').debugVersion
+    abs.debugVersion = $container.data('meta').debugVersion
     if (typeof abs.cfgFlags === 'undefined') {
       abs.cfgFlags = 0x1FFFFFF & ~this.BRIEF
     }
@@ -177,12 +177,12 @@ DumpObject.prototype.dumpAttributes = function (abs) {
   if ((abs.cfgFlags & this.OBJ_ATTRIBUTE_OUTPUT) !== this.OBJ_ATTRIBUTE_OUTPUT) {
     return ''
   }
-  $.each(abs.attributes, function (key, attribute) {
+  $.each(abs.attributes, function (attribute) {
     args = []
     html += '<dd class="attribute">'
     html += self.dumper.markupIdentifier(attribute.name)
     if (Object.keys(attribute.arguments).length) {
-      $.each(attribute.arguments, function (name, val) {
+      $.each(attribute.arguments, function (val, name) {
         args.push(
           (name.match(/^\d+$/) === null
             ? '<span class="t_parameter-name">' + self.dumper.dumpPhpDocStr(name) + '</span><span class="t_punct">:</span>'
@@ -271,7 +271,7 @@ DumpObject.prototype.dumpModifiers = function (abs) {
   }
   var haveModifier = false
   var html = '<dt class="modifiers">modifiers</dt>'
-  $.each(modifiers, function (modifier, isSet) {
+  $.each(modifiers, function (isSet, modifier) {
     if (isSet) {
       haveModifier = true
       html += '<dd class="t_modifier_' + modifier + '">' + modifier + '</dd>'

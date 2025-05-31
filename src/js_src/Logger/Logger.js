@@ -1,12 +1,16 @@
-import $ from 'jquery' // external global
+import $ from 'zest' // external global
 import * as methods from './Methods.js'
+
+export const init = function (config) {
+  methods.init(config)
+}
 
 export function processEntry (logEntry) {
   // console.log(JSON.parse(JSON.stringify(logEntry)))
   var meta = logEntry.meta
   var info = getNodeInfo(meta)
   var channelsTab = info.channels.filter(function (channelInfo) {
-    return channelInfo.name === info.channelNameTop || channelInfo.name.indexOf(info.channelNameTop + '.') === 0
+    return channelInfo.Key === info.channelKeyTop || channelInfo.key.indexOf(info.channelKeyTop + '.') === 0
   })
   var $node
 
@@ -27,7 +31,7 @@ export function processEntry (logEntry) {
         delete meta.attribs.class
       }
       if (meta.attribs.id) {
-        meta.attribs.id = buildId(meta)
+        meta.attribs.id = buildId(meta, null, ['group', 'groupCollapsed'].includes(logEntry.method) ? 'group' : null)
       }
       $node.attr(meta.attribs)
     }
@@ -35,9 +39,9 @@ export function processEntry (logEntry) {
       $node.data('icon', meta.icon)
     }
     if (
-      channelsTab.length > 1 &&
-      info.channelName !== info.channelNameRoot + '.phpError' &&
-      !info.$container.find('.channels input[value="' + info.channelName + '"]').prop('checked')
+      channelsTab.length > 0 &&
+      info.channelKey !== info.channelKeyRoot + '.phpError' &&
+      !info.$container.find('.channels input[value="' + info.channelKey + '"]').prop('checked')
     ) {
       $node.addClass('filter-hidden')
     }
@@ -74,41 +78,41 @@ function buildLogEntryNode (logEntry, info) {
     }
     return $node
   }
-  if (methods.methods[method]) {
-    return methods.methods[method](logEntry, info)
-  }
-  return methods.methods.default(logEntry, info)
+  return methods.methods[method]
+    ? methods.methods[method](logEntry, info)
+    : methods.methods.default(logEntry, info)
 }
 
 function getNodeInfo (meta) {
-  var $container = $('#' + meta.requestId)
+  var $container = $('#request_' + meta.requestId)
   var $debug
   var $node
   var $tabPane
-  var channelNameRoot = $container.find('.debug').data('channelNameRoot') || meta.channelNameRoot || 'general'
-  var channelName = meta.channel || channelNameRoot
-  var channelSplit = channelName.split('.')
+  var channelKeyRoot = $container.find('.debug').data('channelKeyRoot') || meta.channelKeyRoot || 'general'
+  var channelKey = meta.channel || channelKeyRoot
+  var channelKeySplit = channelKey.split('.')
   var info = {
     $container: $container,
     $node: null,
     $tabPane: null,
-    channelName: channelName,
-    channelNameRoot: channelNameRoot,
-    channelNameTop: channelSplit.shift(), // ie channelName of tab
-    channels: []
+    channelKey: channelKey,
+    channelKeyRoot: channelKeyRoot,
+    channelKeyTop: channelKeySplit.shift(), // ie channelKey of tab
+    channelName: meta.channelName || meta.channel || channelKeyRoot,
+    channels: [],
   }
   if ($container.length) {
     $tabPane = getTabPane(info, meta)
     $node = $tabPane.data('nodes').slice(-1)[0] || $tabPane.find('> .debug-log')
     if (meta.appendGroup) {
-      $node = $tabPane.find('#' + buildId(meta, meta.appendGroup) + ' > .group-body')
+      $node = $tabPane.find('#' + buildId(meta, meta.appendGroup, 'group') + ' > .group-body')
     }
   } else {
     // create
     //   header and card are separate so we can sticky the header
     $container = $('' +
-      '<div class="card mb-3 sticky working" id="' + meta.requestId + '">' +
-        '<div class="card-header" data-toggle="collapse" data-target="#' + meta.requestId + ' &gt; .collapse">' +
+      '<div class="card mb-3 sticky working" id="request_' + meta.requestId + '">' +
+        '<div class="card-header" data-toggle="collapse" data-target="#request_' + meta.requestId + ' &gt; .collapse">' +
           '<i class="fa fa-chevron-right"></i>' +
           '<i class="fa fa-times float-end btn-remove-session"></i>' +
           '<div class="card-header-body">' +
@@ -119,11 +123,11 @@ function getNodeInfo (meta) {
         '<div class="card-body collapse debug debug-enhanced-ui" data-theme="' + 'dark' + '">' +
           '<header class="debug-bar debug-menu-bar">' +
             '<nav role="tablist">' +
-              '<a class="active nav-link" data-target=".' + nameToClassname(channelNameRoot) + '" data-toggle="tab" role="tab"><i class="fa fa-list-ul"></i>Log</a>' +
+              '<a class="active nav-link" data-target=".' + keyToClassname(channelKeyRoot) + '" data-toggle="tab" role="tab"><i class="fa fa-list-ul"></i>Log</a>' +
             '</nav>' +
           '</header>' +
           '<div class="tab-panes">' +
-            '<div class="active ' + nameToClassname(channelNameRoot) + ' tab-pane tab-primary" role="tabpanel">' +
+            '<div class="active ' + keyToClassname(channelKeyRoot) + ' tab-pane tab-primary" role="tabpanel">' +
               '<div class="sidebar-trigger"></div>' +
               '<div class="tab-body">' +
                 '<ul class="debug-log-summary group-body"></ul>' +
@@ -138,7 +142,7 @@ function getNodeInfo (meta) {
     )
     $debug = $container.find('.debug')
     $debug.data('channels', [])
-    $debug.data('channelNameRoot', channelNameRoot)
+    $debug.data('channelKeyRoot', channelKeyRoot)
     $debug.debugEnhance('sidebar', 'add')
     $debug.debugEnhance('sidebar', 'close')
     // $debug.find('nav').data('tabPanes', $debug.find('.tab-panes'))
@@ -171,22 +175,26 @@ function addChannel (info, meta) {
   var channelsChecked = []
   var channelsTab
   var $ul
-  if (info.channelName === info.channelNameRoot + '.phpError' || haveChannel(info.channelName, info.channels)) {
+  if (info.channelKey === info.channelKeyRoot + '.phpError' || haveChannel(info.channelKey, info.channels)) {
     return false
   }
   /*
-  console.info('adding channel', {
+  console.warn('adding channel', {
+    key: info.channelKey,
     name: info.channelName,
     icon: meta.channelIcon,
-    show: meta.channelShow
+    show: meta.channelShow,
+    channelKeyRoot: info.channelKeyRoot,
+    // info: info,
   })
   */
   info.channels.push({
-    name: info.channelName,
+    key: info.channelKey,
     icon: meta.channelIcon,
-    show: meta.channelShow
+    name: info.channelName,
+    show: meta.channelShow,
   })
-  if (info.channelName !== info.channelNameRoot && info.channelName.indexOf(info.channelNameRoot + '.') !== 0) {
+  if (info.channelKey !== info.channelKeyRoot && info.channelKey.indexOf(info.channelKeyRoot + '.') !== 0) {
     // not main tab
     return true
   }
@@ -195,7 +203,7 @@ function addChannel (info, meta) {
     only interested in main tab's channels
   */
   channelsTab = info.channels.filter(function (channel) {
-    return channel.name === info.channelNameRoot || channel.name.indexOf(info.channelNameRoot + '.') === 0
+    return channel.key === info.channelKeyRoot || channel.key.indexOf(info.channelKeyRoot + '.') === 0
   })
   if (channelsTab.length < 2) {
     return true
@@ -205,16 +213,16 @@ function addChannel (info, meta) {
   */
   if (channelsTab.length === 2) {
     // checkboxes weren't added when there was only one...
-    channelsChecked.push(channelsTab[0].name)
+    channelsChecked.push(channelsTab[0].key)
   }
   if (meta.channelShow) {
-    channelsChecked.push(info.channelName)
+    channelsChecked.push(info.channelKey)
   }
   $channels.find('input:checked').each(function () {
     channelsChecked.push($(this).val())
   })
 
-  $ul = $debug.debugEnhance('buildChannelList', channelsTab, info.channelNameRoot, channelsChecked)
+  $ul = $debug.debugEnhance('buildChannelList', channelsTab, info.channelKeyRoot, channelsChecked)
   $channels.find('> ul').replaceWith($ul)
   $channels.show()
   $debug.trigger('channelAdded.debug')
@@ -228,8 +236,9 @@ function addError (logEntry, info) {
   var $input = $ul.find('input[value=' + logEntry.meta.errorCat + ']')
   var $label = $input.closest('label')
   var $badge = $label.find('.badge')
-  var order = ['fatal', 'warning', 'deprecated', 'notice', 'strict']
   var count = 1
+  var dict = $('#debug-cards').data('config').dict
+  var order = ['fatal', 'warning', 'deprecated', 'notice', 'strict']
   var i = 0
   var rows = []
   if ($input.length) {
@@ -251,7 +260,7 @@ function addError (logEntry, info) {
             value: logEntry.meta.errorCat
           })
         ).append(
-          logEntry.meta.errorCat + ' <span class="badge">' + 1 + '</span>'
+          dict.get('error.cat.' + logEntry.meta.errorCat) + ' <span class="badge">' + 1 + '</span>'
         )
       )
     )
@@ -273,7 +282,7 @@ function addTab (info, $link) {
   var length = $navLinks.length
   var sort = $link.data('sort')
   var text = $link.text().trim()
-  $navLinks.each(function (i, node) {
+  $navLinks.each(function (node, i) {
     var $navLink = $(this)
     var curSort = $navLink.data('sort')
     var curText = $navLink.text().trim()
@@ -299,8 +308,8 @@ function addTab (info, $link) {
 }
 
 function getTabPane (info, meta) {
-  // console.log('getTabPane', info.channelNameTop, info.$container.data('channelNameRoot'))
-  var classname = nameToClassname(info.channelNameTop)
+  // console.log('getTabPane', info.channelKeyTop, info.$container.data('channelKeyRoot'))
+  var classname = keyToClassname(info.channelKeyTop)
   var $tabPanes = info.$container.find('> .debug > .tab-panes')
   var $tabPane = $tabPanes.find('> .' + classname)
   var $link
@@ -314,7 +323,7 @@ function getTabPane (info, meta) {
     'data-target': '.' + classname,
     'data-toggle': 'tab',
     role: 'tab',
-    html: info.channelNameTop
+    html: info.channelName,
   })
   if (meta.channelIcon) {
     $link.prepend(
@@ -350,7 +359,7 @@ function updateSidebar (logEntry, info, haveNode) {
   /*
     Update error filters
   */
-  if (['error', 'warn'].indexOf(method) > -1 && logEntry.meta.channel === info.channelNameRoot + '.phpError') {
+  if (['error', 'warn'].indexOf(method) > -1 && logEntry.meta.channel === info.channelKeyRoot + '.phpError') {
     addError(logEntry, info)
     return
   }
@@ -377,29 +386,41 @@ function updateSidebar (logEntry, info, haveNode) {
   }
 }
 
-function nameToClassname (name) {
-  return 'debug-tab-' + name.toLowerCase().replace(/\W+/g, '-')
+function keyToClassname (key) {
+  return 'debug-tab-' + key.toLowerCase().replace(/\W+/g, '-')
 }
 
-function haveChannel (channelName, channels) {
+function haveChannel (channelKey, channels) {
   // channels.indexOf(channelName) > -1
   var i
   var len = channels.length
   var channel
   for (i = 0; i < len; i++) {
     channel = channels[i]
-    if (channel.name === channelName) {
+    if (channel.key === channelKey) {
       return true
     }
   }
   return false
 }
 
-function buildId (meta, id) {
+function buildId (meta, id, prefix) {
   id = id || meta.attribs.id
-  id = id.replace(/\W+/g, '-')
+
   if (id.indexOf(meta.requestId) !== 0) {
+    // ensure id is unique per request
     id = meta.requestId + '_' + id
   }
+
+  if (prefix) {
+    id = prefix + '_' + id
+  }
+
+  // id must begin with a letter (a-z or A-Z)
+  id = id.replace(/^[^A-Za-z]+/, '')
+    // note that ":" and "." are  allowed chars but not practical... removing
+    .replace(/[^a-zA-Z0-9_\-]+/, '_')
+    .replace(/_+/, '_')
+
   return id
 }

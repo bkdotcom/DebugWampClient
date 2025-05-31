@@ -1,4 +1,4 @@
-import $ from 'jquery' // external global
+import $ from 'zest' // external global
 import { sectionPrototype } from './SectionPrototype.js'
 
 export function Constants (valDumper) {
@@ -14,15 +14,12 @@ for (name in sectionPrototype) {
 Constants.prototype.addAttribs = function ($element, info, cfg) {
   var classes = {
     constant: true,
+    debug: false,
     isFinal: info.isFinal,
     'private-ancestor': info.isPrivateAncestor
   }
-  $element.addClass(info.visibility).removeClass('debug')
-  $.each(classes, function (classname, useClass) {
-    if (useClass) {
-      $element.addClass(classname)
-    }
-  })
+  $element.addClass(info.visibility)
+    .toggleClass(classes)
   sectionPrototype.addAttribs($element, info, cfg)
 }
 
@@ -66,7 +63,7 @@ Constants.prototype.dumpModifiers = function (info) {
   if (info.isFinal) {
     modifiers.push('final')
   }
-  $.each(modifiers, function (i, modifier) {
+  $.each(modifiers, function (modifier) {
     html += '<span class="t_modifier_' + modifier + '">' + modifier + '</span> '
   })
   return html

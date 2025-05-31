@@ -1,4 +1,4 @@
-import $ from 'jquery' // external global
+import $ from 'zest' // external global
 import PubSub from './PubSub.js'
 import './prototypeMethods.js' // import for side-effects only
 import * as ui from './ui/ui.js'
@@ -23,7 +23,6 @@ $(function () {
   var hasConnected = false
   var $root = $('#debug-cards')
 
-  ui.init(config)
   /*
     init on #debug-cards vs body so we can stop event propagation before bubbles to body  (ie clipboard.js)
   */
@@ -31,6 +30,9 @@ $(function () {
     sidebar: true,
     useLocalStorage: false
   })
+
+  ui.init(config)
+  logger.init($root.data('config'))
 
   PubSub.subscribe('wamp', function (cmd, data) {
     var logEntry = {}

@@ -1,4 +1,4 @@
-import $ from 'jquery' // external global
+import $ from 'zest' // external global
 
 export var CharHighlight = function (dumpString) {
   var self = this
@@ -22,12 +22,12 @@ CharHighlight.prototype.findChars = function (str) {
   })
 }
 
-CharHighlight.prototype.highlight = function (str) {
+CharHighlight.prototype.highlight = function (str, highlightTrim) {
   var self = this
   if (typeof str !== 'string') {
     return str
   }
-  return str.replace(this.charRegex, function (char) {
+  str = str.replace(this.charRegex, function (char) {
     var info = $.extend({
       char: char,
       class: 'unicode',
@@ -52,6 +52,13 @@ CharHighlight.prototype.highlight = function (str) {
       html: info.replaceWith
     })[0].outerHTML
   })
+  if (highlightTrim) {
+    str = str.replace(/(^\s+|\s+$)/g, function (match) {
+      var substr = match.replace(' ' , '<span class="ws_s"> </span>')
+      return '<span class="char-ws" title="whitespace">' + substr + '</span>'
+    })
+  }
+  return str
 }
 
 CharHighlight.prototype.buildCharRegex = function () {

@@ -1,4 +1,4 @@
-import $ from 'jquery' // external global
+import $ from 'zest' // external global
 import { DumpObject } from './DumpObject.js'
 import { DumpString } from './DumpString.js'
 
@@ -15,7 +15,8 @@ var dumpOptStack = [
   */
 ]
 
-export var Dump = function () {
+export var Dump = function (config) {
+  this.config = config // phpDebugConsole config... so we have access to dict/translations
   this.objectDumper = new DumpObject(this)
   this.stringDumper = new DumpString(this)
   this.ABSTRACTION = '\x00debug\x00'.parseHex()
@@ -36,7 +37,7 @@ Dump.prototype.checkTimestamp = function (val, abs) {
   dumpOpts = this.getDumpOpts()
   dumpOpts.postDump = function (dumped, opts) {
     if (opts.tagName === 'td') {
-      opts.attribs.class = 't_' + opts.type
+      opts.attribs.class.push('t_' + opts.type)
       return $('<td />', {
         class: 'timestamp value-container',
         title: date,
@@ -59,6 +60,7 @@ Dump.prototype.dump = function (val, opts) {
       class: []
     },
     charHighlight: true,
+    charHighlightTrim: false,
     postDump: null, // set to function
     requestInfo: null,
     sanitize: true,
@@ -66,7 +68,7 @@ Dump.prototype.dump = function (val, opts) {
     type: null,
     typeMore: null,
     visualWhiteSpace: true
-  }, JSON.parse(JSON.stringify(opts || {})))
+  }, opts || {})
   var tagName
   var type // = this.getType(val)
   var method // = 'dump' + type[0].ucfirst()
@@ -78,7 +80,7 @@ Dump.prototype.dump = function (val, opts) {
   if (typeof dumpOpts.attribs.class === 'undefined') {
     dumpOpts.attribs.class = []
   } else if (typeof dumpOpts.attribs.class === 'string') {
-    dumpOpts.attribs.class = [dumpOpts.attribs.class]
+    dumpOpts.attribs.class = dumpOpts.attribs.class.split(' ')
   }
   dumpOptStack.push(dumpOpts)
   method = 'dump' + dumpOpts.type.ucfirst()
@@ -99,15 +101,7 @@ Dump.prototype.dump = function (val, opts) {
     if (dumpOpts.typeMore && dumpOpts.typeMore !== 'abstraction') {
       dumpOpts.attribs['data-type-more'] = dumpOpts.typeMore.replace(/\0/g, '')
     }
-    $wrap = $('<' + tagName + ' />')
-      .addClass(dumpOpts.attribs.class.join(' '))
-    delete dumpOpts.attribs.class
-    $wrap.attr(dumpOpts.attribs)
-    if (typeof dumpOpts.attribs.style !== 'undefined') {
-      // .attr() doesn't apply style when single object passed
-      $wrap.attr('style', dumpOpts.attribs.style)
-    }
-    val = $wrap.html(val)[0].outerHTML
+    val = this.createElement(tagName, dumpOpts.attribs, val)[0].outerHTML
   }
   if (dumpOpts.postDump) {
     val = dumpOpts.postDump(val, dumpOpts)
@@ -116,6 +110,21 @@ Dump.prototype.dump = function (val, opts) {
     }
   }
   return val
+}
+
+/**
+ * issues with (jQuery) $element.attr({})
+ * doesn't handle style (when passed as value in single object param)
+ * doesn't handle class array
+ * deleting class from attribs leads to other problems
+ */
+Dump.prototype.createElement = function (tagName, attribs, innerHtml) {
+  var $el = $('<' + tagName + ' />')
+    .attr(attribs)
+  if (typeof innerHtml !== 'undefined') {
+    $el.html(innerHtml)
+  }
+  return $el
 }
 
 Dump.prototype.dumpAbstraction = function (abs) {
@@ -233,7 +242,8 @@ Dump.prototype.dumpArrayValue = function (key, val, withKey) {
   $key
     .addClass('t_key')
     .html(this.dump(key, {
-      tagName : null
+      charHighlightTrim: true,
+      tagName : null,
     }))
   if (/^\d+$/.test(key)) {
     $key.addClass('t_int')

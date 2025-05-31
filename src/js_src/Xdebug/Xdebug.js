@@ -1,18 +1,18 @@
-import $ from 'jquery' // external global
+import $ from 'zest' // external global
 import * as methods from './../Logger/Methods.js'
 
 export function Xdebug(pubSub) {
-	var self = this
+  var self = this
   var $root = $('#debug-cards')
-	this.pubSub = pubSub
+  this.pubSub = pubSub
   this.contextMsgReceived = null
   this.contextTimer = null
-	$root.on('click', '.xdebug-commands .btn[data-cmd]', function () {
-		var cmd = $(this).data('cmd')
+  $root.on('click', '.xdebug-commands .btn[data-cmd]', function () {
+    var cmd = $(this).data('cmd')
     var appId = $(this).closest('.card-body').find('.xdebug').data('appId')
     $(this).blur()
     self.sendCmd(appId, cmd)
-	})
+  })
   $root.on('click', '.xdebug-menu-bar .btn[data-target]', function () {
     var $node = $(this).closest('.card-body').find($(this).data('target'))
     $(this).blur()
@@ -52,7 +52,7 @@ Xdebug.prototype.sendCmd = function (appId, cmd, args, data) {
 
 Xdebug.prototype.positionToolbar = function($menuBar) {
   var $card = $menuBar.closest('.card')
-  $menuBar.css('top',
+  $menuBar.style('top',
     (
       $('nav.navbar').outerHeight() +
       $card.find('> .card-header').outerHeight() +
@@ -100,7 +100,7 @@ Xdebug.prototype.processEntry = function (logEntry) {
       if (['property_get', 'property_value'].indexOf(meta.command) > -1) {
         $node = methods.methods.default(logEntry, nodeInfo).find('> *') // array = span, object = div
         // find  open .max-depth where data-fullname = meta.fullname
-        $node2 = nodeInfo.$node.find('.max-depth.expanded').filter(function (i, nodeTemp) {
+        $node2 = nodeInfo.$node.find('.max-depth.expanded').filter(function (nodeTemp) {
           return $(nodeTemp).data('fullname') === meta.fullname
         })
         $node2.replaceWith($node)
@@ -166,7 +166,7 @@ Xdebug.prototype.getNodeInfo = function (appId) {
         '</div>' +
         '<div class="bg-white card-body collapse debug debug-enhanced-ui">' +
           '<header class="debug-bar debug-menu-bar">' +
-        	/*
+          /*
             '<nav role="tablist">' +
               '<a class="active nav-link" data-target=".' + nameToClassname(channelNameRoot) + '" data-toggle="tab" role="tab"><i class="fa fa-list-ul"></i>Log</a>' +
             '</nav>' +
@@ -185,7 +185,7 @@ Xdebug.prototype.getNodeInfo = function (appId) {
         '</div>' +
       '</div>'
     )
-	  $('#debug-cards').append($container)
+    $('#debug-cards').append($container)
   }
   /*
     Step 2: find or create xdebug area
