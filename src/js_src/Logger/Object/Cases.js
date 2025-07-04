@@ -17,13 +17,12 @@ Cases.prototype.addAttribs = function ($element, info, cfg) {
 }
 
 Cases.prototype.dump = function (abs) {
-  var self = this
   var cfg = {
-    attributeOutput : abs.cfgFlags & this.valDumper.objectDumper.CASE_ATTRIBUTE_OUTPUT,
-    collect : abs.cfgFlags & this.valDumper.objectDumper.CASE_COLLECT,
-    groupByInheritance : false,
-    output : abs.cfgFlags & this.valDumper.objectDumper.CASE_OUTPUT,
-    phpDocOutput : abs.cfgFlags & this.valDumper.objectDumper.PHPDOC_OUTPUT,
+    attributeOutput: abs.cfgFlags & this.valDumper.objectDumper.CASE_ATTRIBUTE_OUTPUT,
+    collect: abs.cfgFlags & this.valDumper.objectDumper.CASE_COLLECT,
+    groupByInheritance: false,
+    output: abs.cfgFlags & this.valDumper.objectDumper.CASE_OUTPUT,
+    phpDocOutput: abs.cfgFlags & this.valDumper.objectDumper.PHPDOC_OUTPUT,
   }
   if (abs.implementsList.indexOf('UnitEnum') < 0) {
     return ''

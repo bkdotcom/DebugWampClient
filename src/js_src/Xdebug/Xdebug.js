@@ -1,7 +1,7 @@
 import $ from 'zest' // external global
 import * as methods from './../Logger/Methods.js'
 
-export function Xdebug(pubSub) {
+export function Xdebug (pubSub) {
   var self = this
   var $root = $('#debug-cards')
   this.pubSub = pubSub
@@ -28,7 +28,7 @@ export function Xdebug(pubSub) {
       appId,
       'property_get',
       {
-        n: $(this).data('fullname')
+        n: $(this).data('fullname'),
       }
     )
   })
@@ -42,15 +42,15 @@ export function Xdebug(pubSub) {
 }
 
 Xdebug.prototype.sendCmd = function (appId, cmd, args, data) {
-    this.pubSub.publish(
-      'wamp',
-      'publish',
-      'bdk.debug.xdebug',
-      [appId, cmd, args, data]
-    )
+  this.pubSub.publish(
+    'wamp',
+    'publish',
+    'bdk.debug.xdebug',
+    [appId, cmd, args, data]
+  )
 }
 
-Xdebug.prototype.positionToolbar = function($menuBar) {
+Xdebug.prototype.positionToolbar = function ($menuBar) {
   var $card = $menuBar.closest('.card')
   $menuBar.style('top',
     (
@@ -140,7 +140,7 @@ Xdebug.prototype.getNodeInfo = function (appId) {
       // xdebug appId match
       return true
     }
-    if (dataCard.meta.processId == appId) {
+    if (dataCard.meta.processId === appId) {
       // card processId match
       return true
     }
@@ -219,7 +219,7 @@ Xdebug.prototype.getNodeInfo = function (appId) {
   info = {
     $container: $container,
     $node: $xdebug,
-    $toolbar: $container.find('.xdebug-menu-bar')
+    $toolbar: $container.find('.xdebug-menu-bar'),
   }
   return info
 }

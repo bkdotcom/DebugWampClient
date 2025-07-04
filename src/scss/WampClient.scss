@@ -54,7 +54,6 @@ kbd {
     border-bottom-width: 0;
     border-bottom-left-radius: var(--bs-card-border-radius);
     border-bottom-right-radius: var(--bs-card-border-radius);
-
     cursor: pointer;
     * {
       font-size: inherit;
@@ -117,7 +116,6 @@ kbd {
     background-color: var(--bs-warning-bg-subtle);
     color: var(--bs-warning-text-emphasis);
   }
-
 
   &.sticky {
     > .card-header {
@@ -201,6 +199,7 @@ kbd {
   .navbar-brand {
     padding: 0;
   }
+
   /*
   &.navbar-light {
     background-color: #f8f8f8;

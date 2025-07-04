@@ -13,7 +13,7 @@ var config = new Config({
   realm: 'debug',
   fontSize: '1em',
   linkFiles: false,
-  linkFilesTemplate: 'subl://open?url=file://%file&line=%line'
+  linkFilesTemplate: 'subl://open?url=file://%file&line=%line',
 }, 'debugWampClient')
 
 initWamp()
@@ -28,7 +28,7 @@ $(function () {
   */
   $root.debugEnhance('init', {
     sidebar: true,
-    useLocalStorage: false
+    useLocalStorage: false,
   })
 
   ui.init(config)
@@ -40,14 +40,14 @@ $(function () {
       logEntry = {
         method: data.msg[0],
         args: data.msg[1],
-        meta: data.msg[2]
+        meta: data.msg[2],
       }
       if (data.topic === 'bdk.debug') {
         logger.processEntry(logEntry)
         if (logEntry.method === 'meta' && logEntry.meta.linkFilesTemplateDefault) {
           config.setDefault({
             linkFiles: true,
-            linkFilesTemplate: logEntry.meta.linkFilesTemplateDefault
+            linkFilesTemplate: logEntry.meta.linkFilesTemplateDefault,
           })
         }
       } else if (data.topic === 'bdk.debug.xdebug') {

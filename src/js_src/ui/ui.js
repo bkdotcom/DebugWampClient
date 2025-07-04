@@ -29,7 +29,7 @@ export function init (config) {
     },
     {
       // options
-      rootMargin: '-39px 0px 0px 0px'
+      rootMargin: '-39px 0px 0px 0px',
     }
   )
 
@@ -105,7 +105,7 @@ export function init (config) {
     var sidebarContentHeight = $sidebar.find('.sidebar-content').height()
     // var minHeight = Math.max(sidebarContentHeight + 8, 200)
     $card.find('.card-body > .tab-panes > .tab-pane').style({
-      minHeight: sidebarContentHeight + 'px'
+      minHeight: sidebarContentHeight + 'px',
     })
     positionSidebar($card)
     $('body').on('click', onBodyClick)
@@ -122,7 +122,7 @@ export function init (config) {
   $('body').on('click', '.card-header[data-toggle=collapse]', function () {
     var $target = $($(this).data('target'))
     navbarHeight = $('nav.navbar').outerHeight()
-    new bootstrap.Collapse($target[0]) //formerly $target.collapse('toggle')  with jQuery
+    new bootstrap.Collapse($target[0]) // formerly $target.collapse('toggle')  with jQuery
   })
 
   $('body').on('mouseenter', '.sidebar-trigger', function () {
@@ -189,7 +189,7 @@ function positionSidebar ($card) {
     $sidebar.style({
       // position: 'fixed', // sticky would be nice, but still visible when docked off to the left
       // top: topSidebarFixed + 'px', // position: fixed
-      top: sidebarTop + 'px' // position absolute
+      top: sidebarTop + 'px', // position absolute
       // height: heightVis + 'px'
     })
   }

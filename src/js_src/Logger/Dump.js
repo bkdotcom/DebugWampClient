@@ -41,23 +41,22 @@ Dump.prototype.checkTimestamp = function (val, abs) {
       return $('<td />', {
         class: 'timestamp value-container',
         title: date,
-        html: $('<span />', opts.attribs).html(val)
+        html: $('<span />', opts.attribs).html(val),
       })
     }
     return $('<span />', {
       class: 'timestamp value-container',
       title: date,
-      html: dumped
+      html: dumped,
     })
   }
 }
 
 Dump.prototype.dump = function (val, opts) {
-  var $wrap
   var dumpOpts = $.extend({
     addQuotes: true,
     attribs: {
-      class: []
+      class: [],
     },
     charHighlight: true,
     charHighlightTrim: false,
@@ -67,7 +66,7 @@ Dump.prototype.dump = function (val, opts) {
     tagName: '__default__',
     type: null,
     typeMore: null,
-    visualWhiteSpace: true
+    visualWhiteSpace: true,
   }, opts || {})
   var tagName
   var type // = this.getType(val)
@@ -137,7 +136,7 @@ Dump.prototype.dumpAbstraction = function (abs) {
     'float',
     'int',
     'null',
-    'string'
+    'string',
   ]
   var value
   dumpOpts.attribs = abs.attribs || {}
@@ -185,7 +184,7 @@ Dump.prototype.dumpArray = function (array, abs) {
     asFileTree: false,
     expand: null,
     isMaxDepth: false,
-    showListKeys: true
+    showListKeys: true,
   }, this.getDumpOpts())
   var isList = (function () {
     for (i = 0; i < length; i++) {
@@ -196,12 +195,6 @@ Dump.prototype.dumpArray = function (array, abs) {
     return true
   })()
   var showKeys = dumpOpts.showListKeys || !isList
-  /*
-  console.warn('dumpArray', {
-    array: JSON.parse(JSON.stringify(array)),
-    dumpOpts: JSON.parse(JSON.stringify(dumpOpts))
-  })
-  */
   if (dumpOpts.expand !== null) {
     dumpOpts.attribs['data-expand'] = dumpOpts.expand
   }
@@ -210,12 +203,12 @@ Dump.prototype.dumpArray = function (array, abs) {
   }
   if (dumpOpts.isMaxDepth) {
     return '<span class="t_keyword">array</span>' +
-        ' <span class="t_maxDepth">*MAX DEPTH*</span>'
+      ' <span class="t_maxDepth">*MAX DEPTH*</span>'
   }
   if (length === 0) {
     return '<span class="t_keyword">array</span>' +
-        '<span class="t_punct">(</span>\n' +
-        '<span class="t_punct">)</span>'
+      '<span class="t_punct">(</span>\n' +
+      '<span class="t_punct">)</span>'
   }
   delete array.__debug_key_order__
   html = '<span class="t_keyword">array</span>' +
@@ -224,7 +217,7 @@ Dump.prototype.dumpArray = function (array, abs) {
   for (i = 0; i < length; i++) {
     key = keys[i]
     keyShow = key
-    if (absKeys.hasOwnProperty(key)) {
+    if (Object.prototype.hasOwnProperty.call(absKeys, key)) {
       keyShow = absKeys[key]
     }
     html += this.dumpArrayValue(keyShow, array[key], showKeys)
@@ -243,7 +236,7 @@ Dump.prototype.dumpArrayValue = function (key, val, withKey) {
     .addClass('t_key')
     .html(this.dump(key, {
       charHighlightTrim: true,
-      tagName : null,
+      tagName: null,
     }))
   if (/^\d+$/.test(key)) {
     $key.addClass('t_int')
@@ -444,10 +437,10 @@ Dump.prototype.markupIdentifier = function (val, what, tag, attribs) {
       parts.className = '<span class="namespace">' + split.join('\\') + '\\</span>' +
         parts.className
     }
-    attribs.class = 'classname'
+    attribs.class = ['classname']
     parts.className = $('<' + tag + '/>', attribs).html(parts.className)[0].outerHTML
   } else if (parts.namespace) {
-    attribs.class = 'namespace'
+    attribs.class = ['namespace']
     parts.className = $('<' + tag + '/>', attribs).html(parts.namespace)[0].outerHTML
   }
   if (parts.operator) {
@@ -467,7 +460,7 @@ Dump.prototype.parseTag = function parseTag (html) {
   var parsed = {
     tag: $node[0].tagName.toLowerCase(),
     attribs: {},
-    innerhtml: $node[0].innerHTML
+    innerhtml: $node[0].innerHTML,
   }
   $.each($node[0].attributes, function () {
     if (this.specified) {

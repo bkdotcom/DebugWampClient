@@ -68,7 +68,7 @@ DumpString.prototype.dumpAbs = function (abs) {
       return $('<span />', {
         class: 'value-container',
         'data-type': dumpOpts.type,
-        html: '<span class="prettified">(prettified)</span> '
+        html: '<span class="prettified">(prettified)</span> ',
       }).append(val)
     }
   }
@@ -94,7 +94,7 @@ DumpString.prototype.dumpAsSubstitution = function (val) {
   }
   // we do NOT wrap in <span>...  log('<a href="%s">link</a>', $url)
   return this.dumper.dump(val, {
-    tagName: null
+    tagName: null,
   })
 }
 
@@ -130,7 +130,7 @@ function visualWhiteSpace (str) {
   var strBr = ''
   var searchReplacePairs = [
     [/\r/g, '<span class="ws_r"></span>'],
-    [/\n/g, '<span class="ws_n"></span>' + strBr + '\n']
+    [/\n/g, '<span class="ws_n"></span>' + strBr + '\n'],
   ]
   var length = searchReplacePairs.length
   str = str.replace(/(\r\n|\r|\n)/g, function (match) {

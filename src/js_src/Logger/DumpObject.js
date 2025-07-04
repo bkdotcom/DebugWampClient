@@ -16,14 +16,14 @@ export function DumpObject (dump) {
   this.phpDoc = new PhpDoc(this.dumper)
 
   this.sectionDumpers = {
-    attributes : this.dumpAttributes.bind(this),
-    cases : this.cases.dump.bind(this.cases),
-    constants : this.constants.dump.bind(this.constants),
-    extends : this.dumpExtends.bind(this),
-    implements : this.dumpImplements.bind(this),
-    methods : this.methods.dump.bind(this.methods),
-    phpDoc : this.phpDoc.dump.bind(this.phpDoc),
-    properties : this.properties.dump.bind(this.properties),
+    attributes: this.dumpAttributes.bind(this),
+    cases: this.cases.dump.bind(this.cases),
+    constants: this.constants.dump.bind(this.constants),
+    extends: this.dumpExtends.bind(this),
+    implements: this.dumpImplements.bind(this),
+    methods: this.methods.dump.bind(this.methods),
+    phpDoc: this.phpDoc.dump.bind(this.phpDoc),
+    properties: this.properties.dump.bind(this.properties),
   }
 
   // GENERAL
@@ -53,18 +53,17 @@ export function DumpObject (dump) {
   this.PARAM_ATTRIBUTE_OUTPUT = 2097152
 
   this.phpDocTypes = [
-    'array','bool','callable','float','int','iterable','null','object','string',
-    '$this','self','static',
-    'array-key','double','false','mixed','non-empty-array','resource','scalar','true','void',
+    'array', 'bool', 'callable', 'float', 'int', 'iterable', 'null', 'object', 'string',
+    '$this', 'self', 'static',
+    'array-key', 'double', 'false', 'mixed', 'non-empty-array', 'resource', 'scalar', 'true', 'void',
     'key-of', 'value-of',
     'callable-string', 'class-string', 'literal-string', 'numeric-string', 'non-empty-string',
     'negative-int', 'positive-int',
     'int-mask', 'int-mask-of',
   ]
-
 }
 
-function sort(obj, sortBy) {
+function sort (obj, sortBy) {
   var count
   var i
   var name
@@ -76,7 +75,7 @@ function sort(obj, sortBy) {
     if (name === '__construct') {
       sortInfo.push({
         name: name,
-        nameSort: "\x00",
+        nameSort: '\x00',
         visibility: 0,
       })
       continue
@@ -116,6 +115,29 @@ function sort(obj, sortBy) {
   return objNew
 }
 
+function backwardCompat (abs) {
+  if (typeof abs.sort === 'undefined') {
+    abs.sort = 'vis name'
+  } else if (abs.sort === 'visibility' && versionCompare(abs.debugVersion, '3.2') === -1) {
+    abs.sort = 'vis name'
+  }
+  if (typeof abs.implementsList === 'undefined') {
+    // PhpDebugConsole < 3.1
+    abs.implementsList = abs.implements
+  }
+  if (typeof abs.sectionOrder === 'undefined') {
+    // PhpDebugConsole < 3.2
+    abs.sectionOrder = ['attributes', 'extends', 'implements', 'constants', 'cases', 'properties', 'methods', 'phpDoc']
+  }
+  return abs
+}
+
+DumpObject.prototype.isAsArray = function (abs) {
+  return abs.className === 'stdClass'
+    && (abs.cfgFlags & this.METHOD_OUTPUT) === 0
+    && (abs.cfgFlags & this.OBJ_ATTRIBUTE_OUTPUT) === 0
+}
+
 DumpObject.prototype.dump = function (abs) {
   // console.info('dumpObject', abs)
   var html = ''
@@ -128,43 +150,42 @@ DumpObject.prototype.dump = function (abs) {
       abs.cfgFlags = 0x1FFFFFF & ~this.BRIEF
     }
     abs = this.mergeInherited(abs)
-    if (typeof abs.sort === 'undefined') {
-      abs.sort = 'vis name'
-    } else if (abs.sort === 'visibility' && versionCompare(abs.debugVersion, '3.2') === -1) {
-      abs.sort = 'vis name'
-    }
-    if (typeof abs.implementsList === 'undefined') {
-      // PhpDebugConsole < 3.1
-      abs.implementsList = abs.implements
-    }
+    abs = backwardCompat(abs)
     strClassName = this.dumpClassName(abs)
-    if (abs.isRecursion) {
-      return strClassName +
-        ' <span class="t_recursion">*RECURSION*</span>'
-    }
-    if (abs.isMaxDepth) {
-      return strClassName +
-        ' <span class="t_maxDepth">*MAX DEPTH*</span>'
-    }
-    if (abs.isExcluded) {
-      return strClassName +
-        ' <span class="excluded">(not inspected)</span>'
-    }
-    if (abs.cfgFlags & this.BRIEF && abs.implementsList.indexOf('UnitEnum') > -1) {
-      return strClassName
+    html = this.dumpSpecialCases(abs, strClassName)
+    if (html) {
+      return html
     }
     if (abs.sort.indexOf('inheritance') === 0) {
       dumpOpts.attribs.class.push('groupByInheritance')
     }
     html = this.dumpToString(abs) +
       strClassName +
-      '<dl class="object-inner">' +
-        this.dumpInner(abs) +
-      '</dl>'
+      this.dumpInner(abs)
   } catch (e) {
     console.warn('e', e)
   }
   return html
+}
+
+DumpObject.prototype.dumpSpecialCases = function (abs, className) {
+  if (abs.isRecursion) {
+    return className + ' <span class="t_recursion">*RECURSION*</span>'
+  }
+  if (abs.isMaxDepth) {
+    return className + ' <span class="t_maxDepth">*MAX DEPTH*</span>'
+  }
+  if (abs.isExcluded) {
+    return className + ' <span class="excluded">(not inspected)</span>'
+  }
+  if (abs.cfgFlags & this.BRIEF && abs.implementsList.indexOf('UnitEnum') > -1) {
+    return className
+  }
+  // console.log('abs.properties.length', abs.className, JSON.parse(JSON.stringify(abs)))
+  if (Object.keys(abs.properties).length === 0 && this.isAsArray(abs)) {
+    return className + '<span class="t_punct">()</span>'
+  }
+  return ''
 }
 
 DumpObject.prototype.dumpAttributes = function (abs) {
@@ -210,11 +231,11 @@ DumpObject.prototype.dumpClassName = function (abs) {
     : ''
   if (phpDocOut) {
     phpDoc = ((phpDoc.summary || '') + '\n\n' + (phpDoc.desc || '')).trim()
-    title = title + "\n\n" + this.dumper.dumpPhpDocStr(phpDoc)
+    title = title + '\n\n' + this.dumper.dumpPhpDocStr(phpDoc)
   }
   return this.dumper.dump({
     attribs: {
-      title: title.trim(),
+      title: title.trim() || null,
     },
     debug: this.dumper.ABSTRACTION,
     type: 'identifier',
@@ -249,14 +270,19 @@ DumpObject.prototype.dumpImplements = function (abs) {
 
 DumpObject.prototype.dumpInner = function (abs) {
   var self = this
-  var html = this.dumpModifiers(abs)
-  if (typeof abs.sectionOrder === 'undefined') {
-    // PhpDebugConsole < 3.2
-    abs.sectionOrder = ['attributes', 'extends', 'implements', 'constants', 'cases', 'properties', 'methods', 'phpDoc']
+  var cfg = {
+    asArray: this.isAsArray(abs),
   }
+  var html = '<dl class="object-inner">' +
+    this.dumpModifiers(abs)
   abs.sectionOrder.forEach(function (sectionName) {
-    html += self.sectionDumpers[sectionName](abs)
+    html += self.sectionDumpers[sectionName](abs, cfg)
   })
+  html += '</dl>'
+  if (this.isAsArray(abs)) {
+    this.dumper.getDumpOpts().attribs.class.push('prop-only')
+    return '<span class="t_punct">(</span>' + html + '<span class="t_punct">)</span>'
+  }
   return html
 }
 
@@ -326,23 +352,23 @@ DumpObject.prototype.buildImplementsTree = function (implementsObj, interfacesCo
   var $span
   var k
   for (k in implementsObj) {
-      iface = typeof implementsObj[k] === 'string'
-        ? implementsObj[k]
-        : k
-      $span = $('<span />', {
-        class: 'interface t_identifier',
-        html: this.dumper.markupIdentifier(iface, 'classname')
-      })
-      if (interfacesCollapse.indexOf(iface) > -1) {
-        $span.addClass('toggle-off')
-      }
-      html += '<li>' +
-        $span[0].outerHTML +
-        (typeof implementsObj[k] === 'object'
-           ? this.buildImplementsTree(implementsObj[k], interfacesCollapse)
-           : ''
-        ) +
-        '</li>'
+    iface = typeof implementsObj[k] === 'string'
+      ? implementsObj[k]
+      : k
+    $span = $('<span />', {
+      class: 'interface t_identifier',
+      html: this.dumper.markupIdentifier(iface, 'classname'),
+    })
+    if (interfacesCollapse.indexOf(iface) > -1) {
+      $span.addClass('toggle-off')
+    }
+    html += '<li>' +
+      $span[0].outerHTML +
+      (typeof implementsObj[k] === 'object'
+        ? this.buildImplementsTree(implementsObj[k], interfacesCollapse)
+        : ''
+      ) +
+      '</li>'
   }
   html += '</ul>'
   return html

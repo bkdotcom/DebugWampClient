@@ -29,9 +29,9 @@
         return {
           remove: function () {
             delete topics[topic][index];
-          }
+          },
         }
-      }
+      },
     }
   })();
 
@@ -145,7 +145,7 @@
         realm: $('#realm').val(),
         fontSize: $('#font-size').val(),
         linkFiles: $('#link-files').prop('checked'),
-        linkFilesTemplate: $('#link-files-template').val()
+        linkFilesTemplate: $('#link-files-template').val(),
       });
       $(this).modal('hide');
     });
@@ -209,7 +209,7 @@
       },
       {
         // options
-        rootMargin: '-39px 0px 0px 0px'
+        rootMargin: '-39px 0px 0px 0px',
       }
     );
 
@@ -285,7 +285,7 @@
       var sidebarContentHeight = $sidebar.find('.sidebar-content').height();
       // var minHeight = Math.max(sidebarContentHeight + 8, 200)
       $card.find('.card-body > .tab-panes > .tab-pane').style({
-        minHeight: sidebarContentHeight + 'px'
+        minHeight: sidebarContentHeight + 'px',
       });
       positionSidebar($card);
       $('body').on('click', onBodyClick);
@@ -302,7 +302,7 @@
     $('body').on('click', '.card-header[data-toggle=collapse]', function () {
       var $target = $($(this).data('target'));
       navbarHeight = $('nav.navbar').outerHeight();
-      new bootstrap.Collapse($target[0]); //formerly $target.collapse('toggle')  with jQuery
+      new bootstrap.Collapse($target[0]); // formerly $target.collapse('toggle')  with jQuery
     });
 
     $('body').on('mouseenter', '.sidebar-trigger', function () {
@@ -365,7 +365,7 @@
       $sidebar.style({
         // position: 'fixed', // sticky would be nice, but still visible when docked off to the left
         // top: topSidebarFixed + 'px', // position: fixed
-        top: sidebarTop + 'px' // position absolute
+        top: sidebarTop + 'px', // position absolute
         // height: heightVis + 'px'
       });
     }
@@ -384,15 +384,15 @@
         class: [
           'table-bordered',
           meta.sortable ? 'sortable' : null,
-          meta.inclContext ? 'trace-context' : null
-        ]
+          meta.inclContext ? 'trace-context' : null,
+        ],
       },
       caption: '',
       tableInfo: {
         columns: [],
         haveObjRow: false,
         rows: [],
-      }
+      },
     };
     meta.tableInfo = $.extend(metaDefault.tableInfo, meta.tableInfo);
     meta = $.extend(metaDefault, meta);
@@ -400,12 +400,12 @@
       meta.caption = '';
     }
     $table = $('<table>' +
-      (meta.caption.length ? '<caption>' + meta.caption.escapeHtml() + '</caption>' : '')+
+      (meta.caption.length ? '<caption>' + meta.caption.escapeHtml() + '</caption>' : '') +
       '<thead><tr><th>&nbsp;</th></tr></thead>' +
       '<tbody></tbody>' +
       '</table>'
     )
-      .addClass(meta.attribs.class.join(' '));
+      .addClass(meta.attribs.class);
     this.buildHeader(meta.tableInfo);
     this.buildBody(rows, meta.tableInfo, onBuildRow, info);
     this.buildFooter(meta.tableInfo);
@@ -468,7 +468,7 @@
     var $tr = $('<tr></tr>', rowInfo.attribs || {})
       .append(
         $('<th scope="row" class="t_key text-right"></th>')
-          .addClass(/^\d+$/.test(rowKey) ? 't_int' : parsed.attribs.class.join(' '))
+          .addClass(/^\d+$/.test(rowKey) ? 't_int' : parsed.attribs.class)
           .html(parsed.innerhtml)
       );
 
@@ -3903,9 +3903,9 @@
       var classes = JSON.parse(JSON.stringify(abs.extends));
       classes.unshift(abs.className);
       cfg = $.extend({
-        groupByInheritance : abs.sort.indexOf('inheritance') === 0,
-        objClassName : abs.className,
-        phpDocOutput : abs.cfgFlags & this.valDumper.objectDumper.PHPDOC_OUTPUT,
+        groupByInheritance: abs.sort.indexOf('inheritance') === 0,
+        objClassName: abs.className,
+        phpDocOutput: abs.cfgFlags & this.valDumper.objectDumper.PHPDOC_OUTPUT,
       }, cfg);
       delete abs[what].__debug_key_order__;
       if (cfg.groupByInheritance === false) {
@@ -3921,8 +3921,8 @@
         for (name in abs[what]) {
           info = abs[what][name];
           if (!info.declaredLast || info.declaredLast === className) {
-              items[name] = info;
-              delete abs[what][name];
+            items[name] = info;
+            delete abs[what][name];
           }
         }
         html += self.dumpItemsFiltered(items, cfg);
@@ -3947,8 +3947,8 @@
           delete info.overrides;
         }
         info = $.extend({
-          declaredLast : null,
-          declaredPrev : null,
+          declaredLast: null,
+          declaredPrev: null,
         }, info);
         vis = typeof info.visibility === 'object'
           ? info.visibility
@@ -3956,7 +3956,7 @@
         info.isInherited = info.declaredLast && info.declaredLast !== cfg.objClassName;
         info.isPrivateAncestor = vis.indexOf('private') >= 0 && info.isInherited;
         if (info.isPrivateAncestor) {
-            info.isInherited = false;
+          info.isInherited = false;
         }
         html += this.dumpItem(name, info, cfg);
       }
@@ -3996,9 +3996,9 @@
       if (methodsHave.length < 1) {
         return ''
       }
-     var label = methodsHave.length === 1
+      var label = methodsHave.length === 1
         ? replaceTokens(this.valDumper.config.dict.get('object.methods.magic.1'), {
-          method: methodsHave[0]
+          method: methodsHave[0],
         })
         : replaceTokens(this.valDumper.config.dict.get('object.methods.magic.2'), {
           method1: methodsHave[0],
@@ -4025,11 +4025,11 @@
 
   Cases.prototype.dump = function (abs) {
     var cfg = {
-      attributeOutput : abs.cfgFlags & this.valDumper.objectDumper.CASE_ATTRIBUTE_OUTPUT,
-      collect : abs.cfgFlags & this.valDumper.objectDumper.CASE_COLLECT,
-      groupByInheritance : false,
-      output : abs.cfgFlags & this.valDumper.objectDumper.CASE_OUTPUT,
-      phpDocOutput : abs.cfgFlags & this.valDumper.objectDumper.PHPDOC_OUTPUT,
+      attributeOutput: abs.cfgFlags & this.valDumper.objectDumper.CASE_ATTRIBUTE_OUTPUT,
+      collect: abs.cfgFlags & this.valDumper.objectDumper.CASE_COLLECT,
+      groupByInheritance: false,
+      output: abs.cfgFlags & this.valDumper.objectDumper.CASE_OUTPUT,
+      phpDocOutput: abs.cfgFlags & this.valDumper.objectDumper.PHPDOC_OUTPUT,
     };
     if (abs.implementsList.indexOf('UnitEnum') < 0) {
       return ''
@@ -4081,7 +4081,7 @@
       constant: true,
       debug: false,
       isFinal: info.isFinal,
-      'private-ancestor': info.isPrivateAncestor
+      'private-ancestor': info.isPrivateAncestor,
     };
     $element.addClass(info.visibility)
       .toggleClass(classes);
@@ -4090,9 +4090,9 @@
 
   Constants.prototype.dump = function (abs) {
     var cfg = {
-      collect : abs.cfgFlags & this.valDumper.objectDumper.CONST_COLLECT,
-      attributeOutput : abs.cfgFlags & this.valDumper.objectDumper.CONST_ATTRIBUTE_OUTPUT,
-      output : abs.cfgFlags & this.valDumper.objectDumper.CONST_OUTPUT,
+      collect: abs.cfgFlags & this.valDumper.objectDumper.CONST_COLLECT,
+      attributeOutput: abs.cfgFlags & this.valDumper.objectDumper.CONST_ATTRIBUTE_OUTPUT,
+      output: abs.cfgFlags & this.valDumper.objectDumper.CONST_OUTPUT,
     };
     if (!cfg.output) {
       return ''
@@ -4110,10 +4110,12 @@
   Constants.prototype.dumpInner = function (name, info, cfg) {
     var title = info.phpDoc?.summary || info.desc || null;
     return this.dumpModifiers(info) +
-      '<span class="t_identifier"' + (cfg.phpDocOutput && title
+      '<span class="t_identifier"' +
+        (cfg.phpDocOutput && title
           ? ' title="' + this.valDumper.dumpPhpDocStr(title).escapeHtml() + '"'
-          : '') + '>' +
-        this.valDumper.dump(name, {addQuotes: false}) +
+          : '') +
+        '>' +
+        this.valDumper.dump(name, { addQuotes: false }) +
       '</span> ' +
       '<span class="t_operator">=</span> ' +
       this.valDumper.dump(info.value)
@@ -4150,7 +4152,7 @@
       method: true,
       isDeprecated: info.isDeprecated,
       isFinal: info.isFinal,
-      isStatic: info.isStatic
+      isStatic: info.isStatic,
     };
     var self = this;
     $element.addClass(info.visibility)
@@ -4174,13 +4176,13 @@
 
   Methods.prototype.dump = function (abs) {
     var cfg = {
-      attributeOutput : abs.cfgFlags & this.valDumper.objectDumper.METHOD_ATTRIBUTE_OUTPUT,
-      collect : abs.cfgFlags & this.valDumper.objectDumper.METHOD_COLLECT,
-      methodDescOutput : abs.cfgFlags & this.valDumper.objectDumper.METHOD_DESC_OUTPUT,
-      output : abs.cfgFlags & this.valDumper.objectDumper.METHOD_OUTPUT,
-      paramAttributeOutput : abs.cfgFlags & this.valDumper.objectDumper.PARAM_ATTRIBUTE_OUTPUT,
-      phpDocOutput : abs.cfgFlags & this.valDumper.objectDumper.PHPDOC_OUTPUT,
-      staticVarOutput : abs.cfgFlags & this.valDumper.objectDumper.METHOD_STATIC_VAR_OUTPUT,
+      attributeOutput: abs.cfgFlags & this.valDumper.objectDumper.METHOD_ATTRIBUTE_OUTPUT,
+      collect: abs.cfgFlags & this.valDumper.objectDumper.METHOD_COLLECT,
+      methodDescOutput: abs.cfgFlags & this.valDumper.objectDumper.METHOD_DESC_OUTPUT,
+      output: abs.cfgFlags & this.valDumper.objectDumper.METHOD_OUTPUT,
+      paramAttributeOutput: abs.cfgFlags & this.valDumper.objectDumper.PARAM_ATTRIBUTE_OUTPUT,
+      phpDocOutput: abs.cfgFlags & this.valDumper.objectDumper.PHPDOC_OUTPUT,
+      staticVarOutput: abs.cfgFlags & this.valDumper.objectDumper.METHOD_STATIC_VAR_OUTPUT,
     };
     var html = '';
     if (!cfg.output) {
@@ -4206,8 +4208,8 @@
             '<ul class="list-unstyled"><li>' +
             this.valDumper.dump(info.returnValue, {
               attribs: {
-                class : 'return-value'
-              }
+                class: 'return-value',
+              },
             }) +
             '</li></ul>'
         : ''
@@ -4243,7 +4245,7 @@
         ? info.phpDoc?.desc || ''
         : '',
     ];
-    var title = titleParts.join("\n\n").trim();
+    var title = titleParts.join('\n\n').trim();
     return ' <span class="t_identifier"' +
       (cfg.phpDocOutput && title !== ''
         ? ' title="' + this.valDumper.dumpPhpDocStr(title).escapeHtml() + '"'
@@ -4257,11 +4259,11 @@
     var params = [];
     $.each(info.params, function (info) {
       var $param = $('<span />', {
-        class: 'parameter'
+        class: 'parameter',
       });
       info = $.extend({
         desc: null,
-        defaultValue: self.valDumper.UNDEFINED
+        defaultValue: self.valDumper.UNDEFINED,
       }, info);
       if (info.isPromoted) {
         $param.addClass('isPromoted');
@@ -4319,7 +4321,7 @@
       this.valDumper.objectDumper.markupType(returnType, {
         title: cfg.phpDocOutput && info.return.desc !== null
           ? info.return.desc
-          : ''
+          : '',
       })
   };
 
@@ -4327,17 +4329,17 @@
     var self = this;
     var html = '';
     if (!cfg.staticVarOutput || typeof info.staticVars === 'undefined' || info.staticVars.length < 1) {
-        return ''
+      return ''
     }
     html = '<h3>' + this.valDumper.config.dict.get('object.methods.static-variables') + '</h3>';
     html += '<ul class="list-unstyled">';
     $.each(info.staticVars, function (value, name) {
       html += '<li>' +
         self.valDumper.dump(name, {
-          addQuotes : false,
-          attribs : {
-            class : 't_identifier'
-          }
+          addQuotes: false,
+          attribs: {
+            class: 't_identifier',
+          },
         }) +
         '<span class="t_operator">=</span> ' + self.valDumper.dump(value) +
         '</li>';
@@ -4351,7 +4353,7 @@
       ? 'methods'
       : 'no methods';
     if (!(abs.cfgFlags & this.valDumper.objectDumper.METHOD_COLLECT)) {
-        label = 'methods <i>not collected</i>';
+      label = 'methods <i>not collected</i>';
     }
     return label
   };
@@ -4444,7 +4446,7 @@
     var v1parts = v1.split('.');
     var v2parts = v2.split('.');
 
-    function isValidPart(x) {
+    function isValidPart (x) {
       return (/^\d+$/).test(x)
     }
 
@@ -4479,7 +4481,7 @@
       }
     }
 
-    if (v1parts.length != v2parts.length) {
+    if (v1parts.length !== v2parts.length) {
       return -1
     }
 
@@ -4496,11 +4498,11 @@
     Properties.prototype[name] = sectionPrototype[name];
   }
 
-  Properties.prototype.dump = function (abs) {
-    var cfg = {
-      attributeOutput : abs.cfgFlags & this.valDumper.objectDumper.PROP_ATTRIBUTE_OUTPUT,
-      isDynamicSupport : versionCompare(abs.debugVersion, '3.1') >= 0
-    };
+  Properties.prototype.dump = function (abs, cfg) {
+    cfg = $.extend({}, cfg, {
+      attributeOutput: abs.cfgFlags & this.valDumper.objectDumper.PROP_ATTRIBUTE_OUTPUT,
+      isDynamicSupport: versionCompare(abs.debugVersion, '3.1') >= 0,
+    });
     if (abs.isInterface) {
       return ''
     }
@@ -4536,7 +4538,7 @@
       isWriteOnly: info.isVirtual && info.hooks.indexOf('get') > -1,
       'private-ancestor': info.isPrivateAncestor,
       property: true,
-      setHook: info.hooks.indexOf('set') > -1
+      setHook: info.hooks.indexOf('set') > -1,
     };
     var visibility = typeof info.visibility === 'object'
       ? info.visibility.join(' ')
@@ -4547,38 +4549,32 @@
   };
 
   Properties.prototype.dumpInner = function (name, info, cfg) {
-    var title = info.phpDoc?.summary || info.desc || null;
-    name = name.replace('debug.', '');
-    return this.dumpModifiers(info) +
+    return this.dumpModifiers(info, cfg) +
       (info.type
         ? this.valDumper.objectDumper.markupType(info.type)
         : ''
       ) +
-      ' ' + this.valDumper.dump(name, {
-        addQuotes: /[\s\r\n]/.test(name) || name === '',
-        attribs: {
-          class: 't_identifier',
-          title: cfg.phpDocOutput && title
-            ? this.valDumper.dumpPhpDocStr(title).escapeHtml()
-            : null
-        },
-        charHighlightTrim: true,
-      }) +
+      ' ' +
+      this.dumpName(name, info, cfg) +
       (info.value !== this.valDumper.UNDEFINED
-        ? ' <span class="t_operator">=</span> ' +
+        ? ' <span class="t_operator">' + (cfg.asArray ? '=&gt;' : '=') + '</span> ' +
           this.valDumper.dump(info.value)
         : ''
       )
   };
 
-  Properties.prototype.dumpModifiers = function (info) {
+  Properties.prototype.dumpModifiers = function (info, cfg) {
     var html = '';
     var vis = typeof info.visibility === 'object'
       ? info.visibility
       : [info.visibility];
     var modifiers = {};
+    if (cfg.asArray) {
+      // don't dump modifiers in array mode
+      return html
+    }
     info = $.extend({
-      isEager: null
+      isEager: null,
     }, info);
     modifiers = $.extend(
       {
@@ -4605,6 +4601,31 @@
     return html
   };
 
+  Properties.prototype.dumpName = function (name, info, cfg) {
+    name = /^\d+$/.test(name)
+      ? parseInt(name, 10)
+      : name.replace('debug.', '');
+
+    var classes = {
+      'no-quotes': /[\s\r\n]/.test(name) === false && name !== '' && !cfg.asArray,
+      t_identifier: !cfg.asArray,
+      t_int: typeof name === 'number',
+      t_key: cfg.asArray,
+      t_string: typeof name === 'string' && !cfg.asArray,
+    };
+    var title = info.phpDoc?.summary || info.desc || null;
+
+    return $('<span></span>', {
+      class: classes,
+      title: cfg.phpDocOutput && title
+        ? this.valDumper.dumpPhpDocStr(title).escapeHtml()
+        : null,
+    }).html(this.valDumper.dump(name, {
+      charHighlightTrim: true,
+      tagName: null,
+    }))[0].outerHTML
+  };
+
   function DumpObject (dump) {
     this.dumper = dump;
     this.cases = new Cases(this.dumper);
@@ -4614,14 +4635,14 @@
     this.phpDoc = new PhpDoc(this.dumper);
 
     this.sectionDumpers = {
-      attributes : this.dumpAttributes.bind(this),
-      cases : this.cases.dump.bind(this.cases),
-      constants : this.constants.dump.bind(this.constants),
-      extends : this.dumpExtends.bind(this),
-      implements : this.dumpImplements.bind(this),
-      methods : this.methods.dump.bind(this.methods),
-      phpDoc : this.phpDoc.dump.bind(this.phpDoc),
-      properties : this.properties.dump.bind(this.properties),
+      attributes: this.dumpAttributes.bind(this),
+      cases: this.cases.dump.bind(this.cases),
+      constants: this.constants.dump.bind(this.constants),
+      extends: this.dumpExtends.bind(this),
+      implements: this.dumpImplements.bind(this),
+      methods: this.methods.dump.bind(this.methods),
+      phpDoc: this.phpDoc.dump.bind(this.phpDoc),
+      properties: this.properties.dump.bind(this.properties),
     };
 
     // GENERAL
@@ -4651,18 +4672,17 @@
     this.PARAM_ATTRIBUTE_OUTPUT = 2097152;
 
     this.phpDocTypes = [
-      'array','bool','callable','float','int','iterable','null','object','string',
-      '$this','self','static',
-      'array-key','double','false','mixed','non-empty-array','resource','scalar','true','void',
+      'array', 'bool', 'callable', 'float', 'int', 'iterable', 'null', 'object', 'string',
+      '$this', 'self', 'static',
+      'array-key', 'double', 'false', 'mixed', 'non-empty-array', 'resource', 'scalar', 'true', 'void',
       'key-of', 'value-of',
       'callable-string', 'class-string', 'literal-string', 'numeric-string', 'non-empty-string',
       'negative-int', 'positive-int',
       'int-mask', 'int-mask-of',
     ];
-
   }
 
-  function sort(obj, sortBy) {
+  function sort (obj, sortBy) {
     var count;
     var i;
     var name;
@@ -4674,7 +4694,7 @@
       if (name === '__construct') {
         sortInfo.push({
           name: name,
-          nameSort: "\x00",
+          nameSort: '\x00',
           visibility: 0,
         });
         continue
@@ -4714,6 +4734,29 @@
     return objNew
   }
 
+  function backwardCompat (abs) {
+    if (typeof abs.sort === 'undefined') {
+      abs.sort = 'vis name';
+    } else if (abs.sort === 'visibility' && versionCompare(abs.debugVersion, '3.2') === -1) {
+      abs.sort = 'vis name';
+    }
+    if (typeof abs.implementsList === 'undefined') {
+      // PhpDebugConsole < 3.1
+      abs.implementsList = abs.implements;
+    }
+    if (typeof abs.sectionOrder === 'undefined') {
+      // PhpDebugConsole < 3.2
+      abs.sectionOrder = ['attributes', 'extends', 'implements', 'constants', 'cases', 'properties', 'methods', 'phpDoc'];
+    }
+    return abs
+  }
+
+  DumpObject.prototype.isAsArray = function (abs) {
+    return abs.className === 'stdClass'
+      && (abs.cfgFlags & this.METHOD_OUTPUT) === 0
+      && (abs.cfgFlags & this.OBJ_ATTRIBUTE_OUTPUT) === 0
+  };
+
   DumpObject.prototype.dump = function (abs) {
     // console.info('dumpObject', abs)
     var html = '';
@@ -4726,43 +4769,42 @@
         abs.cfgFlags = 0x1FFFFFF & ~this.BRIEF;
       }
       abs = this.mergeInherited(abs);
-      if (typeof abs.sort === 'undefined') {
-        abs.sort = 'vis name';
-      } else if (abs.sort === 'visibility' && versionCompare(abs.debugVersion, '3.2') === -1) {
-        abs.sort = 'vis name';
-      }
-      if (typeof abs.implementsList === 'undefined') {
-        // PhpDebugConsole < 3.1
-        abs.implementsList = abs.implements;
-      }
+      abs = backwardCompat(abs);
       strClassName = this.dumpClassName(abs);
-      if (abs.isRecursion) {
-        return strClassName +
-          ' <span class="t_recursion">*RECURSION*</span>'
-      }
-      if (abs.isMaxDepth) {
-        return strClassName +
-          ' <span class="t_maxDepth">*MAX DEPTH*</span>'
-      }
-      if (abs.isExcluded) {
-        return strClassName +
-          ' <span class="excluded">(not inspected)</span>'
-      }
-      if (abs.cfgFlags & this.BRIEF && abs.implementsList.indexOf('UnitEnum') > -1) {
-        return strClassName
+      html = this.dumpSpecialCases(abs, strClassName);
+      if (html) {
+        return html
       }
       if (abs.sort.indexOf('inheritance') === 0) {
         dumpOpts.attribs.class.push('groupByInheritance');
       }
       html = this.dumpToString(abs) +
         strClassName +
-        '<dl class="object-inner">' +
-          this.dumpInner(abs) +
-        '</dl>';
+        this.dumpInner(abs);
     } catch (e) {
       console.warn('e', e);
     }
     return html
+  };
+
+  DumpObject.prototype.dumpSpecialCases = function (abs, className) {
+    if (abs.isRecursion) {
+      return className + ' <span class="t_recursion">*RECURSION*</span>'
+    }
+    if (abs.isMaxDepth) {
+      return className + ' <span class="t_maxDepth">*MAX DEPTH*</span>'
+    }
+    if (abs.isExcluded) {
+      return className + ' <span class="excluded">(not inspected)</span>'
+    }
+    if (abs.cfgFlags & this.BRIEF && abs.implementsList.indexOf('UnitEnum') > -1) {
+      return className
+    }
+    // console.log('abs.properties.length', abs.className, JSON.parse(JSON.stringify(abs)))
+    if (Object.keys(abs.properties).length === 0 && this.isAsArray(abs)) {
+      return className + '<span class="t_punct">()</span>'
+    }
+    return ''
   };
 
   DumpObject.prototype.dumpAttributes = function (abs) {
@@ -4808,11 +4850,11 @@
       : '';
     if (phpDocOut) {
       phpDoc = ((phpDoc.summary || '') + '\n\n' + (phpDoc.desc || '')).trim();
-      title = title + "\n\n" + this.dumper.dumpPhpDocStr(phpDoc);
+      title = title + '\n\n' + this.dumper.dumpPhpDocStr(phpDoc);
     }
     return this.dumper.dump({
       attribs: {
-        title: title.trim(),
+        title: title.trim() || null,
       },
       debug: this.dumper.ABSTRACTION,
       type: 'identifier',
@@ -4847,14 +4889,19 @@
 
   DumpObject.prototype.dumpInner = function (abs) {
     var self = this;
-    var html = this.dumpModifiers(abs);
-    if (typeof abs.sectionOrder === 'undefined') {
-      // PhpDebugConsole < 3.2
-      abs.sectionOrder = ['attributes', 'extends', 'implements', 'constants', 'cases', 'properties', 'methods', 'phpDoc'];
-    }
+    var cfg = {
+      asArray: this.isAsArray(abs),
+    };
+    var html = '<dl class="object-inner">' +
+      this.dumpModifiers(abs);
     abs.sectionOrder.forEach(function (sectionName) {
-      html += self.sectionDumpers[sectionName](abs);
+      html += self.sectionDumpers[sectionName](abs, cfg);
     });
+    html += '</dl>';
+    if (this.isAsArray(abs)) {
+      this.dumper.getDumpOpts().attribs.class.push('prop-only');
+      return '<span class="t_punct">(</span>' + html + '<span class="t_punct">)</span>'
+    }
     return html
   };
 
@@ -4924,23 +4971,23 @@
     var $span;
     var k;
     for (k in implementsObj) {
-        iface = typeof implementsObj[k] === 'string'
-          ? implementsObj[k]
-          : k;
-        $span = $('<span />', {
-          class: 'interface t_identifier',
-          html: this.dumper.markupIdentifier(iface, 'classname')
-        });
-        if (interfacesCollapse.indexOf(iface) > -1) {
-          $span.addClass('toggle-off');
-        }
-        html += '<li>' +
-          $span[0].outerHTML +
-          (typeof implementsObj[k] === 'object'
-             ? this.buildImplementsTree(implementsObj[k], interfacesCollapse)
-             : ''
-          ) +
-          '</li>';
+      iface = typeof implementsObj[k] === 'string'
+        ? implementsObj[k]
+        : k;
+      $span = $('<span />', {
+        class: 'interface t_identifier',
+        html: this.dumper.markupIdentifier(iface, 'classname'),
+      });
+      if (interfacesCollapse.indexOf(iface) > -1) {
+        $span.addClass('toggle-off');
+      }
+      html += '<li>' +
+        $span[0].outerHTML +
+        (typeof implementsObj[k] === 'object'
+          ? this.buildImplementsTree(implementsObj[k], interfacesCollapse)
+          : ''
+        ) +
+        '</li>';
     }
     html += '</ul>';
     return html
@@ -5112,7 +5159,7 @@
   var base64ArraybufferExports = requireBase64Arraybuffer();
   var base64 = /*@__PURE__*/getDefaultExportFromCjs(base64ArraybufferExports);
 
-  function chunkSplit(str, length, separator) {
+  function chunkSplit (str, length, separator) {
     return str.match(new RegExp('.{1,' + length + '}', 'g')).map(function (chunk) {
       return chunk + separator
     }).join('')
@@ -5130,13 +5177,13 @@
     var str = this.dumpBasic(abs);
     var strLenDiff = abs.strlen - abs.strlenValue;
     if (abs.strlenValue && strLenDiff) {
-        str += '<span class="maxlen">&hellip; ' + strLenDiff + ' more bytes (not logged)</span>';
+      str += '<span class="maxlen">&hellip; ' + strLenDiff + ' more bytes (not logged)</span>';
     }
     if (abs.brief) {
-        return this.dumpBrief(str, abs)
+      return this.dumpBrief(str, abs)
     }
     if (abs.percentBinary > 33 || abs.contentType) {
-        dumpOpts.postDump = this.dumpPost(abs, tagName);
+      dumpOpts.postDump = this.dumpPost(abs, tagName);
     }
     return str
   };
@@ -5148,21 +5195,21 @@
     }
     return typeof abs.chunks !== 'undefined'
       ? abs.chunks.map(function (chunk) {
-          return chunk[0] === 'utf8'
-            ? self.dumpString.dump(chunk[1])
-            : '<span class="binary">\\x' + chunk[1].replace(' ', ' \\x') + '</span>'
-        }).join('')
-      : '<span class="binary">'
-          + chunkSplit(abs.value, 3 * 32, '<br />').slice(0, -6)
-          + '</span>'
+        return chunk[0] === 'utf8'
+          ? self.dumpString.dump(chunk[1])
+          : '<span class="binary">\\x' + chunk[1].replace(' ', ' \\x') + '</span>'
+      }).join('')
+      : '<span class="binary">' +
+        chunkSplit(abs.value, 3 * 32, '<br />').slice(0, -6) +
+        '</span>'
   };
 
   DumpStringBinary.prototype.dumpBrief = function (str, abs) {
-      // @todo display bytes
-      return abs.contentType
-        ? '<span class="t_keyword">string</span>' +
-            '<span class="text-muted">(' + abs.contentType + ')</span><span class="t_punct colon">:</span> '
-        : str
+    // @todo display bytes
+    return abs.contentType
+      ? '<span class="t_keyword">string</span>' +
+          '<span class="text-muted">(' + abs.contentType + ')</span><span class="t_punct colon">:</span> '
+      : str
   };
 
   DumpStringBinary.prototype.dumpPost = function (abs, tagName) {
@@ -5212,7 +5259,7 @@
 
     return $('<' + tagName + '>', {
       class: 'string-encoded tabs-container',
-      'data-type-more': abs.typeMore
+      'data-type-more': abs.typeMore,
     }).html('\n' +
       '<nav role="tablist">' +
           tabs.tabs.join('') +
@@ -5224,7 +5271,7 @@
   DumpStringEncoded.prototype.buildTabsAndPanes = function (abs) {
     var tabs = {
       tabs: [],
-      panes: []
+      panes: [],
     };
     var index = 1;
     var vals;
@@ -5245,7 +5292,7 @@
     var attribs = JSON.parse(JSON.stringify(dumpOpts.attribs));
     attribs.class.push('no-quotes');
     attribs.class.push('t_' + abs.type);
-    attribs.class = attribs.class.join(' ');
+    // attribs.class = attribs.class.join(' ')
     if (abs.typeMore === 'base64' && abs.brief) {
       dumpOpts.postDump = function (val) {
         return '<span class="t_keyword">string</span><span class="text-muted">(base64)</span><span class="t_punct colon">:</span> ' + val
@@ -5256,7 +5303,7 @@
       labelRaw: 'raw',
       valRaw: $('<span />', attribs).html(
         dumper.dump(abs.value, { tagName: null })
-      )[0].outerHTML
+      )[0].outerHTML,
     }, abs, dumper)
   }
 
@@ -5334,25 +5381,25 @@
   StrDump.prototype.cpToUtf8Bytes = function (cp) {
     if (cp < 0x80) {
       return [
-        cp & 0x7F
+        cp & 0x7F,
       ]
     } else if (cp < 0x800) {
       return [
         ((cp >> 6) & 0x1F) | 0xC0,
-        (cp & 0x3F) | 0x80
+        (cp & 0x3F) | 0x80,
       ]
     } else if (cp < 0x10000) {
       return [
         ((cp >> 12) & 0x0F) | 0xE0,
         ((cp >> 6) & 0x3F) | 0x80,
-        (cp & 0x3F) | 0x80
+        (cp & 0x3F) | 0x80,
       ]
     }
     return [
       ((cp >> 18) & 0x07) | 0xF0,
       ((cp >> 12) & 0x3F) | 0x80,
       ((cp >> 6) & 0x3F) | 0x80,
-      (cp & 0x3F) | 0x80
+      (cp & 0x3F) | 0x80,
     ]
   };
 
@@ -5445,9 +5492,8 @@
     if (code > 0xFFFF) {
       code -= 0x10000;
       return String.fromCharCode(0xD800 + (code >> 10), 0xDC00 + (code & 0x3FF))
-    } else {
-      return String.fromCharCode(code)
     }
+    return String.fromCharCode(code)
   };
 
   StrDump.prototype.encodeUTF16toUTF8 = function (str) {
@@ -5615,7 +5661,7 @@
       bytesLen: this.bytes.length,
       bytesOther: 0,
       bytesSpecial: 0, // special UTF-8
-      bytesUtf8: 0 // includes ASCII
+      bytesUtf8: 0, // includes ASCII
     };
   };
 
@@ -5686,9 +5732,9 @@
     var self = this;
     this.dumpString = dumpString;
     fetch('./?action=charData')
-      .then(function(response) {
+      .then(function (response) {
         return response.json()
-      }).then(function(charData) {
+      }).then(function (charData) {
         self.charData = charData;
         self.charRegex = self.buildCharRegex();
       });
@@ -5724,19 +5770,19 @@
           : null,
         'data-code-point': info.codePoint,
         title: [
-            char.codePointAt(0) < 0x80
-              ? '\\x' + info.codePoint.padStart(2, '0')
-              : 'U-' + info.codePoint,
-            info.desc,
+          char.codePointAt(0) < 0x80
+            ? '\\x' + info.codePoint.padStart(2, '0')
+            : 'U-' + info.codePoint,
+          info.desc,
         ].filter(function (val) {
           return val.length > 0
         }).join(': '),
-        html: info.replaceWith
+        html: info.replaceWith,
       })[0].outerHTML
     });
     if (highlightTrim) {
       str = str.replace(/(^\s+|\s+$)/g, function (match) {
-        var substr = match.replace(' ' , '<span class="ws_s"> </span>');
+        var substr = match.replace(' ', '<span class="ws_s"> </span>');
         return '<span class="char-ws" title="whitespace">' + substr + '</span>'
       });
     }
@@ -5744,7 +5790,7 @@
   };
 
   CharHighlight.prototype.buildCharRegex = function () {
-    var charList = '[' +  Object.keys(this.charData).join('') + ']';
+    var charList = '[' + Object.keys(this.charData).join('') + ']';
     var charControl = '[^\\P{C}\\r\\n\\t]';   // \p{C} includes \r, \n, & \t
     var charSeparator = '[^\\P{Z} ]';         // \p{Z} includes space (but not \r, \n, & \t)
     var regExTemp = new RegExp('(' + charControl + '|' + charSeparator + ')', 'ug');
@@ -5816,7 +5862,7 @@
         return $('<span />', {
           class: 'value-container',
           'data-type': dumpOpts.type,
-          html: '<span class="prettified">(prettified)</span> '
+          html: '<span class="prettified">(prettified)</span> ',
         }).append(val)
       };
     }
@@ -5842,7 +5888,7 @@
     }
     // we do NOT wrap in <span>...  log('<a href="%s">link</a>', $url)
     return this.dumper.dump(val, {
-      tagName: null
+      tagName: null,
     })
   };
 
@@ -5878,7 +5924,7 @@
     var strBr = '';
     var searchReplacePairs = [
       [/\r/g, '<span class="ws_r"></span>'],
-      [/\n/g, '<span class="ws_n"></span>' + strBr + '\n']
+      [/\n/g, '<span class="ws_n"></span>' + strBr + '\n'],
     ];
     var length = searchReplacePairs.length;
     str = str.replace(/(\r\n|\r|\n)/g, function (match) {
@@ -5931,13 +5977,13 @@
         return $('<td />', {
           class: 'timestamp value-container',
           title: date,
-          html: $('<span />', opts.attribs).html(val)
+          html: $('<span />', opts.attribs).html(val),
         })
       }
       return $('<span />', {
         class: 'timestamp value-container',
         title: date,
-        html: dumped
+        html: dumped,
       })
     };
   };
@@ -5946,7 +5992,7 @@
     var dumpOpts = $.extend({
       addQuotes: true,
       attribs: {
-        class: []
+        class: [],
       },
       charHighlight: true,
       charHighlightTrim: false,
@@ -5956,7 +6002,7 @@
       tagName: '__default__',
       type: null,
       typeMore: null,
-      visualWhiteSpace: true
+      visualWhiteSpace: true,
     }, opts || {});
     var tagName;
     var type; // = this.getType(val)
@@ -6026,7 +6072,7 @@
       'float',
       'int',
       'null',
-      'string'
+      'string',
     ];
     var value;
     dumpOpts.attribs = abs.attribs || {};
@@ -6074,7 +6120,7 @@
       asFileTree: false,
       expand: null,
       isMaxDepth: false,
-      showListKeys: true
+      showListKeys: true,
     }, this.getDumpOpts());
     var isList = (function () {
       for (i = 0; i < length; i++) {
@@ -6085,12 +6131,6 @@
       return true
     })();
     var showKeys = dumpOpts.showListKeys || !isList;
-    /*
-    console.warn('dumpArray', {
-      array: JSON.parse(JSON.stringify(array)),
-      dumpOpts: JSON.parse(JSON.stringify(dumpOpts))
-    })
-    */
     if (dumpOpts.expand !== null) {
       dumpOpts.attribs['data-expand'] = dumpOpts.expand;
     }
@@ -6099,12 +6139,12 @@
     }
     if (dumpOpts.isMaxDepth) {
       return '<span class="t_keyword">array</span>' +
-          ' <span class="t_maxDepth">*MAX DEPTH*</span>'
+        ' <span class="t_maxDepth">*MAX DEPTH*</span>'
     }
     if (length === 0) {
       return '<span class="t_keyword">array</span>' +
-          '<span class="t_punct">(</span>\n' +
-          '<span class="t_punct">)</span>'
+        '<span class="t_punct">(</span>\n' +
+        '<span class="t_punct">)</span>'
     }
     delete array.__debug_key_order__;
     html = '<span class="t_keyword">array</span>' +
@@ -6113,7 +6153,7 @@
     for (i = 0; i < length; i++) {
       key = keys[i];
       keyShow = key;
-      if (absKeys.hasOwnProperty(key)) {
+      if (Object.prototype.hasOwnProperty.call(absKeys, key)) {
         keyShow = absKeys[key];
       }
       html += this.dumpArrayValue(keyShow, array[key], showKeys);
@@ -6132,7 +6172,7 @@
       .addClass('t_key')
       .html(this.dump(key, {
         charHighlightTrim: true,
-        tagName : null,
+        tagName: null,
       }));
     if (/^\d+$/.test(key)) {
       $key.addClass('t_int');
@@ -6333,10 +6373,10 @@
         parts.className = '<span class="namespace">' + split.join('\\') + '\\</span>' +
           parts.className;
       }
-      attribs.class = 'classname';
+      attribs.class = ['classname'];
       parts.className = $('<' + tag + '/>', attribs).html(parts.className)[0].outerHTML;
     } else if (parts.namespace) {
-      attribs.class = 'namespace';
+      attribs.class = ['namespace'];
       parts.className = $('<' + tag + '/>', attribs).html(parts.namespace)[0].outerHTML;
     }
     if (parts.operator) {
@@ -6356,7 +6396,7 @@
     var parsed = {
       tag: $node[0].tagName.toLowerCase(),
       attribs: {},
-      innerhtml: $node[0].innerHTML
+      innerhtml: $node[0].innerHTML,
     };
     $.each($node[0].attributes, function () {
       if (this.specified) {
@@ -6419,7 +6459,7 @@
       var attribs = {
         class: 'm_clear',
         'data-file': logEntry.meta.file,
-        'data-line': logEntry.meta.line
+        'data-line': logEntry.meta.line,
       };
       var channelFilter = function () {
         return $(this).data('channel') === logEntry.meta.channel
@@ -6535,11 +6575,11 @@
 
     group: function (logEntry, info) {
       var $group = $('<li>', {
-        class: 'empty expanded m_group'
+        class: 'empty expanded m_group',
       });
       var $groupHeader = groupHeader(logEntry, info);
       var $groupBody = $('<ul>', {
-        class: 'group-body'
+        class: 'group-body',
       });
       var nodes = info.$tabPane.data('nodes');
       if (logEntry.meta.hideIfEmpty) {
@@ -6665,7 +6705,7 @@
       }
       if (typeof meta.drawer === 'boolean') {
         info.$container.data('options', {
-          drawer: meta.drawer
+          drawer: meta.drawer,
         });
       }
       if (meta.interface) {
@@ -6675,7 +6715,7 @@
         $title.html(title);
       }
       if (metaVals.classDefinitions) {
-        for (k in  metaVals.classDefinitions) {
+        for (k in metaVals.classDefinitions) {
           classDefinition = metaVals.classDefinitions[k];
           classDefinition.implementsList = buildImplementsList(classDefinition.implements);
           if (k.substring(0, 6) === '_b64_:') {
@@ -6719,7 +6759,7 @@
 
     default: function (logEntry, info) {
       var attribs = {
-        class: 'm_' + logEntry.method
+        class: 'm_' + logEntry.method,
       };
       var $container = info.$container;
       var $node;
@@ -6728,7 +6768,7 @@
       if (meta.file && meta.channel !== info.channelNameRoot + '.phpError') {
         attribs = $.extend({
           'data-file': meta.file,
-          'data-line': meta.line
+          'data-line': meta.line,
         }, attribs);
       }
       /*
@@ -6787,7 +6827,7 @@
         this.endOutput(logEntry, info);
       }
       return $node
-    } // end default
+    }, // end default
   };
 
   function buildContext (context, lineNumber) {
@@ -6800,7 +6840,7 @@
       'data-line-offset': start,
     }).append(
       $('<code>', {
-        class: 'language-php'
+        class: 'language-php',
       }).text(Object.values(context).join(''))
     )
   }
@@ -6815,7 +6855,7 @@
     var typeMore;
     logEntry.meta = $.extend({
       sanitize: true,
-      sanitizeFirst: null
+      sanitizeFirst: null,
     }, logEntry.meta);
     if (logEntry.meta.sanitizeFirst === null) {
       logEntry.meta.sanitizeFirst = logEntry.meta.sanitize;
@@ -6848,7 +6888,7 @@
           : logEntry.meta.sanitize,
         type: typeInfo[0],
         typeMore: typeInfo[1] || null,
-        visualWhiteSpace: i !== 0
+        visualWhiteSpace: i !== 0,
       });
     }
     return glueAfterFirst
@@ -6856,7 +6896,7 @@
       : $('<li>').html(args[0] + ' ' + args.slice(1).join(glue))
   }
 
-  function buildImplementsList(obj) {
+  function buildImplementsList (obj) {
     var list = [];
     var key;
     var val;
@@ -6919,7 +6959,7 @@
     label = logEntry.meta.isFuncName
       ? dump.markupIdentifier(label, 'function')
       : dump.dump(label, {
-        requestInfo: requestInfo
+        requestInfo: requestInfo,
       }).replace(new RegExp('^<span class="t_string">(.+)</span>$', 's'), '$1');
     for (i = 0; i < logEntry.args.length; i++) {
       logEntry.args[i] = dump.dump(logEntry.args[i], {
@@ -6946,16 +6986,16 @@
     return $header
   }
 
-  function markupFilePath(filePath, commonPrefix, docRoot) {
+  function markupFilePath (filePath, commonPrefix, docRoot) {
     var fileParts = parseFilePath(filePath || '', commonPrefix, docRoot);
-    return (fileParts.docRoot ? '<span class="file-docroot">DOCUMENT_ROOT</span>' : '')
-      + (fileParts.relPathCommon ? '<span class="file-basepath">' + dump.dump(fileParts.relPathCommon, {tagName:null}) + '</span>' : '')
-      + (fileParts.relPath ? '<span class="file-relpath">' + dump.dump(fileParts.relPath, {tagName:null}) + '</span>' : '')
-      + '<span class="file-basename">' + dump.dump(fileParts.baseName, {tagName:null}) + '</span>'
+    return (fileParts.docRoot ? '<span class="file-docroot">DOCUMENT_ROOT</span>' : '') +
+      (fileParts.relPathCommon ? '<span class="file-basepath">' + dump.dump(fileParts.relPathCommon, { tagName: null }) + '</span>' : '') +
+      (fileParts.relPath ? '<span class="file-relpath">' + dump.dump(fileParts.relPath, { tagName: null }) + '</span>' : '') +
+      '<span class="file-basename">' + dump.dump(fileParts.baseName, { tagName: null }) + '</span>'
   }
 
   function parseFilePath (filePath, commonPrefix, docRoot) {
-    var baseName = (filePath.match(/[^\/]+$/) || [''])[0];
+    var baseName = (filePath.match(/[^/]+$/) || [''])[0];
     var containsDocRoot = filePath.indexOf(docRoot) === 0;
     var basePath = '';
     var relPath = filePath.slice(0, 0 - baseName.length);
@@ -6988,14 +7028,14 @@
     var argLen = args.length;
     var index = 0;
     var typeCounts = {
-      c: 0
+      c: 0,
     };
     if (containsSubstitutions(logEntry) === false) {
       return
     }
     args[0] = dump.dump(args[0], {
       sanitize: logEntry.meta.sanitizeFirst,
-      tagName: null
+      tagName: null,
     });
     args[0] = args[0].replace(subRegex, function (match) {
       var replacement = match;
@@ -7065,7 +7105,7 @@
     if (abs.methods.__toString.returnValue) {
       return abs.methods.__toString.returnValue
     }
-    return dump.markupIdentifier(val.className, 'classname')
+    return dump.markupIdentifier(abs.className, 'classname')
   }
 
   function tableAddContextRow ($tr, row, rowInfo, i) {
@@ -7085,19 +7125,19 @@
         class: 'context',
         style: i === 0
           ? 'display:table-row;'
-          : null
+          : null,
       }).append(
         $('<td>', {
-          colspan: 4
+          colspan: 4,
         }).append(
           [
             buildContext(rowInfo.context, row.line),
             Array.isArray(rowInfo.args) && rowInfo.args.length
               ? '<hr />Arguments = ' + dump.dump(row.args)
-              : ''
+              : '',
           ]
         )
-      )
+      ),
     ]
   }
 
@@ -7164,7 +7204,8 @@
       $node.attr('data-channel', meta.channel); // using attr so can use [data-channel="xxx"] selector
       if (meta.attribs && Object.keys(meta.attribs).length) {
         if (meta.attribs.class) {
-          $node.addClass(Array.isArray(meta.attribs.class) ? meta.attribs.class.join(' ') : meta.attribs.class);
+          // $node.addClass(Array.isArray(meta.attribs.class) ? meta.attribs.class.join(' ') : meta.attribs.class)
+          $node.addClass(meta.attribs.class);
           delete meta.attribs.class;
         }
         if (meta.attribs.id) {
@@ -7287,10 +7328,10 @@
       $tabPane = $debug.find('.tab-primary');
       $node = $tabPane.find('.debug-log');
       $tabPane.data('nodes', [
-        $node
+        $node,
       ]);
       $tabPane.data('options', {
-        sidebar: true
+        sidebar: true,
       });
       $('#debug-cards').append($container);
       $container.trigger('added.debug.card');
@@ -7299,7 +7340,7 @@
       $container: $container,
       $node: $node,
       $tabPane: $tabPane,
-      channels: $container.find('.debug').data('channels')
+      channels: $container.find('.debug').data('channels'),
     });
     addChannel(info, meta);
     return info
@@ -7387,14 +7428,14 @@
         $('<li>'
         ).append(
           $('<label>', {
-            class: 'toggle active'
+            class: 'toggle active',
           }).append(
             $('<input>', {
               type: 'checkbox',
               checked: true,
               'data-toggle': 'error',
               'data-count': 1,
-              value: logEntry.meta.errorCat
+              value: logEntry.meta.errorCat,
             })
           ).append(
             dict.get('error.cat.' + logEntry.meta.errorCat) + ' <span class="badge">' + 1 + '</span>'
@@ -7472,13 +7513,13 @@
     addTab(info, $link);
     $tabPane = $('<div>', {
       class: 'tab-pane ' + classname,
-      role: 'tabpanel'
+      role: 'tabpanel',
     })
       .append($('<div>', {
         class: 'tab-body',
         html: '<ul class="debug-log-summary group-body"></ul>' +
           '<hr />' +
-          '<ul class="debug-log group-body"></ul>'
+          '<ul class="debug-log group-body"></ul>',
       }));
     $tabPane.data('nodes', [$tabPane.find('.debug-log')]);
     $tabPanes.append($tabPane);
@@ -7556,13 +7597,13 @@
     // id must begin with a letter (a-z or A-Z)
     id = id.replace(/^[^A-Za-z]+/, '')
       // note that ":" and "." are  allowed chars but not practical... removing
-      .replace(/[^a-zA-Z0-9_\-]+/, '_')
+      .replace(/[^a-zA-Z0-9_-]+/, '_')
       .replace(/_+/, '_');
 
     return id
   }
 
-  function Xdebug(pubSub) {
+  function Xdebug (pubSub) {
     var self = this;
     var $root = $('#debug-cards');
     this.pubSub = pubSub;
@@ -7589,7 +7630,7 @@
         appId,
         'property_get',
         {
-          n: $(this).data('fullname')
+          n: $(this).data('fullname'),
         }
       );
     });
@@ -7603,15 +7644,15 @@
   }
 
   Xdebug.prototype.sendCmd = function (appId, cmd, args, data) {
-      this.pubSub.publish(
-        'wamp',
-        'publish',
-        'bdk.debug.xdebug',
-        [appId, cmd, args, data]
-      );
+    this.pubSub.publish(
+      'wamp',
+      'publish',
+      'bdk.debug.xdebug',
+      [appId, cmd, args, data]
+    );
   };
 
-  Xdebug.prototype.positionToolbar = function($menuBar) {
+  Xdebug.prototype.positionToolbar = function ($menuBar) {
     var $card = $menuBar.closest('.card');
     $menuBar.style('top',
       (
@@ -7701,7 +7742,7 @@
         // xdebug appId match
         return true
       }
-      if (dataCard.meta.processId == appId) {
+      if (dataCard.meta.processId === appId) {
         // card processId match
         return true
       }
@@ -7780,7 +7821,7 @@
     info = {
       $container: $container,
       $node: $xdebug,
-      $toolbar: $container.find('.xdebug-menu-bar')
+      $toolbar: $container.find('.xdebug-menu-bar'),
     };
     return info
   };
@@ -7933,7 +7974,7 @@
     if (haveDbVal) {
       PubSub.publish('phpDebugConsoleConfig', {
         linkFiles: this.config.linkFiles,
-        linkFilesTemplate: this.config.linkFilesTemplate
+        linkFilesTemplate: this.config.linkFilesTemplate,
       });
     }
   };
@@ -8827,7 +8868,7 @@
   SocketWorker.prototype.getConnection = function () {
     var connection = new autobahn.Connection({
       url: this.config.get('url'),
-      realm: this.config.get('realm')
+      realm: this.config.get('realm'),
     });
     var self = this;
     connection.onopen = function (session, details) {
@@ -8878,7 +8919,7 @@
         // postMessage(['msg', row])
         self.pubSub.publish('wamp', 'msg', {
           topic: topic,
-          msg: msg
+          msg: msg,
         });
       } else {
         self.msgQueue.push(msg);
@@ -8892,7 +8933,7 @@
     realm: 'debug',
     fontSize: '1em',
     linkFiles: false,
-    linkFilesTemplate: 'subl://open?url=file://%file&line=%line'
+    linkFilesTemplate: 'subl://open?url=file://%file&line=%line',
   }, 'debugWampClient');
 
   initWamp();
@@ -8907,7 +8948,7 @@
     */
     $root.debugEnhance('init', {
       sidebar: true,
-      useLocalStorage: false
+      useLocalStorage: false,
     });
 
     init$2(config);
@@ -8919,14 +8960,14 @@
         logEntry = {
           method: data.msg[0],
           args: data.msg[1],
-          meta: data.msg[2]
+          meta: data.msg[2],
         };
         if (data.topic === 'bdk.debug') {
           processEntry(logEntry);
           if (logEntry.method === 'meta' && logEntry.meta.linkFilesTemplateDefault) {
             config.setDefault({
               linkFiles: true,
-              linkFilesTemplate: logEntry.meta.linkFilesTemplateDefault
+              linkFilesTemplate: logEntry.meta.linkFilesTemplateDefault,
             });
           }
         } else if (data.topic === 'bdk.debug.xdebug') {

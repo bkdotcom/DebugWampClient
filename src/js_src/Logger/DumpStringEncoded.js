@@ -21,7 +21,7 @@ DumpStringEncoded.prototype.dump = function (val, abs) {
 
   return $('<' + tagName + '>', {
     class: 'string-encoded tabs-container',
-    'data-type-more': abs.typeMore
+    'data-type-more': abs.typeMore,
   }).html('\n' +
     '<nav role="tablist">' +
         tabs.tabs.join('') +
@@ -33,7 +33,7 @@ DumpStringEncoded.prototype.dump = function (val, abs) {
 DumpStringEncoded.prototype.buildTabsAndPanes = function (abs) {
   var tabs = {
     tabs: [],
-    panes: []
+    panes: [],
   }
   var index = 1
   var vals
@@ -54,7 +54,7 @@ function tabValues (abs, dumper) {
   var attribs = JSON.parse(JSON.stringify(dumpOpts.attribs))
   attribs.class.push('no-quotes')
   attribs.class.push('t_' + abs.type)
-  attribs.class = attribs.class.join(' ')
+  // attribs.class = attribs.class.join(' ')
   if (abs.typeMore === 'base64' && abs.brief) {
     dumpOpts.postDump = function (val) {
       return '<span class="t_keyword">string</span><span class="text-muted">(base64)</span><span class="t_punct colon">:</span> ' + val
@@ -65,7 +65,7 @@ function tabValues (abs, dumper) {
     labelRaw: 'raw',
     valRaw: $('<span />', attribs).html(
       dumper.dump(abs.value, { tagName: null })
-    )[0].outerHTML
+    )[0].outerHTML,
   }, abs, dumper)
 }
 

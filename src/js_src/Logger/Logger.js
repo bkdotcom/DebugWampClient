@@ -27,7 +27,8 @@ export function processEntry (logEntry) {
     $node.attr('data-channel', meta.channel) // using attr so can use [data-channel="xxx"] selector
     if (meta.attribs && Object.keys(meta.attribs).length) {
       if (meta.attribs.class) {
-        $node.addClass(Array.isArray(meta.attribs.class) ? meta.attribs.class.join(' ') : meta.attribs.class)
+        // $node.addClass(Array.isArray(meta.attribs.class) ? meta.attribs.class.join(' ') : meta.attribs.class)
+        $node.addClass(meta.attribs.class)
         delete meta.attribs.class
       }
       if (meta.attribs.id) {
@@ -150,10 +151,10 @@ function getNodeInfo (meta) {
     $tabPane = $debug.find('.tab-primary')
     $node = $tabPane.find('.debug-log')
     $tabPane.data('nodes', [
-      $node
+      $node,
     ])
     $tabPane.data('options', {
-      sidebar: true
+      sidebar: true,
     })
     $('#debug-cards').append($container)
     $container.trigger('added.debug.card')
@@ -162,7 +163,7 @@ function getNodeInfo (meta) {
     $container: $container,
     $node: $node,
     $tabPane: $tabPane,
-    channels: $container.find('.debug').data('channels')
+    channels: $container.find('.debug').data('channels'),
   })
   addChannel(info, meta)
   return info
@@ -250,14 +251,14 @@ function addError (logEntry, info) {
       $('<li>'
       ).append(
         $('<label>', {
-          class: 'toggle active'
+          class: 'toggle active',
         }).append(
           $('<input>', {
             type: 'checkbox',
             checked: true,
             'data-toggle': 'error',
             'data-count': 1,
-            value: logEntry.meta.errorCat
+            value: logEntry.meta.errorCat,
           })
         ).append(
           dict.get('error.cat.' + logEntry.meta.errorCat) + ' <span class="badge">' + 1 + '</span>'
@@ -335,13 +336,13 @@ function getTabPane (info, meta) {
   addTab(info, $link)
   $tabPane = $('<div>', {
     class: 'tab-pane ' + classname,
-    role: 'tabpanel'
+    role: 'tabpanel',
   })
     .append($('<div>', {
       class: 'tab-body',
       html: '<ul class="debug-log-summary group-body"></ul>' +
         '<hr />' +
-        '<ul class="debug-log group-body"></ul>'
+        '<ul class="debug-log group-body"></ul>',
     }))
   $tabPane.data('nodes', [$tabPane.find('.debug-log')])
   $tabPanes.append($tabPane)
@@ -419,7 +420,7 @@ function buildId (meta, id, prefix) {
   // id must begin with a letter (a-z or A-Z)
   id = id.replace(/^[^A-Za-z]+/, '')
     // note that ":" and "." are  allowed chars but not practical... removing
-    .replace(/[^a-zA-Z0-9_\-]+/, '_')
+    .replace(/[^a-zA-Z0-9_-]+/, '_')
     .replace(/_+/, '_')
 
   return id

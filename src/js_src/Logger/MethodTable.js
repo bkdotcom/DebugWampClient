@@ -13,15 +13,15 @@ Table.prototype.build = function (rows, meta, onBuildRow, info) {
       class: [
         'table-bordered',
         meta.sortable ? 'sortable' : null,
-        meta.inclContext ? 'trace-context' : null
-      ]
+        meta.inclContext ? 'trace-context' : null,
+      ],
     },
     caption: '',
     tableInfo: {
       columns: [],
       haveObjRow: false,
       rows: [],
-    }
+    },
   }
   meta.tableInfo = $.extend(metaDefault.tableInfo, meta.tableInfo)
   meta = $.extend(metaDefault, meta)
@@ -29,12 +29,12 @@ Table.prototype.build = function (rows, meta, onBuildRow, info) {
     meta.caption = ''
   }
   $table = $('<table>' +
-    (meta.caption.length ? '<caption>' + meta.caption.escapeHtml() + '</caption>' : '')+
+    (meta.caption.length ? '<caption>' + meta.caption.escapeHtml() + '</caption>' : '') +
     '<thead><tr><th>&nbsp;</th></tr></thead>' +
     '<tbody></tbody>' +
     '</table>'
   )
-    .addClass(meta.attribs.class.join(' '))
+    .addClass(meta.attribs.class)
   this.buildHeader(meta.tableInfo)
   this.buildBody(rows, meta.tableInfo, onBuildRow, info)
   this.buildFooter(meta.tableInfo)
@@ -97,7 +97,7 @@ Table.prototype.buildRow = function (row, rowInfo, rowKey, tableInfo) {
   var $tr = $('<tr></tr>', rowInfo.attribs || {})
     .append(
       $('<th scope="row" class="t_key text-right"></th>')
-        .addClass(/^\d+$/.test(rowKey) ? 't_int' : parsed.attribs.class.join(' '))
+        .addClass(/^\d+$/.test(rowKey) ? 't_int' : parsed.attribs.class)
         .html(parsed.innerhtml)
     )
 

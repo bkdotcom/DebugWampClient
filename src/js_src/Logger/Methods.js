@@ -52,7 +52,7 @@ export var methods = {
     var attribs = {
       class: 'm_clear',
       'data-file': logEntry.meta.file,
-      'data-line': logEntry.meta.line
+      'data-line': logEntry.meta.line,
     }
     var channelFilter = function () {
       return $(this).data('channel') === logEntry.meta.channel
@@ -168,11 +168,11 @@ export var methods = {
 
   group: function (logEntry, info) {
     var $group = $('<li>', {
-      class: 'empty expanded m_group'
+      class: 'empty expanded m_group',
     })
     var $groupHeader = groupHeader(logEntry, info)
     var $groupBody = $('<ul>', {
-      class: 'group-body'
+      class: 'group-body',
     })
     var nodes = info.$tabPane.data('nodes')
     if (logEntry.meta.hideIfEmpty) {
@@ -298,7 +298,7 @@ export var methods = {
     }
     if (typeof meta.drawer === 'boolean') {
       info.$container.data('options', {
-        drawer: meta.drawer
+        drawer: meta.drawer,
       })
     }
     if (meta.interface) {
@@ -308,7 +308,7 @@ export var methods = {
       $title.html(title)
     }
     if (metaVals.classDefinitions) {
-      for (k in  metaVals.classDefinitions) {
+      for (k in metaVals.classDefinitions) {
         classDefinition = metaVals.classDefinitions[k]
         classDefinition.implementsList = buildImplementsList(classDefinition.implements)
         if (k.substring(0, 6) === '_b64_:') {
@@ -352,7 +352,7 @@ export var methods = {
 
   default: function (logEntry, info) {
     var attribs = {
-      class: 'm_' + logEntry.method
+      class: 'm_' + logEntry.method,
     }
     var $container = info.$container
     var $node
@@ -361,7 +361,7 @@ export var methods = {
     if (meta.file && meta.channel !== info.channelNameRoot + '.phpError') {
       attribs = $.extend({
         'data-file': meta.file,
-        'data-line': meta.line
+        'data-line': meta.line,
       }, attribs)
     }
     /*
@@ -420,7 +420,7 @@ export var methods = {
       this.endOutput(logEntry, info)
     }
     return $node
-  } // end default
+  }, // end default
 }
 
 function buildContext (context, lineNumber) {
@@ -433,7 +433,7 @@ function buildContext (context, lineNumber) {
     'data-line-offset': start,
   }).append(
     $('<code>', {
-      class: 'language-php'
+      class: 'language-php',
     }).text(Object.values(context).join(''))
   )
 }
@@ -448,7 +448,7 @@ function buildEntryNode (logEntry, requestInfo) {
   var typeMore
   logEntry.meta = $.extend({
     sanitize: true,
-    sanitizeFirst: null
+    sanitizeFirst: null,
   }, logEntry.meta)
   if (logEntry.meta.sanitizeFirst === null) {
     logEntry.meta.sanitizeFirst = logEntry.meta.sanitize
@@ -481,7 +481,7 @@ function buildEntryNode (logEntry, requestInfo) {
         : logEntry.meta.sanitize,
       type: typeInfo[0],
       typeMore: typeInfo[1] || null,
-      visualWhiteSpace: i !== 0
+      visualWhiteSpace: i !== 0,
     })
   }
   return glueAfterFirst
@@ -489,7 +489,7 @@ function buildEntryNode (logEntry, requestInfo) {
     : $('<li>').html(args[0] + ' ' + args.slice(1).join(glue))
 }
 
-function buildImplementsList(obj) {
+function buildImplementsList (obj) {
   var list = []
   var key
   var val
@@ -552,7 +552,7 @@ function groupHeader (logEntry, requestInfo) {
   label = logEntry.meta.isFuncName
     ? dump.markupIdentifier(label, 'function')
     : dump.dump(label, {
-      requestInfo: requestInfo
+      requestInfo: requestInfo,
     }).replace(new RegExp('^<span class="t_string">(.+)</span>$', 's'), '$1')
   for (i = 0; i < logEntry.args.length; i++) {
     logEntry.args[i] = dump.dump(logEntry.args[i], {
@@ -579,16 +579,16 @@ function groupHeader (logEntry, requestInfo) {
   return $header
 }
 
-function markupFilePath(filePath, commonPrefix, docRoot) {
+function markupFilePath (filePath, commonPrefix, docRoot) {
   var fileParts = parseFilePath(filePath || '', commonPrefix, docRoot)
-  return (fileParts.docRoot ? '<span class="file-docroot">DOCUMENT_ROOT</span>' : '')
-    + (fileParts.relPathCommon ? '<span class="file-basepath">' + dump.dump(fileParts.relPathCommon, {tagName:null}) + '</span>' : '')
-    + (fileParts.relPath ? '<span class="file-relpath">' + dump.dump(fileParts.relPath, {tagName:null}) + '</span>' : '')
-    + '<span class="file-basename">' + dump.dump(fileParts.baseName, {tagName:null}) + '</span>'
+  return (fileParts.docRoot ? '<span class="file-docroot">DOCUMENT_ROOT</span>' : '') +
+    (fileParts.relPathCommon ? '<span class="file-basepath">' + dump.dump(fileParts.relPathCommon, { tagName: null }) + '</span>' : '') +
+    (fileParts.relPath ? '<span class="file-relpath">' + dump.dump(fileParts.relPath, { tagName: null }) + '</span>' : '') +
+    '<span class="file-basename">' + dump.dump(fileParts.baseName, { tagName: null }) + '</span>'
 }
 
 function parseFilePath (filePath, commonPrefix, docRoot) {
-  var baseName = (filePath.match(/[^\/]+$/) || [''])[0]
+  var baseName = (filePath.match(/[^/]+$/) || [''])[0]
   var containsDocRoot = filePath.indexOf(docRoot) === 0
   var basePath = ''
   var relPath = filePath.slice(0, 0 - baseName.length)
@@ -621,14 +621,14 @@ function processSubstitutions (logEntry, opts) {
   var argLen = args.length
   var index = 0
   var typeCounts = {
-    c: 0
+    c: 0,
   }
   if (containsSubstitutions(logEntry) === false) {
     return
   }
   args[0] = dump.dump(args[0], {
     sanitize: logEntry.meta.sanitizeFirst,
-    tagName: null
+    tagName: null,
   })
   args[0] = args[0].replace(subRegex, function (match) {
     var replacement = match
@@ -698,7 +698,7 @@ function substitutionObjectAsString (abs) {
   if (abs.methods.__toString.returnValue) {
     return abs.methods.__toString.returnValue
   }
-  return dump.markupIdentifier(val.className, 'classname')
+  return dump.markupIdentifier(abs.className, 'classname')
 }
 
 function tableAddContextRow ($tr, row, rowInfo, i) {
@@ -718,19 +718,19 @@ function tableAddContextRow ($tr, row, rowInfo, i) {
       class: 'context',
       style: i === 0
         ? 'display:table-row;'
-        : null
+        : null,
     }).append(
       $('<td>', {
-        colspan: 4
+        colspan: 4,
       }).append(
         [
           buildContext(rowInfo.context, row.line),
           Array.isArray(rowInfo.args) && rowInfo.args.length
             ? '<hr />Arguments = ' + dump.dump(row.args)
-            : ''
+            : '',
         ]
       )
-    )
+    ),
   ]
 }
 

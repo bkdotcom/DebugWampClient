@@ -12,11 +12,11 @@ for (name in sectionPrototype) {
   Properties.prototype[name] = sectionPrototype[name]
 }
 
-Properties.prototype.dump = function (abs) {
-  var cfg = {
-    attributeOutput : abs.cfgFlags & this.valDumper.objectDumper.PROP_ATTRIBUTE_OUTPUT,
-    isDynamicSupport : versionCompare(abs.debugVersion, '3.1') >= 0
-  }
+Properties.prototype.dump = function (abs, cfg) {
+  cfg = $.extend({}, cfg, {
+    attributeOutput: abs.cfgFlags & this.valDumper.objectDumper.PROP_ATTRIBUTE_OUTPUT,
+    isDynamicSupport: versionCompare(abs.debugVersion, '3.1') >= 0,
+  })
   if (abs.isInterface) {
     return ''
   }
@@ -52,7 +52,7 @@ Properties.prototype.addAttribs = function ($element, info, cfg) {
     isWriteOnly: info.isVirtual && info.hooks.indexOf('get') > -1,
     'private-ancestor': info.isPrivateAncestor,
     property: true,
-    setHook: info.hooks.indexOf('set') > -1
+    setHook: info.hooks.indexOf('set') > -1,
   }
   var visibility = typeof info.visibility === 'object'
     ? info.visibility.join(' ')
@@ -63,38 +63,32 @@ Properties.prototype.addAttribs = function ($element, info, cfg) {
 }
 
 Properties.prototype.dumpInner = function (name, info, cfg) {
-  var title = info.phpDoc?.summary || info.desc || null
-  name = name.replace('debug.', '')
-  return this.dumpModifiers(info) +
+  return this.dumpModifiers(info, cfg) +
     (info.type
       ? this.valDumper.objectDumper.markupType(info.type)
       : ''
     ) +
-    ' ' + this.valDumper.dump(name, {
-      addQuotes: /[\s\r\n]/.test(name) || name === '',
-      attribs: {
-        class: 't_identifier',
-        title: cfg.phpDocOutput && title
-          ? this.valDumper.dumpPhpDocStr(title).escapeHtml()
-          : null
-      },
-      charHighlightTrim: true,
-    }) +
+    ' ' +
+    this.dumpName(name, info, cfg) +
     (info.value !== this.valDumper.UNDEFINED
-      ? ' <span class="t_operator">=</span> ' +
+      ? ' <span class="t_operator">' + (cfg.asArray ? '=&gt;' : '=') + '</span> ' +
         this.valDumper.dump(info.value)
       : ''
     )
 }
 
-Properties.prototype.dumpModifiers = function (info) {
+Properties.prototype.dumpModifiers = function (info, cfg) {
   var html = ''
   var vis = typeof info.visibility === 'object'
     ? info.visibility
     : [info.visibility]
   var modifiers = {}
+  if (cfg.asArray) {
+    // don't dump modifiers in array mode
+    return html
+  }
   info = $.extend({
-    isEager: null
+    isEager: null,
   }, info)
   modifiers = $.extend(
     {
@@ -119,4 +113,29 @@ Properties.prototype.dumpModifiers = function (info) {
     html += '<span class="' + cssClass + '">' + modifier + '</span> '
   })
   return html
+}
+
+Properties.prototype.dumpName = function (name, info, cfg) {
+  name = /^\d+$/.test(name)
+    ? parseInt(name, 10)
+    : name.replace('debug.', '')
+
+  var classes = {
+    'no-quotes': /[\s\r\n]/.test(name) === false && name !== '' && !cfg.asArray,
+    t_identifier: !cfg.asArray,
+    t_int: typeof name === 'number',
+    t_key: cfg.asArray,
+    t_string: typeof name === 'string' && !cfg.asArray,
+  }
+  var title = info.phpDoc?.summary || info.desc || null
+
+  return $('<span></span>', {
+    class: classes,
+    title: cfg.phpDocOutput && title
+      ? this.valDumper.dumpPhpDocStr(title).escapeHtml()
+      : null,
+  }).html(this.valDumper.dump(name, {
+    charHighlightTrim: true,
+    tagName: null,
+  }))[0].outerHTML
 }

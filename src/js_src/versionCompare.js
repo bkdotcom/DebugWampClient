@@ -4,7 +4,7 @@ export function versionCompare (v1, v2) {
   var withAlpha = false
   var zeroExtend = true
 
-  function isValidPart(x) {
+  function isValidPart (x) {
     return (withAlpha ? /^\d+[A-Za-z]*$/ : /^\d+$/).test(x)
   }
 
@@ -39,7 +39,7 @@ export function versionCompare (v1, v2) {
     }
   }
 
-  if (v1parts.length != v2parts.length) {
+  if (v1parts.length !== v2parts.length) {
     return -1
   }
 

@@ -102,7 +102,7 @@ Config.prototype.checkPhpDebugConsole = function (vals) {
   if (haveDbVal) {
     PubSub.publish('phpDebugConsoleConfig', {
       linkFiles: this.config.linkFiles,
-      linkFilesTemplate: this.config.linkFilesTemplate
+      linkFilesTemplate: this.config.linkFilesTemplate,
     })
   }
 }

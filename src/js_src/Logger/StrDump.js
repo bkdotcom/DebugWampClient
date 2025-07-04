@@ -45,25 +45,25 @@ export var StrDump = function () {
 StrDump.prototype.cpToUtf8Bytes = function (cp) {
   if (cp < 0x80) {
     return [
-      cp & 0x7F
+      cp & 0x7F,
     ]
   } else if (cp < 0x800) {
     return [
       ((cp >> 6) & 0x1F) | 0xC0,
-      (cp & 0x3F) | 0x80
+      (cp & 0x3F) | 0x80,
     ]
   } else if (cp < 0x10000) {
     return [
       ((cp >> 12) & 0x0F) | 0xE0,
       ((cp >> 6) & 0x3F) | 0x80,
-      (cp & 0x3F) | 0x80
+      (cp & 0x3F) | 0x80,
     ]
   }
   return [
     ((cp >> 18) & 0x07) | 0xF0,
     ((cp >> 12) & 0x3F) | 0x80,
     ((cp >> 6) & 0x3F) | 0x80,
-    (cp & 0x3F) | 0x80
+    (cp & 0x3F) | 0x80,
   ]
 }
 
@@ -156,9 +156,8 @@ StrDump.prototype.fromCodepoint = function (code) {
   if (code > 0xFFFF) {
     code -= 0x10000
     return String.fromCharCode(0xD800 + (code >> 10), 0xDC00 + (code & 0x3FF))
-  } else {
-    return String.fromCharCode(code)
   }
+  return String.fromCharCode(code)
 }
 
 StrDump.prototype.encodeUTF16toUTF8 = function (str) {
@@ -326,7 +325,7 @@ StrDump.prototype.setBytes = function (bytes) {
     bytesLen: this.bytes.length,
     bytesOther: 0,
     bytesSpecial: 0, // special UTF-8
-    bytesUtf8: 0 // includes ASCII
+    bytesUtf8: 0, // includes ASCII
   }
 }
 
