@@ -2,6 +2,7 @@ import $ from 'zest' // external global
 import { Table } from './MethodTable.js'
 import { Dump } from './Dump.js'
 
+var config
 var dump
 var subRegex = new RegExp('%' +
   '(?:' +
@@ -15,7 +16,8 @@ var subRegex = new RegExp('%' +
   ')', 'g')
 var table
 
-export const init = function (config) {
+export const init = function (cfg) {
+  config = cfg
   dump = new Dump(config)
   table = new Table(dump)
 }
@@ -36,7 +38,7 @@ export var methods = {
       })
     $node.html(html)
     if (dismissible) {
-      $node.prepend('<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+      $node.prepend('<button type="button" class="close" data-dismiss="alert" aria-label="' + config.dict.get('word.close') + '">' +
         '<span aria-hidden="true">&times;</span>' +
         '</button>')
       $node.addClass('alert-dismissible')
@@ -133,7 +135,7 @@ export var methods = {
     $container.find('.debug > .fa-spinner').remove()
     if (responseCode && responseCode + '' !== '200') {
       $container.find('.card-title .response-code').remove()
-      $container.find('.card-title').append(' <span class="label label-default response-code" title="Response Code">' + responseCode + '</span>')
+      $container.find('.card-title').append(' <span class="label label-default response-code" title="' + config.dict.get('response-code') + '">' + responseCode + '</span>')
       if (responseCode.toString().match(/^5/)) {
         $container.addClass('bg-danger')
       }
@@ -287,14 +289,19 @@ export var methods = {
     var k
     var classDefinition
     if (isInit) {
+      $.extend(
+        info.meta,
+        {
+          debugVersion: meta.debugVersion,
+          requestId: meta.requestId,
+        },
+        metaVals
+      )
       info.$container.data('classDefinitions', {})
-      info.$container.data('meta', $.extend({
-        debugVersion: meta.debugVersion,
-        requestId: meta.requestId,
-      }, metaVals))
+      info.$container.find('> .debug').data('meta', info.meta)
     }
-    if (meta.channelNameRoot) {
-      info.$container.find('.debug').data('channelNameRoot', meta.channelNameRoot)
+    if (meta.channelKeyRoot) {
+      info.$container.find('> .debug').data('channelKeyRoot', meta.channelKeyRoot)
     }
     if (typeof meta.drawer === 'boolean') {
       info.$container.data('options', {
@@ -332,7 +339,7 @@ export var methods = {
   table: function (logEntry, info) {
     var onBuildRow = []
     if (logEntry.method === 'trace') {
-      onBuildRow.push(tableTraceRow)
+      // onBuildRow.push(tableTraceRow)
     }
     if (logEntry.meta.inclContext) {
       onBuildRow.push(tableAddContextRow)
@@ -347,6 +354,10 @@ export var methods = {
   },
 
   trace: function (logEntry, info) {
+    // console.warn('trace', JSON.parse(JSON.stringify(logEntry)))
+    $.extend(true, logEntry.meta.tableInfo.columns[0], {
+      attribs: { class: ['no-quotes'] },
+    })
     return this.table(logEntry, info)
   },
 
@@ -358,7 +369,7 @@ export var methods = {
     var $node
     var method = logEntry.method
     var meta = logEntry.meta
-    if (meta.file && meta.channel !== info.channelNameRoot + '.phpError') {
+    if (meta.file && meta.channel !== info.channelKeyRoot + '.phpError') {
       attribs = $.extend({
         'data-file': meta.file,
         'data-line': meta.line,
@@ -409,7 +420,7 @@ export var methods = {
           }, info).attr('data-detect-files', 'true')
         )
       )
-      $node.find('.m_trace').debugEnhance()
+      // $node.find('.m_trace').debugEnhance() // enhance later (via enhanceEntries.js)... after insertion into DOM
     } else if (meta.context) {
       // console.log('context', meta.context)
       $node.append(
@@ -579,37 +590,41 @@ function groupHeader (logEntry, requestInfo) {
   return $header
 }
 
+/*
 function markupFilePath (filePath, commonPrefix, docRoot) {
   var fileParts = parseFilePath(filePath || '', commonPrefix, docRoot)
   return (fileParts.docRoot ? '<span class="file-docroot">DOCUMENT_ROOT</span>' : '') +
-    (fileParts.relPathCommon ? '<span class="file-basepath">' + dump.dump(fileParts.relPathCommon, { tagName: null }) + '</span>' : '') +
-    (fileParts.relPath ? '<span class="file-relpath">' + dump.dump(fileParts.relPath, { tagName: null }) + '</span>' : '') +
+    (fileParts.pathCommon ? '<span class="file-path-common">' + dump.dump(fileParts.pathCommon, { tagName: null }) + '</span>' : '') +
+    (fileParts.pathRel ? '<span class="file-path-rel">' + dump.dump(fileParts.pathRel, { tagName: null }) + '</span>' : '') +
     '<span class="file-basename">' + dump.dump(fileParts.baseName, { tagName: null }) + '</span>'
 }
+*/
 
+/*
 function parseFilePath (filePath, commonPrefix, docRoot) {
   var baseName = (filePath.match(/[^/]+$/) || [''])[0]
   var containsDocRoot = filePath.indexOf(docRoot) === 0
-  var basePath = ''
-  var relPath = filePath.slice(0, 0 - baseName.length)
+  var pathCommon = ''
+  var pathRel = filePath.slice(0, 0 - baseName.length)
   var maxLen = Math.max.apply(null, [
     commonPrefix ? commonPrefix.length : 0,
     containsDocRoot ? docRoot.length : 0,
   ])
   if (maxLen) {
-    basePath = relPath.substring(0, maxLen)
-    relPath = relPath.substring(maxLen)
+    pathCommon = pathRel.substring(0, maxLen)
+    pathRel = pathRel.substring(maxLen)
     if (containsDocRoot) {
-      basePath = basePath.substring(docRoot.length)
+      pathCommon = pathCommon.substring(docRoot.length)
     }
   }
   return {
     docRoot: containsDocRoot ? docRoot : '',
-    relPathCommon: basePath,
-    relPath: relPath,
+    pathCommon: pathCommon,
+    pathRel: relPath,
     baseName: baseName,
   }
 }
+*/
 
 /**
  * @param logEntry
@@ -724,29 +739,29 @@ function tableAddContextRow ($tr, row, rowInfo, i) {
         colspan: 4,
       }).append(
         [
-          buildContext(rowInfo.context, row.line),
+          buildContext(rowInfo.context, row[1]),
           Array.isArray(rowInfo.args) && rowInfo.args.length
-            ? '<hr />Arguments = ' + dump.dump(row.args)
+            ? '<hr />Arguments = ' + dump.dump(rowInfo.args)
             : '',
         ]
       )
     ),
   ]
-}
+}``
 
+/*
 function tableTraceRow ($tr, row, rowInfo, i) {
   // var tr = $tr[0].outerHTML
   var docRoot = rowInfo.requestInfo.$container.data('meta').DOCUMENT_ROOT || ''
-  var filePath = markupFilePath(row.file, rowInfo.commonFilePrefix, docRoot)
-  var method = row.function ? dump.markupIdentifier(row.function, 'method') : ''
+  var filePath = markupFilePath(row[0], rowInfo.commonFilePrefix, docRoot)
+  var method = row[2] ? dump.markupIdentifier(row[2], 'method') : ''
 
-  /*
   tr = tr.replace(
     '<td class="t_string">' + row.file + '</td>',
     '<td class="no-quotes t_string">'
       + (fileParts.docRoot ? '<span class="file-docroot">DOCUMENT_ROOT</span>' : '')
-      + (fileParts.relPathCommon ? '<span class="file-basepath">' + fileParts.relPathCommon + '</span>' : '')
-      + (fileParts.relPath ? '<span class="file-relpath">' + fileParts.relPath + '</span>' : '')
+      + (fileParts.pathCommon ? '<span class="file-path-common">' + fileParts.pathCommon + '</span>' : '')
+      + (fileParts.pathRel ? '<span class="file-path-rel">' + fileParts.pathRel + '</span>' : '')
       + '<span class="file-basename">' + fileParts.baseName + '</span>'
       + '</td>'
   )
@@ -760,13 +775,13 @@ function tableTraceRow ($tr, row, rowInfo, i) {
     '<td class="t_string">' + row.function.escapeHtml() + '</td>',
     '<td class="no-quotes t_identifier t_string">' + dump.markupIdentifier(row.function, 'method') + '</td>'
   )
-  */
 
   $tr.find('td.t_string').eq(0).html(filePath).addClass('no-quotes')
   if (filePath.indexOf('DOCUMENT_ROOT') >= 0) {
-    $tr.attr('data-file', row.file)
+    $tr.attr('data-file', row[0])
   }
   $tr.find('td.t_string').eq(1).html(method).addClass('no-quotes t_identifier')
 
   return $tr
 }
+*/

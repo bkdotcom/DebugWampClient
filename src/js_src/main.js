@@ -30,9 +30,10 @@ $(function () {
     sidebar: true,
     useLocalStorage: false,
   })
+  var debugConfig = $root.data('config')
 
   ui.init(config)
-  logger.init($root.data('config'))
+  logger.init(debugConfig)
 
   PubSub.subscribe('wamp', function (cmd, data) {
     var logEntry = {}
@@ -61,9 +62,9 @@ $(function () {
         return
       }
       $('#debug-cards').prepend(
-        '<div id="alert" class="alert alert-warning alert-dismissible closed">' +
+        '<div id="alert" class="alert alert-warning closed">' +
           'Not connected to debug server' +
-          '<button type="button" class="btn-close" data-dismiss="alert" aria-label="Close"></button>' +
+          // '<button type="button" class="btn-close" data-dismiss="alert" aria-label="' + debugConfig.dict.get('word.close') + '"></button>' +
         '</div>'
       )
       if (!config.haveSavedConfig && !hasConnected) {

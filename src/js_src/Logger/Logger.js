@@ -6,12 +6,9 @@ export const init = function (config) {
 }
 
 export function processEntry (logEntry) {
-  // console.log(JSON.parse(JSON.stringify(logEntry)))
+  // console.log('processEntry', JSON.parse(JSON.stringify(logEntry)))
   var meta = logEntry.meta
   var info = getNodeInfo(meta)
-  var channelsTab = info.channels.filter(function (channelInfo) {
-    return channelInfo.Key === info.channelKeyTop || channelInfo.key.indexOf(info.channelKeyTop + '.') === 0
-  })
   var $node
 
   try {
@@ -39,11 +36,9 @@ export function processEntry (logEntry) {
     if (meta.icon) {
       $node.data('icon', meta.icon)
     }
-    if (
-      channelsTab.length > 0 &&
-      info.channelKey !== info.channelKeyRoot + '.phpError' &&
-      !info.$container.find('.channels input[value="' + info.channelKey + '"]').prop('checked')
-    ) {
+    // apply initial filter
+    //   don't hide expando errors
+    if (!isVisible(logEntry, info, $node)) {
       $node.addClass('filter-hidden')
     }
     if (meta.detectFiles) {
@@ -59,6 +54,30 @@ export function processEntry (logEntry) {
     console.warn('Logger.processEntry error', err)
     console.log('logEntry', logEntry)
   }
+}
+
+/**
+ * Test initial filter visibility
+ *
+ * @return bool
+ */
+function isVisible (logEntry, info, $node) {
+  var channelsTab = []
+  var isExpandoError = ['warn', 'error'].indexOf(logEntry.method) > -1 &&
+    logEntry.meta.uncollapse !== false
+  if (isExpandoError) {
+    $node.parentsUntil('.debug', function () {
+      return $(this).hasClass('m_group')
+    }).removeClass('filter-hidden')
+    return true
+  }
+  channelsTab = info.channels.filter(function (channelInfo) {
+    return channelInfo.Key === info.channelKeyTop || channelInfo.key.indexOf(info.channelKeyTop + '.') === 0
+  })
+  var isHidden = channelsTab.length > 0 &&
+    info.channelKey !== info.channelKeyRoot + '.phpError' &&
+    !info.$container.find('.channels input[value="' + info.channelKey + '"]').prop('checked')
+  return !isHidden
 }
 
 function buildLogEntryNode (logEntry, info) {
@@ -89,7 +108,7 @@ function getNodeInfo (meta) {
   var $debug
   var $node
   var $tabPane
-  var channelKeyRoot = $container.find('.debug').data('channelKeyRoot') || meta.channelKeyRoot || 'general'
+  var channelKeyRoot = $container.find('> .debug').data('channelKeyRoot') || meta.channelKeyRoot || 'general'
   var channelKey = meta.channel || channelKeyRoot
   var channelKeySplit = channelKey.split('.')
   var info = {
@@ -141,9 +160,10 @@ function getNodeInfo (meta) {
         '</div>' +
       '</div>'
     )
-    $debug = $container.find('.debug')
+    $debug = $container.find('> .debug')
     $debug.data('channels', [])
     $debug.data('channelKeyRoot', channelKeyRoot)
+    $debug.data('meta', {})
     $debug.debugEnhance('sidebar', 'add')
     $debug.debugEnhance('sidebar', 'close')
     // $debug.find('nav').data('tabPanes', $debug.find('.tab-panes'))
@@ -163,7 +183,8 @@ function getNodeInfo (meta) {
     $container: $container,
     $node: $node,
     $tabPane: $tabPane,
-    channels: $container.find('.debug').data('channels'),
+    channels: $container.find('> .debug').data('channels'),
+    meta: $container.find('> .debug').data('meta'),
   })
   addChannel(info, meta)
   return info
@@ -171,7 +192,7 @@ function getNodeInfo (meta) {
 
 function addChannel (info, meta) {
   var $container = info.$container
-  var $debug = $container.find('.debug')
+  var $debug = $container.find('> .debug')
   var $channels = $container.find('.channels')
   var channelsChecked = []
   var channelsTab

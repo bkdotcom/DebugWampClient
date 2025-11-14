@@ -12,7 +12,7 @@ export function extend (defaults, options) {
   var prop
   for (i = 0, length = arguments.length; i < length; i++) {
     for (prop in arguments[i]) {
-      if (Object.prototype.hasOwnProperty.call(arguments[i], prop)) {
+      if (Object.hasOwn(arguments[i], prop)) {
         extended[prop] = arguments[i][prop]
       }
     }

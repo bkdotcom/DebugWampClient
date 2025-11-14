@@ -26,6 +26,18 @@ class WampClient
     protected $debug;
     protected $request;
 
+    private $mimeTypes = array(
+        'bmp' => 'image/bmp',
+        'gif' => 'image/gif',
+        'ico' => 'image/vnd.microsoft.icon',
+        'jpeg' => 'image/jpeg',
+        'jpg' => 'image/jpeg',
+        'png' => 'image/png',
+        'svg' => 'image/svg+xml',
+        'tif' => 'image/tiff',
+        'tiff' => 'image/tiff',
+    );
+
     /**
      * Constructor
      *
@@ -37,11 +49,14 @@ class WampClient
         $this->debug = $debug;
         $this->request = $debug->serverRequest;
         $this->cfg = \array_merge(array(
-            'bootstrapCss' => '//cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css',
-            'bootstrapJs' => '//cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js',
+            'bootstrapCss' => '//cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/css/bootstrap.min.css',
+            'bootstrapJs' => '//cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.8/js/bootstrap.bundle.min.js',
             'filepathScript' => __DIR__ . '/js/main.min.js',
         ), $cfg);
         $this->debug->addPlugin(new Highlight());
+        $this->debug->i18n->setCfg('domainFilepath', array(
+            'wampClient' => __DIR__ . '/lang/{locale}.php',
+        ));
     }
 
     /**
@@ -77,7 +92,7 @@ class WampClient
             $token = $matches[1];
             return isset($this->cfg[$token])
                 ? $this->cfg[$token]
-                : '';
+                : $this->debug->i18n->trans($token, 'wampClient');
         }, \file_get_contents(__DIR__ . '/views/index.html'));
     }
 
@@ -123,18 +138,7 @@ class WampClient
         $extension = \strtolower(
             \pathinfo($srcSanitized, PATHINFO_EXTENSION)
         );
-        $mimes = array(
-            'bmp' => 'image/bmp',
-            'gif' => 'image/gif',
-            'ico' => 'image/vnd.microsoft.icon',
-            'jpg' => 'image/jpeg',
-            'jpeg' => 'image/jpeg',
-            'png' => 'image/png',
-            'svg' => 'image/svg+xml',
-            'tif' => 'image/tiff',
-            'tiff' => 'image/tiff',
-        );
-        \header('Content-Type: ' . $mimes[$extension]);
+        \header('Content-Type: ' . $this->mimeTypes[$extension]);
         \header('Content-Disposition: inline; filename="' . \rawurlencode(\basename($srcSanitized)) . '"');
         \header('Content-Length: ' . \filesize($srcSanitized));
         \readfile($srcSanitized);
@@ -149,6 +153,21 @@ class WampClient
     {
         \header('Content-Type: application/javascript');
         echo $this->debug->getRoute('html')->getScript();
+        echo '
+            phpDebugConsole.setCfg({
+                strings: ' . \json_encode($this->javaScriptStrings()) . ',
+            });';
         \readfile($this->cfg['filepathScript']);
+    }
+
+    private function javaScriptStrings()
+    {
+        $i18n = $this->debug->i18n;
+        return array(
+            'object.methods.magic.1' => $i18n->trans('object.methods.magic.1'),
+            'object.methods.magic.2' => $i18n->trans('object.methods.magic.2'),
+            'object.methods.return-value' => $i18n->trans('object.methods.return-value'),
+            'object.methods.static-variables' => $i18n->trans('object.methods.static-variables'),
+        );
     }
 }

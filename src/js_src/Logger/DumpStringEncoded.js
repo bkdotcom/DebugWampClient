@@ -5,7 +5,7 @@ export function DumpStringEncoded (dumpString) {
   this.dumper = dumpString.dumper
 }
 
-DumpStringEncoded.prototype.dump = function (val, abs) {
+DumpStringEncoded.prototype.dump = function (abs) {
   var dumpOpts = this.dumper.getDumpOpts()
   var tagName = dumpOpts.tagName === '__default__'
     ? 'span'

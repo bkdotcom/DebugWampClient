@@ -46,20 +46,23 @@ DumpString.prototype.dumpAbs = function (abs) {
   // console.log('DumpString.dumpAbs', JSON.parse(JSON.stringify(abs)))
   var dumpOpts = this.dumper.getDumpOpts()
   var parsed
-  var val
+  var val = ''
   if (abs.typeMore === 'classname') {
     val = this.dumper.markupIdentifier(abs.value, 'classname')
     parsed = this.dumper.parseTag(val)
-    $.extend(dumpOpts.attribs, parsed.attribs)
+    $.extend(true, dumpOpts.attribs, parsed.attribs)
     return parsed.innerhtml
   }
-  val = this.helper(abs.value)
   if (this.isEncoded(abs)) {
-    return this.dumpEncoded.dump(val, abs)
+    return this.dumpEncoded.dump(abs)
   }
   if (abs.typeMore === 'binary') {
     return this.dumpStringBinary.dump(abs)
   }
+  if (abs.typeMore === 'filepath') {
+    return this.dumpFilepath(abs)
+  }
+  val = this.helper(abs.value)
   if (abs.strlen) {
     val += '<span class="maxlen">&hellip; ' + (abs.strlen - abs.value.length) + ' more bytes (not logged)</span>'
   }
@@ -73,6 +76,33 @@ DumpString.prototype.dumpAbs = function (abs) {
     }
   }
   return val
+}
+
+DumpString.prototype.dumpFilepath = function (abs) {
+  // console.log('dumpFilepath', abs)
+  var $wrapped = $(
+    '<span>'
+    + (abs.docRoot ? '<span class="file-docroot">DOCUMENT_ROOT</span>' : '')
+    + (abs.pathCommon
+      ? this.dumper.dump(abs.pathCommon, {attribs: {class: ['file-path-common']}})
+      : '')
+    + (abs.pathRel
+      ? this.dumper.dump(abs.pathRel, {attribs: {class: ['file-path-rel']}})
+      : '')
+    + this.dumper.dump(abs.baseName, {attribs: {class: ['file-basename']}})
+    + '</span>'
+  )
+  $wrapped.find('.t_string').removeClass('t_string')
+  var file = $wrapped.html()
+  if (!abs.line) {
+    return file
+  }
+  var dumpOpts = this.dumper.getDumpOpts()
+  dumpOpts.addQuotes = false
+  var line = abs.evalLine
+    ? ' (line <span class="t_int">' + abs.line + '</span>, line eval\'d <span class="t_int">' + abs.evalLine + '</span>)'
+    : ' (line <span class="t_int">' + abs.line + '</span>)'
+  return '<span class="t_string">' + file + '</span>' + line
 }
 
 DumpString.prototype.dumpAsSubstitution = function (val) {

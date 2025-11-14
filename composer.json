@@ -1,28 +1,27 @@
 {
-	"name": "bdk/debug-wamp-client",
-	"description": "Html/Javascript WAMP based debug client used in conjunction with PHPDebugConsole on the server",
-	"keywords": ["debug", "debugging", "wamp", "wampws", "var_dump", "inspect", "errorhandler", "phpDebugConsole"],
-	"homepage": "http://github.com/bkdotcom/DebugWampClient",
-	"license": "MIT",
-	"authors": [
-		{
-			"name": "Brad Kent",
-			"email": "bkfake-github@yahoo.com",
-			"homepage": "http://www.bradkent.com/",
-			"role": "Developer"
-		}
-	],
-	"autoload": {
-		"psr-4": { "bdk\\Debug\\": "src/" }
-	},
-	"require": {
-		"bdk/debug": "^3.5"
-	},
-	"scripts": {
-		"post-create-project-cmd": "php -r \"copy('src/index.php', 'index.php');\""
-	},
-	"suggest": {
-		"bdk/wamp-publisher": "WAMP message publisher",
-		"voryx/thruway": "PHP-based WAMP router"
-	}
+  "name": "bdk/debug-wamp-client",
+  "description": "Html/Javascript WAMP based debug client used in conjunction with PHPDebugConsole on the server",
+  "keywords": ["debug", "debugging", "wamp", "wampws", "var_dump", "inspect", "errorhandler", "phpDebugConsole"],
+  "homepage": "http://github.com/bkdotcom/DebugWampClient",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Brad Kent",
+      "email": "bkfake-github@yahoo.com",
+      "homepage": "http://www.bradkent.com/",
+      "role": "Developer"
+    }
+  ],
+  "autoload": {
+    "psr-4": { "bdk\\Debug\\": "src/" }
+  },
+  "require": {
+    "bdk/debug": "^3.5"
+  },
+  "scripts": {
+    "post-create-project-cmd": "php -r \"copy('src/index.php', 'index.php');\""
+  },
+  "suggest": {
+    "bdk/wamp-publisher": "WAMP message publisher"
+  }
 }

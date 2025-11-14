@@ -143,9 +143,10 @@ DumpObject.prototype.dump = function (abs) {
   var html = ''
   var strClassName = ''
   var dumpOpts = this.dumper.getDumpOpts()
-  var $container = this.dumper.getRequestInfo().$container
+  var requestMeta = this.dumper.getRequestInfo().meta
   try {
-    abs.debugVersion = $container.data('meta').debugVersion
+    abs.debugVersion = requestMeta.debugVersion
+    // console.warn('requestMeta', requestMeta)
     if (typeof abs.cfgFlags === 'undefined') {
       abs.cfgFlags = 0x1FFFFFF & ~this.BRIEF
     }

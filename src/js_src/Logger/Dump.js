@@ -53,7 +53,7 @@ Dump.prototype.checkTimestamp = function (val, abs) {
 }
 
 Dump.prototype.dump = function (val, opts) {
-  var dumpOpts = $.extend({
+  var dumpOpts = $.extend(true, {
     addQuotes: true,
     attribs: {
       class: [],
@@ -82,10 +82,16 @@ Dump.prototype.dump = function (val, opts) {
     dumpOpts.attribs.class = dumpOpts.attribs.class.split(' ')
   }
   dumpOptStack.push(dumpOpts)
-  method = 'dump' + dumpOpts.type.ucfirst()
-  val = dumpOpts.typeMore === 'abstraction'
-    ? this.dumpAbstraction(val)
-    : this[method](val)
+  try {
+    method = 'dump' + dumpOpts.type.ucfirst()
+    val = dumpOpts.typeMore === 'abstraction'
+      ? this.dumpAbstraction(val)
+      : this[method](val)
+  } catch (err) {
+    console.error('Error dumping value:', err)
+    console.log('val:', JSON.parse(JSON.stringify(val)))
+    val = '<b>ERROR</b> dumping value'
+  }
   dumpOpts = dumpOptStack.pop()
   tagName = dumpOpts.tagName
   if (tagName === '__default__') {
@@ -96,7 +102,9 @@ Dump.prototype.dump = function (val, opts) {
     dumpOpts.tagName = tagName
   }
   if (tagName) {
-    dumpOpts.attribs.class.push('t_' + dumpOpts.type)
+    if (dumpOpts.type) {
+      dumpOpts.attribs.class.push('t_' + dumpOpts.type)
+    }
     if (dumpOpts.typeMore && dumpOpts.typeMore !== 'abstraction') {
       dumpOpts.attribs['data-type-more'] = dumpOpts.typeMore.replace(/\0/g, '')
     }
@@ -139,33 +147,28 @@ Dump.prototype.dumpAbstraction = function (abs) {
     'string',
   ]
   var value
-  dumpOpts.attribs = abs.attribs || {}
-  if (dumpOpts.attribs.class === undefined) {
-    dumpOpts.attribs.class = []
-  }
-  for (k in dumpOpts) {
-    if (abs[k] !== undefined) {
-      dumpOpts[k] = abs[k]
-    }
-  }
+
+  // copy abs values to dumpOpts
+  $.extend(true, dumpOpts, abs)
+  delete dumpOpts.value
+
   if (abs.options) {
-    $.extend(dumpOpts, abs.options)
+    $.extend(true, dumpOpts, abs.options)
   }
-  if (simpleTypes.indexOf(abs.type) > -1) {
-    value = abs.value
-    if (abs.type === 'array') {
-      // remove value so not setting as dumpOpt or passing redundantly to dumpXxxx in 2nd param
-      delete abs.value
-    }
-    for (k in abs) {
-      if (dumpOpts[k] === undefined) {
-        dumpOpts[k] = abs[k]
-      }
-    }
-    dumpOpts.typeMore = abs.typeMore // likely null
-    return this[method](value, abs)
+  if (simpleTypes.indexOf(abs.type) < 0) {
+    // not a simpleType
+    value = this[method](abs)
+    return value
   }
-  return this[method](abs)
+
+  // simple type
+  value = abs.value
+  if (['array'].indexOf(abs.type) > -1) {
+    // remove value so not setting as dumpOpt or passing redundantly to dumpXxxx in 2nd param
+    delete abs.value
+  }
+  dumpOpts.typeMore = abs.typeMore // likely null
+  return this[method](value, abs)
 }
 
 Dump.prototype.dumpArray = function (array, abs) {
@@ -217,7 +220,7 @@ Dump.prototype.dumpArray = function (array, abs) {
   for (i = 0; i < length; i++) {
     key = keys[i]
     keyShow = key
-    if (Object.prototype.hasOwnProperty.call(absKeys, key)) {
+    if (Object.hasOwn(absKeys, key)) {
       keyShow = absKeys[key]
     }
     html += this.dumpArrayValue(keyShow, array[key], showKeys)
@@ -281,7 +284,8 @@ Dump.prototype.dumpFloat = function (val, abs) {
 
 Dump.prototype.dumpIdentifier = function (abs) {
   var dumpOpts = this.getDumpOpts()
-  if (dumpOpts.attribs.title === undefined && [undefined, this.UNDEFINED].indexOf(abs.backedValue) >= 0) {
+  if (dumpOpts.attribs.title === undefined && [undefined, this.UNDEFINED].indexOf(abs.backedValue) < 0) {
+    // backedValue is not undefined
     dumpOpts.attribs.title = 'value: ' + this.dump(abs.backedValue)
   }
   return this.markupIdentifier(abs.value, abs.typeMore)

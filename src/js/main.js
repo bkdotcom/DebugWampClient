@@ -71,7 +71,7 @@
       var k = [];
       var p;
       for (p in o) {
-        if (Object.prototype.hasOwnProperty.call(o, p)) {
+        if (Object.hasOwn(o, p)) {
           k.push(p);
         }
       }
@@ -378,7 +378,12 @@
   }
 
   Table.prototype.build = function (rows, meta, onBuildRow, info) {
-    // console.warn('Table.build', JSON.parse(JSON.stringify(meta)))
+    /*
+    console.warn('Table.build', {
+      rows: rows,
+      meta: JSON.parse(JSON.stringify(meta)),
+    })
+    */
     var metaDefault = {
       attribs: {
         class: [
@@ -429,12 +434,8 @@
       row = rows[rowKey];
       rowInfo = $.extend(
         {},
-        typeof tableInfo.commonRowInfo !== 'undefined'
-          ? tableInfo.commonRowInfo
-          : {},
-        typeof tableInfo.rows[rowKey] !== 'undefined'
-          ? tableInfo.rows[rowKey]
-          : {},
+        tableInfo?.commonRowInfo || {},
+        tableInfo?.rows?.[rowKey] || {},
         {
           requestInfo: info, //  so pass to onBuildRow (we want DOCUMENT_ROOT)
         }
@@ -457,20 +458,26 @@
   };
 
   Table.prototype.buildRow = function (row, rowInfo, rowKey, tableInfo) {
-    var i;
-    var length;
+    var i = 0;
     var colInfo;
-    var key;
     var parsed = this.dump.parseTag(this.dump.dump(rowKey, {
       requestInfo: rowInfo.requestInfo,
     }));
+    var self = this;
     var td;
-    var $tr = $('<tr></tr>', rowInfo.attribs || {})
-      .append(
+    var $tr = $('<tr></tr>', rowInfo.attribs || {});
+
+    rowInfo =  $.extend({
+      keyOutput: true,
+    }, rowInfo);
+
+    if (rowInfo.keyOutput) {
+      $tr.append(
         $('<th scope="row" class="t_key text-right"></th>')
           .addClass(/^\d+$/.test(rowKey) ? 't_int' : parsed.attribs.class)
           .html(parsed.innerhtml)
       );
+    }
 
     if (tableInfo.haveObjRow) {
       $tr.append(
@@ -480,21 +487,24 @@
           : '<td class="t_undefined"></td>'
       );
     }
-    for (i = 0, length = tableInfo.columns.length; i < length; i++) {
-      colInfo = tableInfo.columns[i];
-      key = colInfo.key;
-      td = this.dump.dump(row[key], {
+
+    // console.warn('row:', row)
+    $.each(row, function (value, key) {
+      colInfo = $.extend({}, tableInfo.columns[i] || {}, rowInfo.columns?.[i] || {});
+      td = self.dump.dump(value, {
         attribs: colInfo.attribs || {},
         requestInfo: rowInfo.requestInfo,
         tagName: 'td',
       });
-      if (row[key] === true && colInfo.trueAs !== null) {
+      if (value === true && colInfo.trueAs !== null) {
         td = td.replace('>true<', '>' + colInfo.trueAs + '<');
-      } else if (row[key] === false && colInfo.falseAs !== null) {
+      } else if (value === false && colInfo.falseAs !== null) {
         td = td.replace('>false<', '>' + colInfo.falseAs + '<');
       }
       $tr.append(td);
-    }
+      i++;
+    });
+
     return $tr
   };
 
@@ -518,7 +528,7 @@
           info.total = parseFloat(info.total.toFixed(6), 10);
         }
         cells.push(this.dump.dump(info.total, {
-          attribs: info.attribs,
+          attribs: info.attribs || {},
           tagName: 'td',
         }));
         continue
@@ -4762,9 +4772,10 @@
     var html = '';
     var strClassName = '';
     var dumpOpts = this.dumper.getDumpOpts();
-    var $container = this.dumper.getRequestInfo().$container;
+    var requestMeta = this.dumper.getRequestInfo().meta;
     try {
-      abs.debugVersion = $container.data('meta').debugVersion;
+      abs.debugVersion = requestMeta.debugVersion;
+      // console.warn('requestMeta', requestMeta)
       if (typeof abs.cfgFlags === 'undefined') {
         abs.cfgFlags = 0x1FFFFFF & ~this.BRIEF;
       }
@@ -5243,7 +5254,7 @@
     this.dumper = dumpString.dumper;
   }
 
-  DumpStringEncoded.prototype.dump = function (val, abs) {
+  DumpStringEncoded.prototype.dump = function (abs) {
     var dumpOpts = this.dumper.getDumpOpts();
     var tagName = dumpOpts.tagName === '__default__'
       ? 'span'
@@ -5840,20 +5851,23 @@
     // console.log('DumpString.dumpAbs', JSON.parse(JSON.stringify(abs)))
     var dumpOpts = this.dumper.getDumpOpts();
     var parsed;
-    var val;
+    var val = '';
     if (abs.typeMore === 'classname') {
       val = this.dumper.markupIdentifier(abs.value, 'classname');
       parsed = this.dumper.parseTag(val);
-      $.extend(dumpOpts.attribs, parsed.attribs);
+      $.extend(true, dumpOpts.attribs, parsed.attribs);
       return parsed.innerhtml
     }
-    val = this.helper(abs.value);
     if (this.isEncoded(abs)) {
-      return this.dumpEncoded.dump(val, abs)
+      return this.dumpEncoded.dump(abs)
     }
     if (abs.typeMore === 'binary') {
       return this.dumpStringBinary.dump(abs)
     }
+    if (abs.typeMore === 'filepath') {
+      return this.dumpFilepath(abs)
+    }
+    val = this.helper(abs.value);
     if (abs.strlen) {
       val += '<span class="maxlen">&hellip; ' + (abs.strlen - abs.value.length) + ' more bytes (not logged)</span>';
     }
@@ -5867,6 +5881,33 @@
       };
     }
     return val
+  };
+
+  DumpString.prototype.dumpFilepath = function (abs) {
+    // console.log('dumpFilepath', abs)
+    var $wrapped = $(
+      '<span>'
+      + (abs.docRoot ? '<span class="file-docroot">DOCUMENT_ROOT</span>' : '')
+      + (abs.pathCommon
+        ? this.dumper.dump(abs.pathCommon, {attribs: {class: ['file-path-common']}})
+        : '')
+      + (abs.pathRel
+        ? this.dumper.dump(abs.pathRel, {attribs: {class: ['file-path-rel']}})
+        : '')
+      + this.dumper.dump(abs.baseName, {attribs: {class: ['file-basename']}})
+      + '</span>'
+    );
+    $wrapped.find('.t_string').removeClass('t_string');
+    var file = $wrapped.html();
+    if (!abs.line) {
+      return file
+    }
+    var dumpOpts = this.dumper.getDumpOpts();
+    dumpOpts.addQuotes = false;
+    var line = abs.evalLine
+      ? ' (line <span class="t_int">' + abs.line + '</span>, line eval\'d <span class="t_int">' + abs.evalLine + '</span>)'
+      : ' (line <span class="t_int">' + abs.line + '</span>)';
+    return '<span class="t_string">' + file + '</span>' + line
   };
 
   DumpString.prototype.dumpAsSubstitution = function (val) {
@@ -5989,7 +6030,7 @@
   };
 
   Dump.prototype.dump = function (val, opts) {
-    var dumpOpts = $.extend({
+    var dumpOpts = $.extend(true, {
       addQuotes: true,
       attribs: {
         class: [],
@@ -6018,10 +6059,16 @@
       dumpOpts.attribs.class = dumpOpts.attribs.class.split(' ');
     }
     dumpOptStack.push(dumpOpts);
-    method = 'dump' + dumpOpts.type.ucfirst();
-    val = dumpOpts.typeMore === 'abstraction'
-      ? this.dumpAbstraction(val)
-      : this[method](val);
+    try {
+      method = 'dump' + dumpOpts.type.ucfirst();
+      val = dumpOpts.typeMore === 'abstraction'
+        ? this.dumpAbstraction(val)
+        : this[method](val);
+    } catch (err) {
+      console.error('Error dumping value:', err);
+      console.log('val:', JSON.parse(JSON.stringify(val)));
+      val = '<b>ERROR</b> dumping value';
+    }
     dumpOpts = dumpOptStack.pop();
     tagName = dumpOpts.tagName;
     if (tagName === '__default__') {
@@ -6032,7 +6079,9 @@
       dumpOpts.tagName = tagName;
     }
     if (tagName) {
-      dumpOpts.attribs.class.push('t_' + dumpOpts.type);
+      if (dumpOpts.type) {
+        dumpOpts.attribs.class.push('t_' + dumpOpts.type);
+      }
       if (dumpOpts.typeMore && dumpOpts.typeMore !== 'abstraction') {
         dumpOpts.attribs['data-type-more'] = dumpOpts.typeMore.replace(/\0/g, '');
       }
@@ -6064,7 +6113,6 @@
 
   Dump.prototype.dumpAbstraction = function (abs) {
     var dumpOpts = this.getDumpOpts();
-    var k;
     var method = 'dump' + abs.type.ucfirst();
     var simpleTypes = [
       'array',
@@ -6075,33 +6123,28 @@
       'string',
     ];
     var value;
-    dumpOpts.attribs = abs.attribs || {};
-    if (dumpOpts.attribs.class === undefined) {
-      dumpOpts.attribs.class = [];
-    }
-    for (k in dumpOpts) {
-      if (abs[k] !== undefined) {
-        dumpOpts[k] = abs[k];
-      }
-    }
+
+    // copy abs values to dumpOpts
+    $.extend(true, dumpOpts, abs);
+    delete dumpOpts.value;
+
     if (abs.options) {
-      $.extend(dumpOpts, abs.options);
+      $.extend(true, dumpOpts, abs.options);
     }
-    if (simpleTypes.indexOf(abs.type) > -1) {
-      value = abs.value;
-      if (abs.type === 'array') {
-        // remove value so not setting as dumpOpt or passing redundantly to dumpXxxx in 2nd param
-        delete abs.value;
-      }
-      for (k in abs) {
-        if (dumpOpts[k] === undefined) {
-          dumpOpts[k] = abs[k];
-        }
-      }
-      dumpOpts.typeMore = abs.typeMore; // likely null
-      return this[method](value, abs)
+    if (simpleTypes.indexOf(abs.type) < 0) {
+      // not a simpleType
+      value = this[method](abs);
+      return value
     }
-    return this[method](abs)
+
+    // simple type
+    value = abs.value;
+    if (['array'].indexOf(abs.type) > -1) {
+      // remove value so not setting as dumpOpt or passing redundantly to dumpXxxx in 2nd param
+      delete abs.value;
+    }
+    dumpOpts.typeMore = abs.typeMore; // likely null
+    return this[method](value, abs)
   };
 
   Dump.prototype.dumpArray = function (array, abs) {
@@ -6153,7 +6196,7 @@
     for (i = 0; i < length; i++) {
       key = keys[i];
       keyShow = key;
-      if (Object.prototype.hasOwnProperty.call(absKeys, key)) {
+      if (Object.hasOwn(absKeys, key)) {
         keyShow = absKeys[key];
       }
       html += this.dumpArrayValue(keyShow, array[key], showKeys);
@@ -6217,7 +6260,8 @@
 
   Dump.prototype.dumpIdentifier = function (abs) {
     var dumpOpts = this.getDumpOpts();
-    if (dumpOpts.attribs.title === undefined && [undefined, this.UNDEFINED].indexOf(abs.backedValue) >= 0) {
+    if (dumpOpts.attribs.title === undefined && [undefined, this.UNDEFINED].indexOf(abs.backedValue) < 0) {
+      // backedValue is not undefined
       dumpOpts.attribs.title = 'value: ' + this.dump(abs.backedValue);
     }
     return this.markupIdentifier(abs.value, abs.typeMore)
@@ -6409,6 +6453,7 @@
     return parsed
   };
 
+  var config$1;
   var dump;
   var subRegex = new RegExp('%' +
     '(?:' +
@@ -6422,8 +6467,9 @@
     ')', 'g');
   var table;
 
-  const init$1 = function (config) {
-    dump = new Dump(config);
+  const init$1 = function (cfg) {
+    config$1 = cfg;
+    dump = new Dump(config$1);
     table = new Table(dump);
   };
 
@@ -6443,7 +6489,7 @@
         });
       $node.html(html);
       if (dismissible) {
-        $node.prepend('<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+        $node.prepend('<button type="button" class="close" data-dismiss="alert" aria-label="' + config$1.dict.get('word.close') + '">' +
           '<span aria-hidden="true">&times;</span>' +
           '</button>');
         $node.addClass('alert-dismissible');
@@ -6540,7 +6586,7 @@
       $container.find('.debug > .fa-spinner').remove();
       if (responseCode && responseCode + '' !== '200') {
         $container.find('.card-title .response-code').remove();
-        $container.find('.card-title').append(' <span class="label label-default response-code" title="Response Code">' + responseCode + '</span>');
+        $container.find('.card-title').append(' <span class="label label-default response-code" title="' + config$1.dict.get('response-code') + '">' + responseCode + '</span>');
         if (responseCode.toString().match(/^5/)) {
           $container.addClass('bg-danger');
         }
@@ -6694,14 +6740,19 @@
       var k;
       var classDefinition;
       if (isInit) {
+        $.extend(
+          info.meta,
+          {
+            debugVersion: meta.debugVersion,
+            requestId: meta.requestId,
+          },
+          metaVals
+        );
         info.$container.data('classDefinitions', {});
-        info.$container.data('meta', $.extend({
-          debugVersion: meta.debugVersion,
-          requestId: meta.requestId,
-        }, metaVals));
+        info.$container.find('> .debug').data('meta', info.meta);
       }
-      if (meta.channelNameRoot) {
-        info.$container.find('.debug').data('channelNameRoot', meta.channelNameRoot);
+      if (meta.channelKeyRoot) {
+        info.$container.find('> .debug').data('channelKeyRoot', meta.channelKeyRoot);
       }
       if (typeof meta.drawer === 'boolean') {
         info.$container.data('options', {
@@ -6738,9 +6789,7 @@
 
     table: function (logEntry, info) {
       var onBuildRow = [];
-      if (logEntry.method === 'trace') {
-        onBuildRow.push(tableTraceRow);
-      }
+      if (logEntry.method === 'trace') ;
       if (logEntry.meta.inclContext) {
         onBuildRow.push(tableAddContextRow);
       }
@@ -6754,6 +6803,10 @@
     },
 
     trace: function (logEntry, info) {
+      // console.warn('trace', JSON.parse(JSON.stringify(logEntry)))
+      $.extend(true, logEntry.meta.tableInfo.columns[0], {
+        attribs: { class: ['no-quotes'] },
+      });
       return this.table(logEntry, info)
     },
 
@@ -6765,7 +6818,7 @@
       var $node;
       var method = logEntry.method;
       var meta = logEntry.meta;
-      if (meta.file && meta.channel !== info.channelNameRoot + '.phpError') {
+      if (meta.file && meta.channel !== info.channelKeyRoot + '.phpError') {
         attribs = $.extend({
           'data-file': meta.file,
           'data-line': meta.line,
@@ -6816,7 +6869,7 @@
             }, info).attr('data-detect-files', 'true')
           )
         );
-        $node.find('.m_trace').debugEnhance();
+        // $node.find('.m_trace').debugEnhance() // enhance later (via enhanceEntries.js)... after insertion into DOM
       } else if (meta.context) {
         // console.log('context', meta.context)
         $node.append(
@@ -6986,37 +7039,41 @@
     return $header
   }
 
+  /*
   function markupFilePath (filePath, commonPrefix, docRoot) {
-    var fileParts = parseFilePath(filePath || '', commonPrefix, docRoot);
+    var fileParts = parseFilePath(filePath || '', commonPrefix, docRoot)
     return (fileParts.docRoot ? '<span class="file-docroot">DOCUMENT_ROOT</span>' : '') +
-      (fileParts.relPathCommon ? '<span class="file-basepath">' + dump.dump(fileParts.relPathCommon, { tagName: null }) + '</span>' : '') +
-      (fileParts.relPath ? '<span class="file-relpath">' + dump.dump(fileParts.relPath, { tagName: null }) + '</span>' : '') +
+      (fileParts.pathCommon ? '<span class="file-path-common">' + dump.dump(fileParts.pathCommon, { tagName: null }) + '</span>' : '') +
+      (fileParts.pathRel ? '<span class="file-path-rel">' + dump.dump(fileParts.pathRel, { tagName: null }) + '</span>' : '') +
       '<span class="file-basename">' + dump.dump(fileParts.baseName, { tagName: null }) + '</span>'
   }
+  */
 
+  /*
   function parseFilePath (filePath, commonPrefix, docRoot) {
-    var baseName = (filePath.match(/[^/]+$/) || [''])[0];
-    var containsDocRoot = filePath.indexOf(docRoot) === 0;
-    var basePath = '';
-    var relPath = filePath.slice(0, 0 - baseName.length);
+    var baseName = (filePath.match(/[^/]+$/) || [''])[0]
+    var containsDocRoot = filePath.indexOf(docRoot) === 0
+    var pathCommon = ''
+    var pathRel = filePath.slice(0, 0 - baseName.length)
     var maxLen = Math.max.apply(null, [
       commonPrefix ? commonPrefix.length : 0,
       containsDocRoot ? docRoot.length : 0,
-    ]);
+    ])
     if (maxLen) {
-      basePath = relPath.substring(0, maxLen);
-      relPath = relPath.substring(maxLen);
+      pathCommon = pathRel.substring(0, maxLen)
+      pathRel = pathRel.substring(maxLen)
       if (containsDocRoot) {
-        basePath = basePath.substring(docRoot.length);
+        pathCommon = pathCommon.substring(docRoot.length)
       }
     }
     return {
       docRoot: containsDocRoot ? docRoot : '',
-      relPathCommon: basePath,
-      relPath: relPath,
+      pathCommon: pathCommon,
+      pathRel: relPath,
       baseName: baseName,
     }
   }
+  */
 
   /**
    * @param logEntry
@@ -7131,29 +7188,28 @@
           colspan: 4,
         }).append(
           [
-            buildContext(rowInfo.context, row.line),
+            buildContext(rowInfo.context, row[1]),
             Array.isArray(rowInfo.args) && rowInfo.args.length
-              ? '<hr />Arguments = ' + dump.dump(row.args)
+              ? '<hr />Arguments = ' + dump.dump(rowInfo.args)
               : '',
           ]
         )
       ),
     ]
   }
-
+  /*
   function tableTraceRow ($tr, row, rowInfo, i) {
     // var tr = $tr[0].outerHTML
-    var docRoot = rowInfo.requestInfo.$container.data('meta').DOCUMENT_ROOT || '';
-    var filePath = markupFilePath(row.file, rowInfo.commonFilePrefix, docRoot);
-    var method = row.function ? dump.markupIdentifier(row.function, 'method') : '';
+    var docRoot = rowInfo.requestInfo.$container.data('meta').DOCUMENT_ROOT || ''
+    var filePath = markupFilePath(row[0], rowInfo.commonFilePrefix, docRoot)
+    var method = row[2] ? dump.markupIdentifier(row[2], 'method') : ''
 
-    /*
     tr = tr.replace(
       '<td class="t_string">' + row.file + '</td>',
       '<td class="no-quotes t_string">'
         + (fileParts.docRoot ? '<span class="file-docroot">DOCUMENT_ROOT</span>' : '')
-        + (fileParts.relPathCommon ? '<span class="file-basepath">' + fileParts.relPathCommon + '</span>' : '')
-        + (fileParts.relPath ? '<span class="file-relpath">' + fileParts.relPath + '</span>' : '')
+        + (fileParts.pathCommon ? '<span class="file-path-common">' + fileParts.pathCommon + '</span>' : '')
+        + (fileParts.pathRel ? '<span class="file-path-rel">' + fileParts.pathRel + '</span>' : '')
         + '<span class="file-basename">' + fileParts.baseName + '</span>'
         + '</td>'
     )
@@ -7167,28 +7223,25 @@
       '<td class="t_string">' + row.function.escapeHtml() + '</td>',
       '<td class="no-quotes t_identifier t_string">' + dump.markupIdentifier(row.function, 'method') + '</td>'
     )
-    */
 
-    $tr.find('td.t_string').eq(0).html(filePath).addClass('no-quotes');
+    $tr.find('td.t_string').eq(0).html(filePath).addClass('no-quotes')
     if (filePath.indexOf('DOCUMENT_ROOT') >= 0) {
-      $tr.attr('data-file', row.file);
+      $tr.attr('data-file', row[0])
     }
-    $tr.find('td.t_string').eq(1).html(method).addClass('no-quotes t_identifier');
+    $tr.find('td.t_string').eq(1).html(method).addClass('no-quotes t_identifier')
 
     return $tr
   }
+  */
 
   const init = function (config) {
     init$1(config);
   };
 
   function processEntry (logEntry) {
-    // console.log(JSON.parse(JSON.stringify(logEntry)))
+    // console.log('processEntry', JSON.parse(JSON.stringify(logEntry)))
     var meta = logEntry.meta;
     var info = getNodeInfo(meta);
-    var channelsTab = info.channels.filter(function (channelInfo) {
-      return channelInfo.Key === info.channelKeyTop || channelInfo.key.indexOf(info.channelKeyTop + '.') === 0
-    });
     var $node;
 
     try {
@@ -7216,11 +7269,9 @@
       if (meta.icon) {
         $node.data('icon', meta.icon);
       }
-      if (
-        channelsTab.length > 0 &&
-        info.channelKey !== info.channelKeyRoot + '.phpError' &&
-        !info.$container.find('.channels input[value="' + info.channelKey + '"]').prop('checked')
-      ) {
+      // apply initial filter
+      //   don't hide expando errors
+      if (!isVisible(logEntry, info, $node)) {
         $node.addClass('filter-hidden');
       }
       if (meta.detectFiles) {
@@ -7236,6 +7287,30 @@
       console.warn('Logger.processEntry error', err);
       console.log('logEntry', logEntry);
     }
+  }
+
+  /**
+   * Test initial filter visibility
+   *
+   * @return bool
+   */
+  function isVisible (logEntry, info, $node) {
+    var channelsTab = [];
+    var isExpandoError = ['warn', 'error'].indexOf(logEntry.method) > -1 &&
+      logEntry.meta.uncollapse !== false;
+    if (isExpandoError) {
+      $node.parentsUntil('.debug', function () {
+        return $(this).hasClass('m_group')
+      }).removeClass('filter-hidden');
+      return true
+    }
+    channelsTab = info.channels.filter(function (channelInfo) {
+      return channelInfo.Key === info.channelKeyTop || channelInfo.key.indexOf(info.channelKeyTop + '.') === 0
+    });
+    var isHidden = channelsTab.length > 0 &&
+      info.channelKey !== info.channelKeyRoot + '.phpError' &&
+      !info.$container.find('.channels input[value="' + info.channelKey + '"]').prop('checked');
+    return !isHidden
   }
 
   function buildLogEntryNode (logEntry, info) {
@@ -7266,7 +7341,7 @@
     var $debug;
     var $node;
     var $tabPane;
-    var channelKeyRoot = $container.find('.debug').data('channelKeyRoot') || meta.channelKeyRoot || 'general';
+    var channelKeyRoot = $container.find('> .debug').data('channelKeyRoot') || meta.channelKeyRoot || 'general';
     var channelKey = meta.channel || channelKeyRoot;
     var channelKeySplit = channelKey.split('.');
     var info = {
@@ -7318,9 +7393,10 @@
           '</div>' +
         '</div>'
       );
-      $debug = $container.find('.debug');
+      $debug = $container.find('> .debug');
       $debug.data('channels', []);
       $debug.data('channelKeyRoot', channelKeyRoot);
+      $debug.data('meta', {});
       $debug.debugEnhance('sidebar', 'add');
       $debug.debugEnhance('sidebar', 'close');
       // $debug.find('nav').data('tabPanes', $debug.find('.tab-panes'))
@@ -7340,7 +7416,8 @@
       $container: $container,
       $node: $node,
       $tabPane: $tabPane,
-      channels: $container.find('.debug').data('channels'),
+      channels: $container.find('> .debug').data('channels'),
+      meta: $container.find('> .debug').data('meta'),
     });
     addChannel(info, meta);
     return info
@@ -7348,7 +7425,7 @@
 
   function addChannel (info, meta) {
     var $container = info.$container;
-    var $debug = $container.find('.debug');
+    var $debug = $container.find('> .debug');
     var $channels = $container.find('.channels');
     var channelsChecked = [];
     var channelsTab;
@@ -7867,7 +7944,7 @@
     var prop;
     for (i = 0, length = arguments.length; i < length; i++) {
       for (prop in arguments[i]) {
-        if (Object.prototype.hasOwnProperty.call(arguments[i], prop)) {
+        if (Object.hasOwn(arguments[i], prop)) {
           extended[prop] = arguments[i][prop];
         }
       }
@@ -8950,9 +9027,10 @@
       sidebar: true,
       useLocalStorage: false,
     });
+    var debugConfig = $root.data('config');
 
     init$2(config);
-    init($root.data('config'));
+    init(debugConfig);
 
     PubSub.subscribe('wamp', function (cmd, data) {
       var logEntry = {};
@@ -8981,9 +9059,9 @@
           return
         }
         $('#debug-cards').prepend(
-          '<div id="alert" class="alert alert-warning alert-dismissible closed">' +
+          '<div id="alert" class="alert alert-warning closed">' +
             'Not connected to debug server' +
-            '<button type="button" class="btn-close" data-dismiss="alert" aria-label="Close"></button>' +
+            // '<button type="button" class="btn-close" data-dismiss="alert" aria-label="' + debugConfig.dict.get('word.close') + '"></button>' +
           '</div>'
         );
         if (!config.haveSavedConfig && !hasConnected) {
