@@ -34,7 +34,7 @@ Table.prototype.build = function (rows, meta, onBuildRow, info) {
     meta.caption = ''
   }
   $table = $('<table>' +
-    (meta.caption.length ? '<caption>' + meta.caption.escapeHtml() + '</caption>' : '') +
+    (meta.caption.length ? '<caption>' + this.dump.dump(meta.caption, {tagName: null}) + '</caption>' : '') +
     '<thead><tr><th>&nbsp;</th></tr></thead>' +
     '<tbody></tbody>' +
     '</table>'

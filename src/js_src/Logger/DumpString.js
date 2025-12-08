@@ -133,13 +133,16 @@ DumpString.prototype.helper = function (val) {
     ? new Uint8Array(base64.decode(val.substr(6)))
     : strDump.encodeUTF16toUTF8(val)
   var dumpOpts = this.dumper.getDumpOpts()
-  return strDump.dump(bytes, dumpOpts.sanitize)
+  val = strDump.dump(bytes, dumpOpts.sanitize)
+  if (dumpOpts.charHighlight) {
+    val = this.charHighlight.highlight(val, dumpOpts.charHighlightTrim)
+  }
   /*
   if (dumpOpts.visualWhiteSpace) {
     val = visualWhiteSpace(val)
   }
-  return val
   */
+  return val
 }
 
 DumpString.prototype.isEncoded = function (val) {

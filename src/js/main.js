@@ -405,7 +405,7 @@
       meta.caption = '';
     }
     $table = $('<table>' +
-      (meta.caption.length ? '<caption>' + meta.caption.escapeHtml() + '</caption>' : '') +
+      (meta.caption.length ? '<caption>' + this.dump.dump(meta.caption, {tagName: null}) + '</caption>' : '') +
       '<thead><tr><th>&nbsp;</th></tr></thead>' +
       '<tbody></tbody>' +
       '</table>'
@@ -473,7 +473,7 @@
 
     if (rowInfo.keyOutput) {
       $tr.append(
-        $('<th scope="row" class="t_key text-right"></th>')
+        $('<th scope="row" class="t_key"></th>')
           .addClass(/^\d+$/.test(rowKey) ? 't_int' : parsed.attribs.class)
           .html(parsed.innerhtml)
       );
@@ -2077,11 +2077,11 @@
   function require_cloneBuffer () {
   	if (hasRequired_cloneBuffer) return _cloneBuffer.exports;
   	hasRequired_cloneBuffer = 1;
-  	(function (module, exports) {
+  	(function (module, exports$1) {
   		var root = require_root();
 
   		/** Detect free variable `exports`. */
-  		var freeExports = exports && !exports.nodeType && exports;
+  		var freeExports = exports$1 && !exports$1.nodeType && exports$1;
 
   		/** Detect free variable `module`. */
   		var freeModule = freeExports && 'object' == 'object' && module && !module.nodeType && module;
@@ -2659,12 +2659,12 @@
   function requireIsBuffer () {
   	if (hasRequiredIsBuffer) return isBuffer.exports;
   	hasRequiredIsBuffer = 1;
-  	(function (module, exports) {
+  	(function (module, exports$1) {
   		var root = require_root(),
   		    stubFalse = requireStubFalse();
 
   		/** Detect free variable `exports`. */
-  		var freeExports = exports && !exports.nodeType && exports;
+  		var freeExports = exports$1 && !exports$1.nodeType && exports$1;
 
   		/** Detect free variable `module`. */
   		var freeModule = freeExports && 'object' == 'object' && module && !module.nodeType && module;
@@ -2875,11 +2875,11 @@
   function require_nodeUtil () {
   	if (hasRequired_nodeUtil) return _nodeUtil.exports;
   	hasRequired_nodeUtil = 1;
-  	(function (module, exports) {
+  	(function (module, exports$1) {
   		var freeGlobal = require_freeGlobal();
 
   		/** Detect free variable `exports`. */
-  		var freeExports = exports && !exports.nodeType && exports;
+  		var freeExports = exports$1 && !exports$1.nodeType && exports$1;
 
   		/** Detect free variable `module`. */
   		var freeModule = freeExports && 'object' == 'object' && module && !module.nodeType && module;
@@ -5938,13 +5938,16 @@
       ? new Uint8Array(base64.decode(val.substr(6)))
       : strDump.encodeUTF16toUTF8(val);
     var dumpOpts = this.dumper.getDumpOpts();
-    return strDump.dump(bytes, dumpOpts.sanitize)
+    val = strDump.dump(bytes, dumpOpts.sanitize);
+    if (dumpOpts.charHighlight) {
+      val = this.charHighlight.highlight(val, dumpOpts.charHighlightTrim);
+    }
     /*
     if (dumpOpts.visualWhiteSpace) {
       val = visualWhiteSpace(val)
     }
-    return val
     */
+    return val
   };
 
   DumpString.prototype.isEncoded = function (val) {
@@ -8201,7 +8204,7 @@
   function requireAutobahn_min () {
   	if (hasRequiredAutobahn_min) return autobahn_min.exports;
   	hasRequiredAutobahn_min = 1;
-  	(function (module, exports) {
+  	(function (module, exports$1) {
   		(function(z){module.exports=z();})(function(){return function(){function z(O,A,f){function e(b,d){if(!A[b]){if(!O[b]){var v="function"==typeof commonjsRequire&&commonjsRequire;if(!d&&v)return v(b,true);if(g)return g(b,true);d=Error("Cannot find module '"+b+"'");throw d.code="MODULE_NOT_FOUND",
   		d;}d=A[b]={exports:{}};O[b][0].call(d.exports,function(m){return e(O[b][1][m]||m)},d,d.exports,z,O,A,f);}return A[b].exports}for(var g="function"==typeof commonjsRequire&&commonjsRequire,a=0;a<f.length;a++)e(f[a]);return e}return z}()({1:[function(z,O,A){var f=z("crypto-js");A.sign=function(e,g){return f.HmacSHA256(g,e).toString(f.enc.Base64)};A.derive_key=function(e,g,a,b){return f.PBKDF2(e,g,{keySize:(b||32)/4,iterations:a||1E3,hasher:f.algo.SHA256}).toString(f.enc.Base64)};},{"crypto-js":68}],2:[function(z,O,A){function f(v,
   		m){m=a.htob(m.challenge);v=g.sign.detached(m,v.secretKey);return a.btoh(v)+a.btoh(m)}function e(v){return a.btoh(v.publicKey)}var g=z("tweetnacl"),a=z("../util.js"),b=z("../log.js"),d=z("../connection.js");A.load_private_key=function(v,m){var r=a.atob(localStorage.getItem(v));!r||m?(r=g.randomBytes(g.sign.seedLength),localStorage.setItem(v,a.btoa(r)),b.debug('new key seed "'+v+'" saved to local storage!')):b.debug('key seed "'+v+'" loaded from local storage!');return g.sign.keyPair.fromSeed(r)};A.delete_private_key=
