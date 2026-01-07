@@ -1,4 +1,4 @@
-import $ from 'jquery' // external global
+import $ from 'zest' // external global
 
 var $table
 
@@ -7,21 +7,26 @@ export function Table (dump) {
 }
 
 Table.prototype.build = function (rows, meta, onBuildRow, info) {
-  // console.warn('Table.build', JSON.parse(JSON.stringify(meta)))
+  /*
+  console.warn('Table.build', {
+    rows: rows,
+    meta: JSON.parse(JSON.stringify(meta)),
+  })
+  */
   var metaDefault = {
     attribs: {
       class: [
         'table-bordered',
         meta.sortable ? 'sortable' : null,
-        meta.inclContext ? 'trace-context' : null
-      ]
+        meta.inclContext ? 'trace-context' : null,
+      ],
     },
     caption: '',
     tableInfo: {
       columns: [],
       haveObjRow: false,
       rows: [],
-    }
+    },
   }
   meta.tableInfo = $.extend(metaDefault.tableInfo, meta.tableInfo)
   meta = $.extend(metaDefault, meta)
@@ -29,12 +34,12 @@ Table.prototype.build = function (rows, meta, onBuildRow, info) {
     meta.caption = ''
   }
   $table = $('<table>' +
-    (meta.caption.length ? '<caption>' + meta.caption.escapeHtml() + '</caption>' : '')+
+    (meta.caption.length ? '<caption>' + this.dump.dump(meta.caption, {tagName: null}) + '</caption>' : '') +
     '<thead><tr><th>&nbsp;</th></tr></thead>' +
     '<tbody></tbody>' +
     '</table>'
   )
-    .addClass(meta.attribs.class.join(' '))
+    .addClass(meta.attribs.class)
   this.buildHeader(meta.tableInfo)
   this.buildBody(rows, meta.tableInfo, onBuildRow, info)
   this.buildFooter(meta.tableInfo)
@@ -58,12 +63,8 @@ Table.prototype.buildBody = function (rows, tableInfo, onBuildRow, info) {
     row = rows[rowKey]
     rowInfo = $.extend(
       {},
-      typeof tableInfo.commonRowInfo !== 'undefined'
-        ? tableInfo.commonRowInfo
-        : {},
-      typeof tableInfo.rows[rowKey] !== 'undefined'
-        ? tableInfo.rows[rowKey]
-        : {},
+      tableInfo?.commonRowInfo || {},
+      tableInfo?.rows?.[rowKey] || {},
       {
         requestInfo: info, //  so pass to onBuildRow (we want DOCUMENT_ROOT)
       }
@@ -86,20 +87,26 @@ Table.prototype.buildBody = function (rows, tableInfo, onBuildRow, info) {
 }
 
 Table.prototype.buildRow = function (row, rowInfo, rowKey, tableInfo) {
-  var i
-  var length
+  var i = 0
   var colInfo
-  var key
   var parsed = this.dump.parseTag(this.dump.dump(rowKey, {
     requestInfo: rowInfo.requestInfo,
   }))
+  var self = this
   var td
   var $tr = $('<tr></tr>', rowInfo.attribs || {})
-    .append(
-      $('<th scope="row" class="t_key text-right"></th>')
-        .addClass(/^\d+$/.test(rowKey) ? 't_int' : parsed.attribs.class.join(' '))
+
+  rowInfo =  $.extend({
+    keyOutput: true,
+  }, rowInfo)
+
+  if (rowInfo.keyOutput) {
+    $tr.append(
+      $('<th scope="row" class="t_key"></th>')
+        .addClass(/^\d+$/.test(rowKey) ? 't_int' : parsed.attribs.class)
         .html(parsed.innerhtml)
     )
+  }
 
   if (tableInfo.haveObjRow) {
     $tr.append(
@@ -109,21 +116,24 @@ Table.prototype.buildRow = function (row, rowInfo, rowKey, tableInfo) {
         : '<td class="t_undefined"></td>'
     )
   }
-  for (i = 0, length = tableInfo.columns.length; i < length; i++) {
-    colInfo = tableInfo.columns[i]
-    key = colInfo.key
-    td = this.dump.dump(row[key], {
+
+  // console.warn('row:', row)
+  $.each(row, function (value, key) {
+    colInfo = $.extend({}, tableInfo.columns[i] || {}, rowInfo.columns?.[i] || {})
+    td = self.dump.dump(value, {
       attribs: colInfo.attribs || {},
       requestInfo: rowInfo.requestInfo,
       tagName: 'td',
     })
-    if (row[key] === true && colInfo.trueAs !== null) {
+    if (value === true && colInfo.trueAs !== null) {
       td = td.replace('>true<', '>' + colInfo.trueAs + '<')
-    } else if (row[key] === false && colInfo.falseAs !== null) {
+    } else if (value === false && colInfo.falseAs !== null) {
       td = td.replace('>false<', '>' + colInfo.falseAs + '<')
     }
     $tr.append(td)
-  }
+    i++
+  })
+
   return $tr
 }
 
@@ -147,7 +157,7 @@ Table.prototype.buildFooter = function (tableInfo) {
         info.total = parseFloat(info.total.toFixed(6), 10)
       }
       cells.push(this.dump.dump(info.total, {
-        attribs: info.attribs,
+        attribs: info.attribs || {},
         tagName: 'td',
       }))
       continue

@@ -1,4 +1,4 @@
-import $ from 'jquery' // external global
+import $ from 'zest' // external global
 import { DumpObject } from './DumpObject.js'
 import { DumpString } from './DumpString.js'
 
@@ -15,7 +15,8 @@ var dumpOptStack = [
   */
 ]
 
-export var Dump = function () {
+export var Dump = function (config) {
+  this.config = config // phpDebugConsole config... so we have access to dict/translations
   this.objectDumper = new DumpObject(this)
   this.stringDumper = new DumpString(this)
   this.ABSTRACTION = '\x00debug\x00'.parseHex()
@@ -36,37 +37,37 @@ Dump.prototype.checkTimestamp = function (val, abs) {
   dumpOpts = this.getDumpOpts()
   dumpOpts.postDump = function (dumped, opts) {
     if (opts.tagName === 'td') {
-      opts.attribs.class = 't_' + opts.type
+      opts.attribs.class.push('t_' + opts.type)
       return $('<td />', {
         class: 'timestamp value-container',
         title: date,
-        html: $('<span />', opts.attribs).html(val)
+        html: $('<span />', opts.attribs).html(val),
       })
     }
     return $('<span />', {
       class: 'timestamp value-container',
       title: date,
-      html: dumped
+      html: dumped,
     })
   }
 }
 
 Dump.prototype.dump = function (val, opts) {
-  var $wrap
-  var dumpOpts = $.extend({
+  var dumpOpts = $.extend(true, {
     addQuotes: true,
     attribs: {
-      class: []
+      class: [],
     },
     charHighlight: true,
+    charHighlightTrim: false,
     postDump: null, // set to function
     requestInfo: null,
     sanitize: true,
     tagName: '__default__',
     type: null,
     typeMore: null,
-    visualWhiteSpace: true
-  }, JSON.parse(JSON.stringify(opts || {})))
+    visualWhiteSpace: true,
+  }, opts || {})
   var tagName
   var type // = this.getType(val)
   var method // = 'dump' + type[0].ucfirst()
@@ -78,13 +79,19 @@ Dump.prototype.dump = function (val, opts) {
   if (typeof dumpOpts.attribs.class === 'undefined') {
     dumpOpts.attribs.class = []
   } else if (typeof dumpOpts.attribs.class === 'string') {
-    dumpOpts.attribs.class = [dumpOpts.attribs.class]
+    dumpOpts.attribs.class = dumpOpts.attribs.class.split(' ')
   }
   dumpOptStack.push(dumpOpts)
-  method = 'dump' + dumpOpts.type.ucfirst()
-  val = dumpOpts.typeMore === 'abstraction'
-    ? this.dumpAbstraction(val)
-    : this[method](val)
+  try {
+    method = 'dump' + dumpOpts.type.ucfirst()
+    val = dumpOpts.typeMore === 'abstraction'
+      ? this.dumpAbstraction(val)
+      : this[method](val)
+  } catch (err) {
+    console.error('Error dumping value:', err)
+    console.log('val:', JSON.parse(JSON.stringify(val)))
+    val = '<b>ERROR</b> dumping value'
+  }
   dumpOpts = dumpOptStack.pop()
   tagName = dumpOpts.tagName
   if (tagName === '__default__') {
@@ -95,19 +102,13 @@ Dump.prototype.dump = function (val, opts) {
     dumpOpts.tagName = tagName
   }
   if (tagName) {
-    dumpOpts.attribs.class.push('t_' + dumpOpts.type)
+    if (dumpOpts.type) {
+      dumpOpts.attribs.class.push('t_' + dumpOpts.type)
+    }
     if (dumpOpts.typeMore && dumpOpts.typeMore !== 'abstraction') {
       dumpOpts.attribs['data-type-more'] = dumpOpts.typeMore.replace(/\0/g, '')
     }
-    $wrap = $('<' + tagName + ' />')
-      .addClass(dumpOpts.attribs.class.join(' '))
-    delete dumpOpts.attribs.class
-    $wrap.attr(dumpOpts.attribs)
-    if (typeof dumpOpts.attribs.style !== 'undefined') {
-      // .attr() doesn't apply style when single object passed
-      $wrap.attr('style', dumpOpts.attribs.style)
-    }
-    val = $wrap.html(val)[0].outerHTML
+    val = this.createElement(tagName, dumpOpts.attribs, val)[0].outerHTML
   }
   if (dumpOpts.postDump) {
     val = dumpOpts.postDump(val, dumpOpts)
@@ -116,6 +117,21 @@ Dump.prototype.dump = function (val, opts) {
     }
   }
   return val
+}
+
+/**
+ * issues with (jQuery) $element.attr({})
+ * doesn't handle style (when passed as value in single object param)
+ * doesn't handle class array
+ * deleting class from attribs leads to other problems
+ */
+Dump.prototype.createElement = function (tagName, attribs, innerHtml) {
+  var $el = $('<' + tagName + ' />')
+    .attr(attribs)
+  if (typeof innerHtml !== 'undefined') {
+    $el.html(innerHtml)
+  }
+  return $el
 }
 
 Dump.prototype.dumpAbstraction = function (abs) {
@@ -128,36 +144,31 @@ Dump.prototype.dumpAbstraction = function (abs) {
     'float',
     'int',
     'null',
-    'string'
+    'string',
   ]
   var value
-  dumpOpts.attribs = abs.attribs || {}
-  if (dumpOpts.attribs.class === undefined) {
-    dumpOpts.attribs.class = []
-  }
-  for (k in dumpOpts) {
-    if (abs[k] !== undefined) {
-      dumpOpts[k] = abs[k]
-    }
-  }
+
+  // copy abs values to dumpOpts
+  $.extend(true, dumpOpts, abs)
+  delete dumpOpts.value
+
   if (abs.options) {
-    $.extend(dumpOpts, abs.options)
+    $.extend(true, dumpOpts, abs.options)
   }
-  if (simpleTypes.indexOf(abs.type) > -1) {
-    value = abs.value
-    if (abs.type === 'array') {
-      // remove value so not setting as dumpOpt or passing redundantly to dumpXxxx in 2nd param
-      delete abs.value
-    }
-    for (k in abs) {
-      if (dumpOpts[k] === undefined) {
-        dumpOpts[k] = abs[k]
-      }
-    }
-    dumpOpts.typeMore = abs.typeMore // likely null
-    return this[method](value, abs)
+  if (simpleTypes.indexOf(abs.type) < 0) {
+    // not a simpleType
+    value = this[method](abs)
+    return value
   }
-  return this[method](abs)
+
+  // simple type
+  value = abs.value
+  if (['array'].indexOf(abs.type) > -1) {
+    // remove value so not setting as dumpOpt or passing redundantly to dumpXxxx in 2nd param
+    delete abs.value
+  }
+  dumpOpts.typeMore = abs.typeMore // likely null
+  return this[method](value, abs)
 }
 
 Dump.prototype.dumpArray = function (array, abs) {
@@ -176,7 +187,7 @@ Dump.prototype.dumpArray = function (array, abs) {
     asFileTree: false,
     expand: null,
     isMaxDepth: false,
-    showListKeys: true
+    showListKeys: true,
   }, this.getDumpOpts())
   var isList = (function () {
     for (i = 0; i < length; i++) {
@@ -187,12 +198,6 @@ Dump.prototype.dumpArray = function (array, abs) {
     return true
   })()
   var showKeys = dumpOpts.showListKeys || !isList
-  /*
-  console.warn('dumpArray', {
-    array: JSON.parse(JSON.stringify(array)),
-    dumpOpts: JSON.parse(JSON.stringify(dumpOpts))
-  })
-  */
   if (dumpOpts.expand !== null) {
     dumpOpts.attribs['data-expand'] = dumpOpts.expand
   }
@@ -201,12 +206,12 @@ Dump.prototype.dumpArray = function (array, abs) {
   }
   if (dumpOpts.isMaxDepth) {
     return '<span class="t_keyword">array</span>' +
-        ' <span class="t_maxDepth">*MAX DEPTH*</span>'
+      ' <span class="t_maxDepth">*MAX DEPTH*</span>'
   }
   if (length === 0) {
     return '<span class="t_keyword">array</span>' +
-        '<span class="t_punct">(</span>\n' +
-        '<span class="t_punct">)</span>'
+      '<span class="t_punct">(</span>\n' +
+      '<span class="t_punct">)</span>'
   }
   delete array.__debug_key_order__
   html = '<span class="t_keyword">array</span>' +
@@ -215,7 +220,7 @@ Dump.prototype.dumpArray = function (array, abs) {
   for (i = 0; i < length; i++) {
     key = keys[i]
     keyShow = key
-    if (absKeys.hasOwnProperty(key)) {
+    if (Object.hasOwn(absKeys, key)) {
       keyShow = absKeys[key]
     }
     html += this.dumpArrayValue(keyShow, array[key], showKeys)
@@ -233,7 +238,8 @@ Dump.prototype.dumpArrayValue = function (key, val, withKey) {
   $key
     .addClass('t_key')
     .html(this.dump(key, {
-      tagName : null
+      charHighlightTrim: true,
+      tagName: null,
     }))
   if (/^\d+$/.test(key)) {
     $key.addClass('t_int')
@@ -278,7 +284,8 @@ Dump.prototype.dumpFloat = function (val, abs) {
 
 Dump.prototype.dumpIdentifier = function (abs) {
   var dumpOpts = this.getDumpOpts()
-  if (dumpOpts.attribs.title === undefined && [undefined, this.UNDEFINED].indexOf(abs.backedValue) >= 0) {
+  if (dumpOpts.attribs.title === undefined && [undefined, this.UNDEFINED].indexOf(abs.backedValue) < 0) {
+    // backedValue is not undefined
     dumpOpts.attribs.title = 'value: ' + this.dump(abs.backedValue)
   }
   return this.markupIdentifier(abs.value, abs.typeMore)
@@ -434,10 +441,10 @@ Dump.prototype.markupIdentifier = function (val, what, tag, attribs) {
       parts.className = '<span class="namespace">' + split.join('\\') + '\\</span>' +
         parts.className
     }
-    attribs.class = 'classname'
+    attribs.class = ['classname']
     parts.className = $('<' + tag + '/>', attribs).html(parts.className)[0].outerHTML
   } else if (parts.namespace) {
-    attribs.class = 'namespace'
+    attribs.class = ['namespace']
     parts.className = $('<' + tag + '/>', attribs).html(parts.namespace)[0].outerHTML
   }
   if (parts.operator) {
@@ -457,7 +464,7 @@ Dump.prototype.parseTag = function parseTag (html) {
   var parsed = {
     tag: $node[0].tagName.toLowerCase(),
     attribs: {},
-    innerhtml: $node[0].innerHTML
+    innerhtml: $node[0].innerHTML,
   }
   $.each($node[0].attributes, function () {
     if (this.specified) {

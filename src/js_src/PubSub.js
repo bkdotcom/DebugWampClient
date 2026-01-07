@@ -26,8 +26,8 @@ export default (function () {
       return {
         remove: function () {
           delete topics[topic][index]
-        }
+        },
       }
-    }
+    },
   }
 })()

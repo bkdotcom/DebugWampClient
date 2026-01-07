@@ -15,13 +15,13 @@ var onwarn = function(message) {
 var tasks = [
   {
     input: 'src/js_src/main.js',
-    external: ['jquery'],
+    external: ['zest'],
     onwarn: onwarn,
     output: {
       file: 'src/js/main.js',
       format: 'iife', // immediately invoked function expression
       globals: {
-        jquery: 'window.jQuery'
+        zest: 'window.zest'
       },
       // sourcemap: 'inline',
     },
@@ -87,13 +87,13 @@ if (process.env.NODE_ENV !== 'watch') {
   ]
   tasks.push({
     input: 'src/js_src/main.js',
-    external: ['jquery'],
+    external: ['zest'],
     onwarn: onwarn,
     output: {
       file: 'src/js/main.min.js',
       format: 'iife', // immediately invoked function expression
       globals: {
-        jquery: 'window.jQuery'
+        zest: 'window.zest'
       },
     },
     plugins: plugins,

@@ -19,11 +19,13 @@ if (!Array.isArray) {
   }
 }
 
+/*
 if (!String.prototype.trim) {
   String.prototype.trim = function () {
     return this.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '')
   }
 }
+*/
 if (!Object.keys) {
   Object.keys = function (o) {
     if (o !== Object(o)) {
@@ -32,7 +34,7 @@ if (!Object.keys) {
     var k = []
     var p
     for (p in o) {
-      if (Object.prototype.hasOwnProperty.call(o, p)) {
+      if (Object.hasOwn(o, p)) {
         k.push(p)
       }
     }

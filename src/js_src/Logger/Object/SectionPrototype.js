@@ -1,3 +1,11 @@
+import $ from 'zest' // external global
+
+function replaceTokens (str, data) {
+  return str.replace(/\{([^}]+)\}/g, (match, key) => {
+    return data[key] || match
+  })
+}
+
 export var sectionPrototype = {
   dumpItems: function (abs, what, cfg) {
     var self = this
@@ -5,9 +13,9 @@ export var sectionPrototype = {
     var classes = JSON.parse(JSON.stringify(abs.extends))
     classes.unshift(abs.className)
     cfg = $.extend({
-      groupByInheritance : abs.sort.indexOf('inheritance') === 0,
-      objClassName : abs.className,
-      phpDocOutput : abs.cfgFlags & this.valDumper.objectDumper.PHPDOC_OUTPUT,
+      groupByInheritance: abs.sort.indexOf('inheritance') === 0,
+      objClassName: abs.className,
+      phpDocOutput: abs.cfgFlags & this.valDumper.objectDumper.PHPDOC_OUTPUT,
     }, cfg)
     delete abs[what].__debug_key_order__
     if (cfg.groupByInheritance === false) {
@@ -23,8 +31,8 @@ export var sectionPrototype = {
       for (name in abs[what]) {
         info = abs[what][name]
         if (!info.declaredLast || info.declaredLast === className) {
-            items[name] = info
-            delete abs[what][name]
+          items[name] = info
+          delete abs[what][name]
         }
       }
       html += self.dumpItemsFiltered(items, cfg)
@@ -49,16 +57,16 @@ export var sectionPrototype = {
         delete info.overrides
       }
       info = $.extend({
-        declaredLast : null,
-        declaredPrev : null,
+        declaredLast: null,
+        declaredPrev: null,
       }, info)
       vis = typeof info.visibility === 'object'
         ? info.visibility
         : [info.visibility]
       info.isInherited = info.declaredLast && info.declaredLast !== cfg.objClassName
-      info.isPrivateAncestor = $.inArray('private', vis) >= 0 && info.isInherited
+      info.isPrivateAncestor = vis.indexOf('private') >= 0 && info.isInherited
       if (info.isPrivateAncestor) {
-          info.isInherited = false
+        info.isInherited = false
       }
       html += this.dumpItem(name, info, cfg)
     }
@@ -98,10 +106,14 @@ export var sectionPrototype = {
     if (methodsHave.length < 1) {
       return ''
     }
-    methods = methodsHave.join(' and ')
-    methods = methodsHave.length === 1
-      ? 'a ' + methods + ' method'
-      : methods + ' methods'
-    return '<dd class="magic info">This object has ' + methods + '</dd>'
+    var label = methodsHave.length === 1
+      ? replaceTokens(this.valDumper.config.dict.get('object.methods.magic.1'), {
+        method: methodsHave[0],
+      })
+      : replaceTokens(this.valDumper.config.dict.get('object.methods.magic.2'), {
+        method1: methodsHave[0],
+        method2: methodsHave[1],
+      })
+    return '<dd class="magic info">' + label + '</dd>'
   },
 }

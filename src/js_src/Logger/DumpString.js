@@ -1,4 +1,4 @@
-import $ from 'jquery' // external global
+import $ from 'zest' // external global
 import base64 from 'base64-arraybuffer'
 import { DumpStringBinary } from './DumpStringBinary'
 import { DumpStringEncoded } from './DumpStringEncoded'
@@ -34,7 +34,7 @@ DumpString.prototype.doDump = function (val) {
     val = val.escapeHtml()
   }
   if (opts.charHighlight) {
-    val = this.charHighlight.highlight(val)
+    val = this.charHighlight.highlight(val, opts.charHighlightTrim)
   }
   if (opts.visualWhiteSpace) {
     val = visualWhiteSpace(val)
@@ -46,20 +46,23 @@ DumpString.prototype.dumpAbs = function (abs) {
   // console.log('DumpString.dumpAbs', JSON.parse(JSON.stringify(abs)))
   var dumpOpts = this.dumper.getDumpOpts()
   var parsed
-  var val
+  var val = ''
   if (abs.typeMore === 'classname') {
     val = this.dumper.markupIdentifier(abs.value, 'classname')
     parsed = this.dumper.parseTag(val)
-    $.extend(dumpOpts.attribs, parsed.attribs)
+    $.extend(true, dumpOpts.attribs, parsed.attribs)
     return parsed.innerhtml
   }
-  val = this.helper(abs.value)
   if (this.isEncoded(abs)) {
-    return this.dumpEncoded.dump(val, abs)
+    return this.dumpEncoded.dump(abs)
   }
   if (abs.typeMore === 'binary') {
     return this.dumpStringBinary.dump(abs)
   }
+  if (abs.typeMore === 'filepath') {
+    return this.dumpFilepath(abs)
+  }
+  val = this.helper(abs.value)
   if (abs.strlen) {
     val += '<span class="maxlen">&hellip; ' + (abs.strlen - abs.value.length) + ' more bytes (not logged)</span>'
   }
@@ -68,11 +71,38 @@ DumpString.prototype.dumpAbs = function (abs) {
       return $('<span />', {
         class: 'value-container',
         'data-type': dumpOpts.type,
-        html: '<span class="prettified">(prettified)</span> '
+        html: '<span class="prettified">(prettified)</span> ',
       }).append(val)
     }
   }
   return val
+}
+
+DumpString.prototype.dumpFilepath = function (abs) {
+  // console.log('dumpFilepath', abs)
+  var $wrapped = $(
+    '<span>'
+    + (abs.docRoot ? '<span class="file-docroot">DOCUMENT_ROOT</span>' : '')
+    + (abs.pathCommon
+      ? this.dumper.dump(abs.pathCommon, {attribs: {class: ['file-path-common']}})
+      : '')
+    + (abs.pathRel
+      ? this.dumper.dump(abs.pathRel, {attribs: {class: ['file-path-rel']}})
+      : '')
+    + this.dumper.dump(abs.baseName, {attribs: {class: ['file-basename']}})
+    + '</span>'
+  )
+  $wrapped.find('.t_string').removeClass('t_string')
+  var file = $wrapped.html()
+  if (!abs.line) {
+    return file
+  }
+  var dumpOpts = this.dumper.getDumpOpts()
+  dumpOpts.addQuotes = false
+  var line = abs.evalLine
+    ? ' (line <span class="t_int">' + abs.line + '</span>, line eval\'d <span class="t_int">' + abs.evalLine + '</span>)'
+    : ' (line <span class="t_int">' + abs.line + '</span>)'
+  return '<span class="t_string">' + file + '</span>' + line
 }
 
 DumpString.prototype.dumpAsSubstitution = function (val) {
@@ -94,7 +124,7 @@ DumpString.prototype.dumpAsSubstitution = function (val) {
   }
   // we do NOT wrap in <span>...  log('<a href="%s">link</a>', $url)
   return this.dumper.dump(val, {
-    tagName: null
+    tagName: null,
   })
 }
 
@@ -103,13 +133,16 @@ DumpString.prototype.helper = function (val) {
     ? new Uint8Array(base64.decode(val.substr(6)))
     : strDump.encodeUTF16toUTF8(val)
   var dumpOpts = this.dumper.getDumpOpts()
-  return strDump.dump(bytes, dumpOpts.sanitize)
+  val = strDump.dump(bytes, dumpOpts.sanitize)
+  if (dumpOpts.charHighlight) {
+    val = this.charHighlight.highlight(val, dumpOpts.charHighlightTrim)
+  }
   /*
   if (dumpOpts.visualWhiteSpace) {
     val = visualWhiteSpace(val)
   }
-  return val
   */
+  return val
 }
 
 DumpString.prototype.isEncoded = function (val) {
@@ -130,7 +163,7 @@ function visualWhiteSpace (str) {
   var strBr = ''
   var searchReplacePairs = [
     [/\r/g, '<span class="ws_r"></span>'],
-    [/\n/g, '<span class="ws_n"></span>' + strBr + '\n']
+    [/\n/g, '<span class="ws_n"></span>' + strBr + '\n'],
   ]
   var length = searchReplacePairs.length
   str = str.replace(/(\r\n|\r|\n)/g, function (match) {

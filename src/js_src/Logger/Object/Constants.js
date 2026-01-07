@@ -1,4 +1,4 @@
-import $ from 'jquery' // external global
+import $ from 'zest' // external global
 import { sectionPrototype } from './SectionPrototype.js'
 
 export function Constants (valDumper) {
@@ -14,23 +14,20 @@ for (name in sectionPrototype) {
 Constants.prototype.addAttribs = function ($element, info, cfg) {
   var classes = {
     constant: true,
+    debug: false,
     isFinal: info.isFinal,
-    'private-ancestor': info.isPrivateAncestor
+    'private-ancestor': info.isPrivateAncestor,
   }
-  $element.addClass(info.visibility).removeClass('debug')
-  $.each(classes, function (classname, useClass) {
-    if (useClass) {
-      $element.addClass(classname)
-    }
-  })
+  $element.addClass(info.visibility)
+    .toggleClass(classes)
   sectionPrototype.addAttribs($element, info, cfg)
 }
 
 Constants.prototype.dump = function (abs) {
   var cfg = {
-    collect : abs.cfgFlags & this.valDumper.objectDumper.CONST_COLLECT,
-    attributeOutput : abs.cfgFlags & this.valDumper.objectDumper.CONST_ATTRIBUTE_OUTPUT,
-    output : abs.cfgFlags & this.valDumper.objectDumper.CONST_OUTPUT,
+    collect: abs.cfgFlags & this.valDumper.objectDumper.CONST_COLLECT,
+    attributeOutput: abs.cfgFlags & this.valDumper.objectDumper.CONST_ATTRIBUTE_OUTPUT,
+    output: abs.cfgFlags & this.valDumper.objectDumper.CONST_OUTPUT,
   }
   if (!cfg.output) {
     return ''
@@ -48,10 +45,12 @@ Constants.prototype.dump = function (abs) {
 Constants.prototype.dumpInner = function (name, info, cfg) {
   var title = info.phpDoc?.summary || info.desc || null
   return this.dumpModifiers(info) +
-    '<span class="t_identifier"' + (cfg.phpDocOutput && title
+    '<span class="t_identifier"' +
+      (cfg.phpDocOutput && title
         ? ' title="' + this.valDumper.dumpPhpDocStr(title).escapeHtml() + '"'
-        : '') + '>' +
-      this.valDumper.dump(name, {addQuotes: false}) +
+        : '') +
+      '>' +
+      this.valDumper.dump(name, { addQuotes: false }) +
     '</span> ' +
     '<span class="t_operator">=</span> ' +
     this.valDumper.dump(info.value)
@@ -66,9 +65,8 @@ Constants.prototype.dumpModifiers = function (info) {
   if (info.isFinal) {
     modifiers.push('final')
   }
-  $.each(modifiers, function (i, modifier) {
+  $.each(modifiers, function (modifier) {
     html += '<span class="t_modifier_' + modifier + '">' + modifier + '</span> '
   })
   return html
 }
-

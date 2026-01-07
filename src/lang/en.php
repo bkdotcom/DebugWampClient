@@ -1,0 +1,25 @@
+<?php
+
+return array(
+    'btn.apply' => 'Apply',
+    'btn.cancel' => 'Cancel',
+    'btn.navToggle' => 'Toggle navigation',
+    'btn.settings' => 'Settings',
+    'connecting' => 'Connecting to debug server&hellip;',
+    'console.clear' => 'Clear the console',
+    'control.fontSize.label' => 'Font Size',
+    'control.linkFiles.description' => 'Filepaths become clickable.  Open directly in your IDE / text editor.',
+    'control.linkFiles.label' => 'Create file links',
+    'control.linkFilesTemplate.label' => 'Link Template',
+    'control.realm.label' => 'Realm',
+    'control.theme.auto.label' => 'Auto',
+    'control.theme.dark.label' => 'Dark',
+    'control.theme.label' => 'Theme',
+    'control.theme.light.label' => 'Light',
+    'control.websocketUrl.label' => 'WebSocket Url',
+    'header.settings' => 'Settings',
+    'response-code' => 'Response Code',
+    'title' => 'PHPDebugConsole',
+    'word.close' => 'close',
+    'word.examples' => 'examples',
+);

@@ -1,4 +1,4 @@
-(function ($$1) {
+(function ($) {
   'use strict';
 
   var PubSub = (function () {
@@ -29,9 +29,9 @@
         return {
           remove: function () {
             delete topics[topic][index];
-          }
+          },
         }
-      }
+      },
     }
   })();
 
@@ -56,11 +56,13 @@
     };
   }
 
+  /*
   if (!String.prototype.trim) {
     String.prototype.trim = function () {
       return this.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '')
-    };
+    }
   }
+  */
   if (!Object.keys) {
     Object.keys = function (o) {
       if (o !== Object(o)) {
@@ -69,7 +71,7 @@
       var k = [];
       var p;
       for (p in o) {
-        if (Object.prototype.hasOwnProperty.call(o, p)) {
+        if (Object.hasOwn(o, p)) {
           k.push(p);
         }
       }
@@ -126,57 +128,57 @@
     cssRule.style[ruleCamel] = value;
   }
 
-  function init$1 (config) {
-    $$1('#link-files').on('change', function () {
-      var isChecked = $$1(this).prop('checked');
-      var $templateGroup = $$1('#link-files-template').closest('.form-group');
+  function init$3 (config) {
+    $('#link-files').on('change', function () {
+      var isChecked = $(this).prop('checked');
+      var $templateGroup = $('#link-files-template').closest('.form-group');
       isChecked
         ? $templateGroup.slideDown()
         : $templateGroup.slideUp();
     }).trigger('change');
 
-    $$1('#modal-settings').on('submit', function (e) {
+    $('#modal-settings').on('submit', function (e) {
       e.preventDefault();
       config.set({
-        theme: $$1('#theme').val(),
-        url: $$1('#wsUrl').val(),
-        realm: $$1('#realm').val(),
-        fontSize: $$1('#font-size').val(),
-        linkFiles: $$1('#link-files').prop('checked'),
-        linkFilesTemplate: $$1('#link-files-template').val()
+        theme: $('#theme').val(),
+        url: $('#wsUrl').val(),
+        realm: $('#realm').val(),
+        fontSize: $('#font-size').val(),
+        linkFiles: $('#link-files').prop('checked'),
+        linkFilesTemplate: $('#link-files-template').val(),
       });
-      $$1(this).modal('hide');
+      $(this).modal('hide');
     });
 
-    $$1('#modal-settings').on('hide.bs.modal', function (e) {
+    $('#modal-settings').on('hide.bs.modal', function (e) {
       updateCssProperty('wampClientCss', '#debug-cards', 'font-size', config.get('fontSize'));
     });
 
-    $$1('#modal-settings').on('show.bs.modal', function (e) {
-      $$1('#theme').val(config.get('theme')).trigger('change');
-      $$1('#wsUrl').val(config.get('url'));
-      $$1('#realm').val(config.get('realm'));
-      $$1('#font-size').val(config.get('fontSize'));
-      $$1('#link-files').prop('checked', config.get('linkFiles')).trigger('change');
-      $$1('#link-files-template').val(config.get('linkFilesTemplate'));
+    $('#modal-settings').on('show.bs.modal', function (e) {
+      $('#theme').val(config.get('theme')).trigger('change');
+      $('#wsUrl').val(config.get('url'));
+      $('#realm').val(config.get('realm'));
+      $('#font-size').val(config.get('fontSize'));
+      $('#link-files').prop('checked', config.get('linkFiles')).trigger('change');
+      $('#link-files-template').val(config.get('linkFilesTemplate'));
     });
 
-    $$1('#theme-options').on('click', 'button', function () {
-      $$1('#theme').val($$1(this).val()).trigger('change');
+    $('#theme-options').on('click', 'button', function () {
+      $('#theme').val($(this).val()).trigger('change');
     });
 
-    $$1('#theme').on('change', function (e) {
-      var val = $$1(this).val();
+    $('#theme').on('change', function (e) {
+      var val = $(this).val();
       var $icon;
-      $$1('#theme-options .dropdown-item').each(function () {
-        var isOption = $$1(this).val() === val;
-        $$1(this).toggleClass('active', isOption);
+      $('#theme-options .dropdown-item').each(function () {
+        var isOption = $(this).val() === val;
+        $(this).toggleClass('active', isOption);
         if (isOption) {
-          $icon = $$1(this).find('i').clone();
+          $icon = $(this).find('i').clone();
         }
       });
-      $$1('#theme-options').prev().find('i').remove();
-      $$1('#theme-options').prev().prepend($icon);
+      $('#theme-options').prev().find('i').remove();
+      $('#theme-options').prev().prepend($icon);
     });
   }
 
@@ -184,9 +186,9 @@
   var classExpanded = 'fa-chevron-down';
   var timeoutHandler;
   var navbarHeight; // = $('nav.navbar').outerHeight()
-  var $cardsInViewport = $$1();
+  var $cardsInViewport = $();
 
-  function init (config) {
+  function init$2 (config) {
     var io = new IntersectionObserver(
       function (entries) {
         // console.log('IntersectionObserver update', entries)
@@ -207,23 +209,23 @@
       },
       {
         // options
-        rootMargin: '-39px 0px 0px 0px'
+        rootMargin: '-39px 0px 0px 0px',
       }
     );
 
-    $$1('.navbar .clear').on('click', function () {
+    $('.navbar .clear').on('click', function () {
       console.time('clear');
-      $$1('#debug-cards > .card').not('.working').trigger('removed.debug.card');
+      $('#debug-cards > .card').not('.working').trigger('removed.debug.card');
       console.timeEnd('clear');
     });
 
-    $$1('#debug-cards').on('added.debug.card', function (e) {
+    $('#debug-cards').on('added.debug.card', function (e) {
       // console.warn('card added', e.target, e)
       io.observe(e.target);
     });
-    $$1('#debug-cards').on('removed.debug.card', function (e) {
+    $('#debug-cards').on('removed.debug.card', function (e) {
       // console.warn('card removed', e.target, e)
-      var $card = $$1(e.target);
+      var $card = $(e.target);
       io.unobserve(e.target);
       $cardsInViewport = $cardsInViewport.not(e.target);
       if ($card.hasClass('working')) {
@@ -232,7 +234,7 @@
       $card.remove();
     });
 
-    $$1('body').on('mouseup', function (e) {
+    $('body').on('mouseup', function (e) {
       if (timeoutHandler) {
         e.preventDefault();
         clearInterval(timeoutHandler);
@@ -241,24 +243,24 @@
     });
 
     // test for long-press of main clear button
-    $$1('.clear').on('mousedown', function (e) {
+    $('.clear').on('mousedown', function (e) {
       timeoutHandler = setTimeout(function () {
         // has been long pressed (3 seconds)
         // clear all (incl working)
-        $$1('#debug-cards > .card').trigger('removed.debug.card');
+        $('#debug-cards > .card').trigger('removed.debug.card');
       }, 2000);
     });
 
-    $$1('body').on('shown.bs.collapse hidden.bs.collapse', '.card-body', function (e) {
-      var $cardBody = $$1(this);
+    $('body').on('shown.bs.collapse hidden.bs.collapse', '.card-body', function (e) {
+      var $cardBody = $(this);
       var $card = $cardBody.closest('.card');
       var $cardHeader = $card.find('> .card-header');
       var $icon = $card.find('.card-header .' + classCollapsed + ', .card-header .' + classExpanded);
       $icon.toggleClass(classExpanded + ' ' + classCollapsed);
       $card.toggleClass('expanded');
-      if (e.type === 'shown') {
-        $cardHeader.css('top', navbarHeight + 'px');
-        $cardBody.find('> .debug-menu-bar').css('top', (
+      if (e.type === 'shown.bs.collapse') {
+        $cardHeader.style('top', navbarHeight + 'px');
+        $cardBody.find('> .debug-menu-bar').style('top', (
           navbarHeight +
           $cardHeader.outerHeight()
         ) + 'px');
@@ -268,68 +270,56 @@
     });
 
     // close btn on card-header clicked
-    $$1('body').on('click', '.btn-remove-session', function (e) {
-      $$1(this).closest('.card').trigger('removed.debug.card');
+    $('body').on('click', '.btn-remove-session', function () {
+      $(this).closest('.card').trigger('removed.debug.card');
     });
 
-    $$1(window).on('scroll', debounce(function () {
-      // console.group('scroll')
-      $cardsInViewport.filter('.expanded').each(function () {
-        positionSidebar($$1(this));
-      });
-      // console.groupEnd()
+    $(window).on('scroll', debounce(function () {
+      $cardsInViewport.filter('.expanded').each(positionSidebar);
     }, 50));
 
-    $$1('body').on('open.debug.sidebar', function (e) {
+    $('body').on('open.debug.sidebar', function (e) {
       // console.warn('open.debug.sidebar')
-      var $sidebar = $$1(e.target);
+      var $sidebar = $(e.target);
       var $card = $sidebar.closest('.card');
       var sidebarContentHeight = $sidebar.find('.sidebar-content').height();
       // var minHeight = Math.max(sidebarContentHeight + 8, 200)
-      $card.find('.card-body > .tab-panes > .tab-pane').css({
-        minHeight: sidebarContentHeight + 'px'
+      $card.find('.card-body > .tab-panes > .tab-pane').style({
+        minHeight: sidebarContentHeight + 'px',
       });
       positionSidebar($card);
-      $$1('body').on('click', onBodyClick);
+      $('body').on('click', onBodyClick);
     });
 
-    $$1('body').on('close.debug.sidebar', function (e) {
+    $('body').on('close.debug.sidebar', function (e) {
       // remove minHeight
-      var $card = $$1(e.target).closest('.card');
+      var $card = $(e.target).closest('.card');
       positionSidebar($card);
       // $card.find('.card-body .tab-pane').attr('style', '')
-      $$1('body').off('click', onBodyClick);
+      $('body').off('click', onBodyClick);
     });
 
-    $$1('body').on('click', '.card-header[data-toggle=collapse]', function () {
-      var $target = $$1($$1(this).data('target'));
-      navbarHeight = $$1('nav.navbar').outerHeight();
-      $target.collapse('toggle');
+    $('body').on('click', '.card-header[data-toggle=collapse]', function () {
+      var $target = $($(this).data('target'));
+      navbarHeight = $('nav.navbar').outerHeight();
+      new bootstrap.Collapse($target[0]); // formerly $target.collapse('toggle')  with jQuery
     });
 
-    /*
-    $('body').on('click', '.sidebar-tab', function (e){
-      var $card = $(e.target).closest('.card')
-      var sidebarIsOpen = $card.find('.debug-sidebar.show').length > 0
-      $card.debugEnhance('sidebar', sidebarIsOpen ? 'close' : 'open')
-    })
-    */
-
-    $$1('body').on('mouseenter', '.sidebar-trigger', function () {
-      $$1(this).closest('.card').debugEnhance('sidebar', 'open');
+    $('body').on('mouseenter', '.sidebar-trigger', function () {
+      $(this).closest('.card').debugEnhance('sidebar', 'open');
     });
 
-    $$1('body').on('mouseleave', '.debug-sidebar', function () {
-      $$1(this).closest('.card').debugEnhance('sidebar', 'close');
+    $('body').on('mouseleave', '.debug-sidebar', function () {
+      $(this).closest('.card').debugEnhance('sidebar', 'close');
     });
 
     updateCssProperty('wampClientCss', '.debug', 'font-size', 'inherit');
     updateCssProperty('wampClientCss', '#debug-cards', 'font-size', config.get('fontSize'));
 
-    init$1(config);
+    init$3(config);
 
     // note:  navbar may not yet be at final height
-    navbarHeight = $$1('nav.navbar').outerHeight();
+    navbarHeight = $('nav.navbar').outerHeight();
   }
 
   function debounce (fn, ms) {
@@ -344,15 +334,16 @@
   }
 
   function onBodyClick (e) {
-    if ($$1(e.target).closest('.debug-sidebar').length === 0) {
-      $$1('.debug-sidebar.show').closest('.card').debugEnhance('sidebar', 'close');
+    if ($(e.target).closest('.debug-sidebar').length === 0) {
+      $('.debug-sidebar.show').closest('.card').debugEnhance('sidebar', 'close');
     }
   }
 
   function positionSidebar ($card) {
+    $card = $($card);
     var $cardBody = $card.find('.card-body');
     var $sidebar = $card.find('.debug-sidebar');
-    // var scrollTop = $(window).scrollTop()
+
     var cardOffset = $card[0].getBoundingClientRect().top;
     var isSticky = cardOffset <= navbarHeight;
     // for height calculations, we will consider menubar as part of header vs body
@@ -360,22 +351,21 @@
     var bodyHeight = $cardBody.outerHeight() - menubarHeight;
     var bodyOffset = $cardBody[0].getBoundingClientRect().top + menubarHeight;
     var headerHeight = bodyOffset - cardOffset + menubarHeight;
-    // var headerHeight = $card.find('> .card-header').outerHeight() + menubarHeight
     var heightVis = bodyOffset + bodyHeight - headerHeight;
     var heightHidden = bodyHeight - heightVis;
     var contentHeight = $sidebar.find('.sidebar-content').height();
     // var sidebarTopFixed = navbarHeight + headerHeight
-    var sidebarTop = heightHidden + (parseInt($$1('body').css('paddingTop')) - navbarHeight);
+    var sidebarTop = heightHidden + (parseInt($('body').style('paddingTop')) - navbarHeight);
 
     $sidebar.attr('style', '');
     if (isSticky) {
-      if (contentHeight > heightVis && $sidebar.hasClass('show')) {
+      if ((contentHeight > heightVis) && $sidebar.hasClass('show')) {
         sidebarTop -= contentHeight - heightVis + 8;
       }
-      $sidebar.css({
+      $sidebar.style({
         // position: 'fixed', // sticky would be nice, but still visible when docked off to the left
         // top: topSidebarFixed + 'px', // position: fixed
-        top: sidebarTop + 'px' // position absolute
+        top: sidebarTop + 'px', // position absolute
         // height: heightVis + 'px'
       });
     }
@@ -388,34 +378,39 @@
   }
 
   Table.prototype.build = function (rows, meta, onBuildRow, info) {
-    // console.warn('Table.build', JSON.parse(JSON.stringify(meta)))
+    /*
+    console.warn('Table.build', {
+      rows: rows,
+      meta: JSON.parse(JSON.stringify(meta)),
+    })
+    */
     var metaDefault = {
       attribs: {
         class: [
           'table-bordered',
           meta.sortable ? 'sortable' : null,
-          meta.inclContext ? 'trace-context' : null
-        ]
+          meta.inclContext ? 'trace-context' : null,
+        ],
       },
       caption: '',
       tableInfo: {
         columns: [],
         haveObjRow: false,
         rows: [],
-      }
+      },
     };
-    meta.tableInfo = $$1.extend(metaDefault.tableInfo, meta.tableInfo);
-    meta = $$1.extend(metaDefault, meta);
+    meta.tableInfo = $.extend(metaDefault.tableInfo, meta.tableInfo);
+    meta = $.extend(metaDefault, meta);
     if (meta.caption === null) {
       meta.caption = '';
     }
-    $table = $$1('<table>' +
-      (meta.caption.length ? '<caption>' + meta.caption.escapeHtml() + '</caption>' : '')+
+    $table = $('<table>' +
+      (meta.caption.length ? '<caption>' + this.dump.dump(meta.caption, {tagName: null}) + '</caption>' : '') +
       '<thead><tr><th>&nbsp;</th></tr></thead>' +
       '<tbody></tbody>' +
       '</table>'
     )
-      .addClass(meta.attribs.class.join(' '));
+      .addClass(meta.attribs.class);
     this.buildHeader(meta.tableInfo);
     this.buildBody(rows, meta.tableInfo, onBuildRow, info);
     this.buildFooter(meta.tableInfo);
@@ -437,14 +432,10 @@
     for (i = 0, length = rowKeys.length; i < length; i++) {
       rowKey = rowKeys[i];
       row = rows[rowKey];
-      rowInfo = $$1.extend(
+      rowInfo = $.extend(
         {},
-        typeof tableInfo.commonRowInfo !== 'undefined'
-          ? tableInfo.commonRowInfo
-          : {},
-        typeof tableInfo.rows[rowKey] !== 'undefined'
-          ? tableInfo.rows[rowKey]
-          : {},
+        tableInfo?.commonRowInfo || {},
+        tableInfo?.rows?.[rowKey] || {},
         {
           requestInfo: info, //  so pass to onBuildRow (we want DOCUMENT_ROOT)
         }
@@ -467,44 +458,53 @@
   };
 
   Table.prototype.buildRow = function (row, rowInfo, rowKey, tableInfo) {
-    var i;
-    var length;
+    var i = 0;
     var colInfo;
-    var key;
     var parsed = this.dump.parseTag(this.dump.dump(rowKey, {
       requestInfo: rowInfo.requestInfo,
     }));
+    var self = this;
     var td;
-    var $tr = $$1('<tr></tr>', rowInfo.attribs || {})
-      .append(
-        $$1('<th scope="row" class="t_key text-right"></th>')
-          .addClass(/^\d+$/.test(rowKey) ? 't_int' : parsed.attribs.class.join(' '))
+    var $tr = $('<tr></tr>', rowInfo.attribs || {});
+
+    rowInfo =  $.extend({
+      keyOutput: true,
+    }, rowInfo);
+
+    if (rowInfo.keyOutput) {
+      $tr.append(
+        $('<th scope="row" class="t_key"></th>')
+          .addClass(/^\d+$/.test(rowKey) ? 't_int' : parsed.attribs.class)
           .html(parsed.innerhtml)
       );
+    }
 
     if (tableInfo.haveObjRow) {
       $tr.append(
         rowInfo.class
-          ? $$1(this.dump.markupIdentifier(rowInfo.class, 'classname', 'td'))
+          ? $(this.dump.markupIdentifier(rowInfo.class, 'classname', 'td'))
             .attr('title', rowInfo.summary)
           : '<td class="t_undefined"></td>'
       );
     }
-    for (i = 0, length = tableInfo.columns.length; i < length; i++) {
-      colInfo = tableInfo.columns[i];
-      key = colInfo.key;
-      td = this.dump.dump(row[key], {
+
+    // console.warn('row:', row)
+    $.each(row, function (value, key) {
+      colInfo = $.extend({}, tableInfo.columns[i] || {}, rowInfo.columns?.[i] || {});
+      td = self.dump.dump(value, {
         attribs: colInfo.attribs || {},
         requestInfo: rowInfo.requestInfo,
         tagName: 'td',
       });
-      if (row[key] === true && colInfo.trueAs !== null) {
+      if (value === true && colInfo.trueAs !== null) {
         td = td.replace('>true<', '>' + colInfo.trueAs + '<');
-      } else if (row[key] === false && colInfo.falseAs !== null) {
+      } else if (value === false && colInfo.falseAs !== null) {
         td = td.replace('>false<', '>' + colInfo.falseAs + '<');
       }
       $tr.append(td);
-    }
+      i++;
+    });
+
     return $tr
   };
 
@@ -528,7 +528,7 @@
           info.total = parseFloat(info.total.toFixed(6), 10);
         }
         cells.push(this.dump.dump(info.total, {
-          attribs: info.attribs,
+          attribs: info.attribs || {},
           tagName: 'td',
         }));
         continue
@@ -562,7 +562,7 @@
         label += ' ' + this.dump.markupIdentifier(info.class, 'classname');
       }
       $theadTr.append(
-        $$1('<th scope="col"></th>').html(label)
+        $('<th scope="col"></th>').html(label)
       );
     }
   };
@@ -2077,11 +2077,11 @@
   function require_cloneBuffer () {
   	if (hasRequired_cloneBuffer) return _cloneBuffer.exports;
   	hasRequired_cloneBuffer = 1;
-  	(function (module, exports) {
+  	(function (module, exports$1) {
   		var root = require_root();
 
   		/** Detect free variable `exports`. */
-  		var freeExports = exports && !exports.nodeType && exports;
+  		var freeExports = exports$1 && !exports$1.nodeType && exports$1;
 
   		/** Detect free variable `module`. */
   		var freeModule = freeExports && 'object' == 'object' && module && !module.nodeType && module;
@@ -2659,12 +2659,12 @@
   function requireIsBuffer () {
   	if (hasRequiredIsBuffer) return isBuffer.exports;
   	hasRequiredIsBuffer = 1;
-  	(function (module, exports) {
+  	(function (module, exports$1) {
   		var root = require_root(),
   		    stubFalse = requireStubFalse();
 
   		/** Detect free variable `exports`. */
-  		var freeExports = exports && !exports.nodeType && exports;
+  		var freeExports = exports$1 && !exports$1.nodeType && exports$1;
 
   		/** Detect free variable `module`. */
   		var freeModule = freeExports && 'object' == 'object' && module && !module.nodeType && module;
@@ -2875,11 +2875,11 @@
   function require_nodeUtil () {
   	if (hasRequired_nodeUtil) return _nodeUtil.exports;
   	hasRequired_nodeUtil = 1;
-  	(function (module, exports) {
+  	(function (module, exports$1) {
   		var freeGlobal = require_freeGlobal();
 
   		/** Detect free variable `exports`. */
-  		var freeExports = exports && !exports.nodeType && exports;
+  		var freeExports = exports$1 && !exports$1.nodeType && exports$1;
 
   		/** Detect free variable `module`. */
   		var freeModule = freeExports && 'object' == 'object' && module && !module.nodeType && module;
@@ -3900,6 +3900,12 @@
   var mergeWithExports = requireMergeWith();
   var mergeWith = /*@__PURE__*/getDefaultExportFromCjs(mergeWithExports);
 
+  function replaceTokens (str, data) {
+    return str.replace(/\{([^}]+)\}/g, (match, key) => {
+      return data[key] || match
+    })
+  }
+
   var sectionPrototype = {
     dumpItems: function (abs, what, cfg) {
       var self = this;
@@ -3907,9 +3913,9 @@
       var classes = JSON.parse(JSON.stringify(abs.extends));
       classes.unshift(abs.className);
       cfg = $.extend({
-        groupByInheritance : abs.sort.indexOf('inheritance') === 0,
-        objClassName : abs.className,
-        phpDocOutput : abs.cfgFlags & this.valDumper.objectDumper.PHPDOC_OUTPUT,
+        groupByInheritance: abs.sort.indexOf('inheritance') === 0,
+        objClassName: abs.className,
+        phpDocOutput: abs.cfgFlags & this.valDumper.objectDumper.PHPDOC_OUTPUT,
       }, cfg);
       delete abs[what].__debug_key_order__;
       if (cfg.groupByInheritance === false) {
@@ -3925,8 +3931,8 @@
         for (name in abs[what]) {
           info = abs[what][name];
           if (!info.declaredLast || info.declaredLast === className) {
-              items[name] = info;
-              delete abs[what][name];
+            items[name] = info;
+            delete abs[what][name];
           }
         }
         html += self.dumpItemsFiltered(items, cfg);
@@ -3951,16 +3957,16 @@
           delete info.overrides;
         }
         info = $.extend({
-          declaredLast : null,
-          declaredPrev : null,
+          declaredLast: null,
+          declaredPrev: null,
         }, info);
         vis = typeof info.visibility === 'object'
           ? info.visibility
           : [info.visibility];
         info.isInherited = info.declaredLast && info.declaredLast !== cfg.objClassName;
-        info.isPrivateAncestor = $.inArray('private', vis) >= 0 && info.isInherited;
+        info.isPrivateAncestor = vis.indexOf('private') >= 0 && info.isInherited;
         if (info.isPrivateAncestor) {
-            info.isInherited = false;
+          info.isInherited = false;
         }
         html += this.dumpItem(name, info, cfg);
       }
@@ -4000,11 +4006,15 @@
       if (methodsHave.length < 1) {
         return ''
       }
-      methods = methodsHave.join(' and ');
-      methods = methodsHave.length === 1
-        ? 'a ' + methods + ' method'
-        : methods + ' methods';
-      return '<dd class="magic info">This object has ' + methods + '</dd>'
+      var label = methodsHave.length === 1
+        ? replaceTokens(this.valDumper.config.dict.get('object.methods.magic.1'), {
+          method: methodsHave[0],
+        })
+        : replaceTokens(this.valDumper.config.dict.get('object.methods.magic.2'), {
+          method1: methodsHave[0],
+          method2: methodsHave[1],
+        });
+      return '<dd class="magic info">' + label + '</dd>'
     },
   };
 
@@ -4025,11 +4035,11 @@
 
   Cases.prototype.dump = function (abs) {
     var cfg = {
-      attributeOutput : abs.cfgFlags & this.valDumper.objectDumper.CASE_ATTRIBUTE_OUTPUT,
-      collect : abs.cfgFlags & this.valDumper.objectDumper.CASE_COLLECT,
-      groupByInheritance : false,
-      output : abs.cfgFlags & this.valDumper.objectDumper.CASE_OUTPUT,
-      phpDocOutput : abs.cfgFlags & this.valDumper.objectDumper.PHPDOC_OUTPUT,
+      attributeOutput: abs.cfgFlags & this.valDumper.objectDumper.CASE_ATTRIBUTE_OUTPUT,
+      collect: abs.cfgFlags & this.valDumper.objectDumper.CASE_COLLECT,
+      groupByInheritance: false,
+      output: abs.cfgFlags & this.valDumper.objectDumper.CASE_OUTPUT,
+      phpDocOutput: abs.cfgFlags & this.valDumper.objectDumper.PHPDOC_OUTPUT,
     };
     if (abs.implementsList.indexOf('UnitEnum') < 0) {
       return ''
@@ -4051,7 +4061,7 @@
     var title = cfg.phpDocOutput
       ? info.phpDoc.summary || info.desc || null
       : null;
-    var $element = $$1('<div></div>')
+    var $element = $('<div></div>')
       .html('<span class="t_identifier">' + name + '</span>' +
         (info.value !== this.valDumper.UNDEFINED
           ? ' <span class="t_operator">=</span> ' +
@@ -4079,23 +4089,20 @@
   Constants.prototype.addAttribs = function ($element, info, cfg) {
     var classes = {
       constant: true,
+      debug: false,
       isFinal: info.isFinal,
-      'private-ancestor': info.isPrivateAncestor
+      'private-ancestor': info.isPrivateAncestor,
     };
-    $element.addClass(info.visibility).removeClass('debug');
-    $$1.each(classes, function (classname, useClass) {
-      if (useClass) {
-        $element.addClass(classname);
-      }
-    });
+    $element.addClass(info.visibility)
+      .toggleClass(classes);
     sectionPrototype.addAttribs($element, info, cfg);
   };
 
   Constants.prototype.dump = function (abs) {
     var cfg = {
-      collect : abs.cfgFlags & this.valDumper.objectDumper.CONST_COLLECT,
-      attributeOutput : abs.cfgFlags & this.valDumper.objectDumper.CONST_ATTRIBUTE_OUTPUT,
-      output : abs.cfgFlags & this.valDumper.objectDumper.CONST_OUTPUT,
+      collect: abs.cfgFlags & this.valDumper.objectDumper.CONST_COLLECT,
+      attributeOutput: abs.cfgFlags & this.valDumper.objectDumper.CONST_ATTRIBUTE_OUTPUT,
+      output: abs.cfgFlags & this.valDumper.objectDumper.CONST_OUTPUT,
     };
     if (!cfg.output) {
       return ''
@@ -4113,10 +4120,12 @@
   Constants.prototype.dumpInner = function (name, info, cfg) {
     var title = info.phpDoc?.summary || info.desc || null;
     return this.dumpModifiers(info) +
-      '<span class="t_identifier"' + (cfg.phpDocOutput && title
+      '<span class="t_identifier"' +
+        (cfg.phpDocOutput && title
           ? ' title="' + this.valDumper.dumpPhpDocStr(title).escapeHtml() + '"'
-          : '') + '>' +
-        this.valDumper.dump(name, {addQuotes: false}) +
+          : '') +
+        '>' +
+        this.valDumper.dump(name, { addQuotes: false }) +
       '</span> ' +
       '<span class="t_operator">=</span> ' +
       this.valDumper.dump(info.value)
@@ -4131,7 +4140,7 @@
     if (info.isFinal) {
       modifiers.push('final');
     }
-    $$1.each(modifiers, function (i, modifier) {
+    $.each(modifiers, function (modifier) {
       html += '<span class="t_modifier_' + modifier + '">' + modifier + '</span> ';
     });
     return html
@@ -4149,18 +4158,15 @@
 
   Methods.prototype.addAttribs = function ($element, info, cfg) {
     var classes = {
+      debug: false,
       method: true,
       isDeprecated: info.isDeprecated,
       isFinal: info.isFinal,
-      isStatic: info.isStatic
+      isStatic: info.isStatic,
     };
     var self = this;
-    $element.addClass(info.visibility).removeClass('debug');
-    $$1.each(classes, function (className, useClass) {
-      if (useClass) {
-        $element.addClass(className);
-      }
-    });
+    $element.addClass(info.visibility)
+      .toggleClass(classes);
     sectionPrototype.addAttribs($element, info, cfg);
     if (info.implements && info.implements.length) {
       $element.attr('data-implements', info.implements);
@@ -4180,13 +4186,13 @@
 
   Methods.prototype.dump = function (abs) {
     var cfg = {
-      attributeOutput : abs.cfgFlags & this.valDumper.objectDumper.METHOD_ATTRIBUTE_OUTPUT,
-      collect : abs.cfgFlags & this.valDumper.objectDumper.METHOD_COLLECT,
-      methodDescOutput : abs.cfgFlags & this.valDumper.objectDumper.METHOD_DESC_OUTPUT,
-      output : abs.cfgFlags & this.valDumper.objectDumper.METHOD_OUTPUT,
-      paramAttributeOutput : abs.cfgFlags & this.valDumper.objectDumper.PARAM_ATTRIBUTE_OUTPUT,
-      phpDocOutput : abs.cfgFlags & this.valDumper.objectDumper.PHPDOC_OUTPUT,
-      staticVarOutput : abs.cfgFlags & this.valDumper.objectDumper.METHOD_STATIC_VAR_OUTPUT,
+      attributeOutput: abs.cfgFlags & this.valDumper.objectDumper.METHOD_ATTRIBUTE_OUTPUT,
+      collect: abs.cfgFlags & this.valDumper.objectDumper.METHOD_COLLECT,
+      methodDescOutput: abs.cfgFlags & this.valDumper.objectDumper.METHOD_DESC_OUTPUT,
+      output: abs.cfgFlags & this.valDumper.objectDumper.METHOD_OUTPUT,
+      paramAttributeOutput: abs.cfgFlags & this.valDumper.objectDumper.PARAM_ATTRIBUTE_OUTPUT,
+      phpDocOutput: abs.cfgFlags & this.valDumper.objectDumper.PHPDOC_OUTPUT,
+      staticVarOutput: abs.cfgFlags & this.valDumper.objectDumper.METHOD_STATIC_VAR_OUTPUT,
     };
     var html = '';
     if (!cfg.output) {
@@ -4208,12 +4214,12 @@
       this.dumpReturn(info, cfg) +
       this.dumpStaticVars(info, cfg) +
       (name === '__toString'
-        ? '<h3>return value</h3>' +
+        ? '<h3>' + this.valDumper.config.dict.get('object.methods.return-value') + '</h3>' +
             '<ul class="list-unstyled"><li>' +
             this.valDumper.dump(info.returnValue, {
               attribs: {
-                class : 'return-value'
-              }
+                class: 'return-value',
+              },
             }) +
             '</li></ul>'
         : ''
@@ -4231,19 +4237,7 @@
       [vis.join(' ')]: true,
       static: info.isStatic,
     };
-    /*
-    if (info.isAbstract) {
-      modifiers.push('abstract')
-    }
-    if (info.isFinal) {
-      modifiers.push('final')
-    }
-    modifiers.push(vis.join('  '))
-    if (info.isStatic) {
-      modifiers.push('static')
-    }
-    */
-    $$1.each(modifiers, function (modifier, isSet) {
+    $.each(modifiers, function (isSet, modifier) {
       if (isSet) {
         html += '<span class="t_modifier_' + modifier + '">' + modifier + '</span> ';
       }
@@ -4261,7 +4255,7 @@
         ? info.phpDoc?.desc || ''
         : '',
     ];
-    var title = titleParts.join("\n\n").trim();
+    var title = titleParts.join('\n\n').trim();
     return ' <span class="t_identifier"' +
       (cfg.phpDocOutput && title !== ''
         ? ' title="' + this.valDumper.dumpPhpDocStr(title).escapeHtml() + '"'
@@ -4273,13 +4267,13 @@
   Methods.prototype.dumpParams = function (info, cfg) {
     var self = this;
     var params = [];
-    $$1.each(info.params, function (i, info) {
-      var $param = $$1('<span />', {
-        class: 'parameter'
+    $.each(info.params, function (info) {
+      var $param = $('<span />', {
+        class: 'parameter',
       });
-      info = $$1.extend({
+      info = $.extend({
         desc: null,
-        defaultValue: self.valDumper.UNDEFINED
+        defaultValue: self.valDumper.UNDEFINED,
       }, info);
       if (info.isPromoted) {
         $param.addClass('isPromoted');
@@ -4323,7 +4317,7 @@
       defaultValue = defaultValue.replace('\n', ' ');
     }
     $param.append(' <span class="t_operator">=</span> ' +
-      $$1(this.valDumper.dump(defaultValue))
+      $(this.valDumper.dump(defaultValue))
         .addClass('t_parameter-default')[0].outerHTML
     );
   };
@@ -4337,7 +4331,7 @@
       this.valDumper.objectDumper.markupType(returnType, {
         title: cfg.phpDocOutput && info.return.desc !== null
           ? info.return.desc
-          : ''
+          : '',
       })
   };
 
@@ -4345,17 +4339,17 @@
     var self = this;
     var html = '';
     if (!cfg.staticVarOutput || typeof info.staticVars === 'undefined' || info.staticVars.length < 1) {
-        return ''
+      return ''
     }
-    html = '<h3>static variables</h3>';
+    html = '<h3>' + this.valDumper.config.dict.get('object.methods.static-variables') + '</h3>';
     html += '<ul class="list-unstyled">';
-    $$1.each(info.staticVars, function (name, value) {
+    $.each(info.staticVars, function (value, name) {
       html += '<li>' +
         self.valDumper.dump(name, {
-          addQuotes : false,
-          attribs : {
-            class : 't_identifier'
-          }
+          addQuotes: false,
+          attribs: {
+            class: 't_identifier',
+          },
         }) +
         '<span class="t_operator">=</span> ' + self.valDumper.dump(value) +
         '</li>';
@@ -4369,7 +4363,7 @@
       ? 'methods'
       : 'no methods';
     if (!(abs.cfgFlags & this.valDumper.objectDumper.METHOD_COLLECT)) {
-        label = 'methods <i>not collected</i>';
+      label = 'methods <i>not collected</i>';
     }
     return label
   };
@@ -4462,7 +4456,7 @@
     var v1parts = v1.split('.');
     var v2parts = v2.split('.');
 
-    function isValidPart(x) {
+    function isValidPart (x) {
       return (/^\d+$/).test(x)
     }
 
@@ -4497,7 +4491,7 @@
       }
     }
 
-    if (v1parts.length != v2parts.length) {
+    if (v1parts.length !== v2parts.length) {
       return -1
     }
 
@@ -4514,11 +4508,11 @@
     Properties.prototype[name] = sectionPrototype[name];
   }
 
-  Properties.prototype.dump = function (abs) {
-    var cfg = {
-      attributeOutput : abs.cfgFlags & this.valDumper.objectDumper.PROP_ATTRIBUTE_OUTPUT,
-      isDynamicSupport : versionCompare(abs.debugVersion, '3.1') >= 0
-    };
+  Properties.prototype.dump = function (abs, cfg) {
+    cfg = $.extend({}, cfg, {
+      attributeOutput: abs.cfgFlags & this.valDumper.objectDumper.PROP_ATTRIBUTE_OUTPUT,
+      isDynamicSupport: versionCompare(abs.debugVersion, '3.1') >= 0,
+    });
     if (abs.isInterface) {
       return ''
     }
@@ -4554,54 +4548,45 @@
       isWriteOnly: info.isVirtual && info.hooks.indexOf('get') > -1,
       'private-ancestor': info.isPrivateAncestor,
       property: true,
-      setHook: info.hooks.indexOf('set') > -1
+      setHook: info.hooks.indexOf('set') > -1,
     };
     var visibility = typeof info.visibility === 'object'
       ? info.visibility.join(' ')
       : info.visibility;
-    $element.addClass(visibility).removeClass('debug');
-    $$1.each(classes, function (className, useClass) {
-      if (useClass) {
-        $element.addClass(className);
-      }
-    });
+    $element.addClass(visibility).removeClass('debug')
+      .toggleClass(classes);
     sectionPrototype.addAttribs($element, info, cfg);
   };
 
   Properties.prototype.dumpInner = function (name, info, cfg) {
-    var title = info.phpDoc?.summary || info.desc || null;
-    name = name.replace('debug.', '');
-    return this.dumpModifiers(info) +
+    return this.dumpModifiers(info, cfg) +
       (info.type
         ? this.valDumper.objectDumper.markupType(info.type)
         : ''
       ) +
-      ' ' + this.valDumper.dump(name, {
-        addQuotes: /[\s\r\n]/.test(name) || name === '',
-        attribs: {
-          class: 't_identifier',
-          title: cfg.phpDocOutput && title
-            ? this.valDumper.dumpPhpDocStr(title).escapeHtml()
-            : null
-        }
-      }) +
+      ' ' +
+      this.dumpName(name, info, cfg) +
       (info.value !== this.valDumper.UNDEFINED
-        ? ' <span class="t_operator">=</span> ' +
+        ? ' <span class="t_operator">' + (cfg.asArray ? '=&gt;' : '=') + '</span> ' +
           this.valDumper.dump(info.value)
         : ''
       )
   };
 
-  Properties.prototype.dumpModifiers = function (info) {
+  Properties.prototype.dumpModifiers = function (info, cfg) {
     var html = '';
     var vis = typeof info.visibility === 'object'
       ? info.visibility
       : [info.visibility];
     var modifiers = {};
-    info = $$1.extend({
-      isEager: null
+    if (cfg.asArray) {
+      // don't dump modifiers in array mode
+      return html
+    }
+    info = $.extend({
+      isEager: null,
     }, info);
-    modifiers = $$1.extend(
+    modifiers = $.extend(
       {
         eager: info.isEager,
         final: info.isFinal,
@@ -4615,7 +4600,7 @@
         static: info.isStatic,
       }
     );
-    $$1.each(modifiers, function (modifier, incl) {
+    $.each(modifiers, function (incl, modifier) {
       var cssClass = 't_modifier_' + modifier;
       if (!incl) {
         return
@@ -4624,6 +4609,31 @@
       html += '<span class="' + cssClass + '">' + modifier + '</span> ';
     });
     return html
+  };
+
+  Properties.prototype.dumpName = function (name, info, cfg) {
+    name = /^\d+$/.test(name)
+      ? parseInt(name, 10)
+      : name.replace('debug.', '');
+
+    var classes = {
+      'no-quotes': /[\s\r\n]/.test(name) === false && name !== '' && !cfg.asArray,
+      t_identifier: !cfg.asArray,
+      t_int: typeof name === 'number',
+      t_key: cfg.asArray,
+      t_string: typeof name === 'string' && !cfg.asArray,
+    };
+    var title = info.phpDoc?.summary || info.desc || null;
+
+    return $('<span></span>', {
+      class: classes,
+      title: cfg.phpDocOutput && title
+        ? this.valDumper.dumpPhpDocStr(title).escapeHtml()
+        : null,
+    }).html(this.valDumper.dump(name, {
+      charHighlightTrim: true,
+      tagName: null,
+    }))[0].outerHTML
   };
 
   function DumpObject (dump) {
@@ -4635,14 +4645,14 @@
     this.phpDoc = new PhpDoc(this.dumper);
 
     this.sectionDumpers = {
-      attributes : this.dumpAttributes.bind(this),
-      cases : this.cases.dump.bind(this.cases),
-      constants : this.constants.dump.bind(this.constants),
-      extends : this.dumpExtends.bind(this),
-      implements : this.dumpImplements.bind(this),
-      methods : this.methods.dump.bind(this.methods),
-      phpDoc : this.phpDoc.dump.bind(this.phpDoc),
-      properties : this.properties.dump.bind(this.properties),
+      attributes: this.dumpAttributes.bind(this),
+      cases: this.cases.dump.bind(this.cases),
+      constants: this.constants.dump.bind(this.constants),
+      extends: this.dumpExtends.bind(this),
+      implements: this.dumpImplements.bind(this),
+      methods: this.methods.dump.bind(this.methods),
+      phpDoc: this.phpDoc.dump.bind(this.phpDoc),
+      properties: this.properties.dump.bind(this.properties),
     };
 
     // GENERAL
@@ -4672,18 +4682,17 @@
     this.PARAM_ATTRIBUTE_OUTPUT = 2097152;
 
     this.phpDocTypes = [
-      'array','bool','callable','float','int','iterable','null','object','string',
-      '$this','self','static',
-      'array-key','double','false','mixed','non-empty-array','resource','scalar','true','void',
+      'array', 'bool', 'callable', 'float', 'int', 'iterable', 'null', 'object', 'string',
+      '$this', 'self', 'static',
+      'array-key', 'double', 'false', 'mixed', 'non-empty-array', 'resource', 'scalar', 'true', 'void',
       'key-of', 'value-of',
       'callable-string', 'class-string', 'literal-string', 'numeric-string', 'non-empty-string',
       'negative-int', 'positive-int',
       'int-mask', 'int-mask-of',
     ];
-
   }
 
-  function sort(obj, sortBy) {
+  function sort (obj, sortBy) {
     var count;
     var i;
     var name;
@@ -4695,7 +4704,7 @@
       if (name === '__construct') {
         sortInfo.push({
           name: name,
-          nameSort: "\x00",
+          nameSort: '\x00',
           visibility: 0,
         });
         continue
@@ -4735,54 +4744,78 @@
     return objNew
   }
 
+  function backwardCompat (abs) {
+    if (typeof abs.sort === 'undefined') {
+      abs.sort = 'vis name';
+    } else if (abs.sort === 'visibility' && versionCompare(abs.debugVersion, '3.2') === -1) {
+      abs.sort = 'vis name';
+    }
+    if (typeof abs.implementsList === 'undefined') {
+      // PhpDebugConsole < 3.1
+      abs.implementsList = abs.implements;
+    }
+    if (typeof abs.sectionOrder === 'undefined') {
+      // PhpDebugConsole < 3.2
+      abs.sectionOrder = ['attributes', 'extends', 'implements', 'constants', 'cases', 'properties', 'methods', 'phpDoc'];
+    }
+    return abs
+  }
+
+  DumpObject.prototype.isAsArray = function (abs) {
+    return abs.className === 'stdClass'
+      && (abs.cfgFlags & this.METHOD_OUTPUT) === 0
+      && (abs.cfgFlags & this.OBJ_ATTRIBUTE_OUTPUT) === 0
+  };
+
   DumpObject.prototype.dump = function (abs) {
     // console.info('dumpObject', abs)
     var html = '';
     var strClassName = '';
     var dumpOpts = this.dumper.getDumpOpts();
+    var requestMeta = this.dumper.getRequestInfo().meta;
     try {
-      abs.debugVersion = this.dumper.getRequestInfo().$container.data('meta').debugVersion;
+      abs.debugVersion = requestMeta.debugVersion;
+      // console.warn('requestMeta', requestMeta)
       if (typeof abs.cfgFlags === 'undefined') {
         abs.cfgFlags = 0x1FFFFFF & ~this.BRIEF;
       }
       abs = this.mergeInherited(abs);
-      if (typeof abs.sort === 'undefined') {
-        abs.sort = 'vis name';
-      } else if (abs.sort === 'visibility' && versionCompare(abs.debugVersion, '3.2') === -1) {
-        abs.sort = 'vis name';
-      }
-      if (typeof abs.implementsList === 'undefined') {
-        // PhpDebugConsole < 3.1
-        abs.implementsList = abs.implements;
-      }
+      abs = backwardCompat(abs);
       strClassName = this.dumpClassName(abs);
-      if (abs.isRecursion) {
-        return strClassName +
-          ' <span class="t_recursion">*RECURSION*</span>'
-      }
-      if (abs.isMaxDepth) {
-        return strClassName +
-          ' <span class="t_maxDepth">*MAX DEPTH*</span>'
-      }
-      if (abs.isExcluded) {
-        return strClassName +
-          ' <span class="excluded">(not inspected)</span>'
-      }
-      if (abs.cfgFlags & this.BRIEF && abs.implementsList.indexOf('UnitEnum') > -1) {
-        return strClassName
+      html = this.dumpSpecialCases(abs, strClassName);
+      if (html) {
+        return html
       }
       if (abs.sort.indexOf('inheritance') === 0) {
         dumpOpts.attribs.class.push('groupByInheritance');
       }
       html = this.dumpToString(abs) +
         strClassName +
-        '<dl class="object-inner">' +
-          this.dumpInner(abs) +
-        '</dl>';
+        this.dumpInner(abs);
     } catch (e) {
       console.warn('e', e);
     }
     return html
+  };
+
+  DumpObject.prototype.dumpSpecialCases = function (abs, className) {
+    if (abs.isRecursion) {
+      return className + ' <span class="t_recursion">*RECURSION*</span>'
+    }
+    if (abs.isMaxDepth) {
+      return className + ' <span class="t_maxDepth">*MAX DEPTH*</span>'
+    }
+    if (abs.isExcluded) {
+      return className + ' <span class="excluded">(not inspected)</span>'
+    }
+    if (abs.cfgFlags & this.BRIEF && abs.implementsList.indexOf('UnitEnum') > -1) {
+      return className
+    }
+    // console.log('abs.properties.length', abs.className, JSON.parse(JSON.stringify(abs)))
+    if (Object.keys(abs.properties).length === 0 && this.isAsArray(abs)) {
+      return className + '<span class="t_punct">()</span>'
+    }
+    return ''
   };
 
   DumpObject.prototype.dumpAttributes = function (abs) {
@@ -4795,12 +4828,12 @@
     if ((abs.cfgFlags & this.OBJ_ATTRIBUTE_OUTPUT) !== this.OBJ_ATTRIBUTE_OUTPUT) {
       return ''
     }
-    $$1.each(abs.attributes, function (key, attribute) {
+    $.each(abs.attributes, function (attribute) {
       args = [];
       html += '<dd class="attribute">';
       html += self.dumper.markupIdentifier(attribute.name);
       if (Object.keys(attribute.arguments).length) {
-        $$1.each(attribute.arguments, function (name, val) {
+        $.each(attribute.arguments, function (val, name) {
           args.push(
             (name.match(/^\d+$/) === null
               ? '<span class="t_parameter-name">' + self.dumper.dumpPhpDocStr(name) + '</span><span class="t_punct">:</span>'
@@ -4828,11 +4861,11 @@
       : '';
     if (phpDocOut) {
       phpDoc = ((phpDoc.summary || '') + '\n\n' + (phpDoc.desc || '')).trim();
-      title = title + "\n\n" + this.dumper.dumpPhpDocStr(phpDoc);
+      title = title + '\n\n' + this.dumper.dumpPhpDocStr(phpDoc);
     }
     return this.dumper.dump({
       attribs: {
-        title: title.trim(),
+        title: title.trim() || null,
       },
       debug: this.dumper.ABSTRACTION,
       type: 'identifier',
@@ -4867,14 +4900,19 @@
 
   DumpObject.prototype.dumpInner = function (abs) {
     var self = this;
-    var html = this.dumpModifiers(abs);
-    if (typeof abs.sectionOrder === 'undefined') {
-      // PhpDebugConsole < 3.2
-      abs.sectionOrder = ['attributes', 'extends', 'implements', 'constants', 'cases', 'properties', 'methods', 'phpDoc'];
-    }
+    var cfg = {
+      asArray: this.isAsArray(abs),
+    };
+    var html = '<dl class="object-inner">' +
+      this.dumpModifiers(abs);
     abs.sectionOrder.forEach(function (sectionName) {
-      html += self.sectionDumpers[sectionName](abs);
+      html += self.sectionDumpers[sectionName](abs, cfg);
     });
+    html += '</dl>';
+    if (this.isAsArray(abs)) {
+      this.dumper.getDumpOpts().attribs.class.push('prop-only');
+      return '<span class="t_punct">(</span>' + html + '<span class="t_punct">)</span>'
+    }
     return html
   };
 
@@ -4889,7 +4927,7 @@
     };
     var haveModifier = false;
     var html = '<dt class="modifiers">modifiers</dt>';
-    $$1.each(modifiers, function (modifier, isSet) {
+    $.each(modifiers, function (isSet, modifier) {
       if (isSet) {
         haveModifier = true;
         html += '<dd class="t_modifier_' + modifier + '">' + modifier + '</dd>';
@@ -4925,7 +4963,7 @@
       val = val.substring(0, 100);
       valAppend = '&hellip; <i>(' + (len - 100) + ' more bytes)</i>';
     }
-    $toStringDump = $$1(this.dumper.dump(val));
+    $toStringDump = $(this.dumper.dump(val));
     title = (!abs.stringified ? '__toString() : ' : '') + $toStringDump.prop('title');
     if (title === '__toString() : ') {
       title = '__toString()';
@@ -4944,23 +4982,23 @@
     var $span;
     var k;
     for (k in implementsObj) {
-        iface = typeof implementsObj[k] === 'string'
-          ? implementsObj[k]
-          : k;
-        $span = $$1('<span />', {
-          class: 'interface t_identifier',
-          html: this.dumper.markupIdentifier(iface, 'classname')
-        });
-        if (interfacesCollapse.indexOf(iface) > -1) {
-          $span.addClass('toggle-off');
-        }
-        html += '<li>' +
-          $span[0].outerHTML +
-          (typeof implementsObj[k] === 'object'
-             ? this.buildImplementsTree(implementsObj[k], interfacesCollapse)
-             : ''
-          ) +
-          '</li>';
+      iface = typeof implementsObj[k] === 'string'
+        ? implementsObj[k]
+        : k;
+      $span = $('<span />', {
+        class: 'interface t_identifier',
+        html: this.dumper.markupIdentifier(iface, 'classname'),
+      });
+      if (interfacesCollapse.indexOf(iface) > -1) {
+        $span.addClass('toggle-off');
+      }
+      html += '<li>' +
+        $span[0].outerHTML +
+        (typeof implementsObj[k] === 'object'
+          ? this.buildImplementsTree(implementsObj[k], interfacesCollapse)
+          : ''
+        ) +
+        '</li>';
     }
     html += '</ul>';
     return html
@@ -4982,7 +5020,7 @@
       })
     );
     if (Object.keys(attribs).length > 0) {
-      type = $$1('<span></span>').attr(attribs).html(type)[0].outerHTML;
+      type = $('<span></span>').attr(attribs).html(type)[0].outerHTML;
     }
     return type
   };
@@ -5132,7 +5170,7 @@
   var base64ArraybufferExports = requireBase64Arraybuffer();
   var base64 = /*@__PURE__*/getDefaultExportFromCjs(base64ArraybufferExports);
 
-  function chunkSplit(str, length, separator) {
+  function chunkSplit (str, length, separator) {
     return str.match(new RegExp('.{1,' + length + '}', 'g')).map(function (chunk) {
       return chunk + separator
     }).join('')
@@ -5150,13 +5188,13 @@
     var str = this.dumpBasic(abs);
     var strLenDiff = abs.strlen - abs.strlenValue;
     if (abs.strlenValue && strLenDiff) {
-        str += '<span class="maxlen">&hellip; ' + strLenDiff + ' more bytes (not logged)</span>';
+      str += '<span class="maxlen">&hellip; ' + strLenDiff + ' more bytes (not logged)</span>';
     }
     if (abs.brief) {
-        return this.dumpBrief(str, abs)
+      return this.dumpBrief(str, abs)
     }
     if (abs.percentBinary > 33 || abs.contentType) {
-        dumpOpts.postDump = this.dumpPost(abs, tagName);
+      dumpOpts.postDump = this.dumpPost(abs, tagName);
     }
     return str
   };
@@ -5168,21 +5206,21 @@
     }
     return typeof abs.chunks !== 'undefined'
       ? abs.chunks.map(function (chunk) {
-          return chunk[0] === 'utf8'
-            ? self.dumpString.dump(chunk[1])
-            : '<span class="binary">\\x' + chunk[1].replace(' ', ' \\x') + '</span>'
-        }).join('')
-      : '<span class="binary">'
-          + chunkSplit(abs.value, 3 * 32, '<br />').slice(0, -6)
-          + '</span>'
+        return chunk[0] === 'utf8'
+          ? self.dumpString.dump(chunk[1])
+          : '<span class="binary">\\x' + chunk[1].replace(' ', ' \\x') + '</span>'
+      }).join('')
+      : '<span class="binary">' +
+        chunkSplit(abs.value, 3 * 32, '<br />').slice(0, -6) +
+        '</span>'
   };
 
   DumpStringBinary.prototype.dumpBrief = function (str, abs) {
-      // @todo display bytes
-      return abs.contentType
-        ? '<span class="t_keyword">string</span>' +
-            '<span class="text-muted">(' + abs.contentType + ')</span><span class="t_punct colon">:</span> '
-        : str
+    // @todo display bytes
+    return abs.contentType
+      ? '<span class="t_keyword">string</span>' +
+          '<span class="text-muted">(' + abs.contentType + ')</span><span class="t_punct colon">:</span> '
+      : str
   };
 
   DumpStringBinary.prototype.dumpPost = function (abs, tagName) {
@@ -5216,7 +5254,7 @@
     this.dumper = dumpString.dumper;
   }
 
-  DumpStringEncoded.prototype.dump = function (val, abs) {
+  DumpStringEncoded.prototype.dump = function (abs) {
     var dumpOpts = this.dumper.getDumpOpts();
     var tagName = dumpOpts.tagName === '__default__'
       ? 'span'
@@ -5230,9 +5268,9 @@
     tabs = this.buildTabsAndPanes(abs);
     dumpOpts.tagName = null;
 
-    return $$1('<' + tagName + '>', {
+    return $('<' + tagName + '>', {
       class: 'string-encoded tabs-container',
-      'data-type-more': abs.typeMore
+      'data-type-more': abs.typeMore,
     }).html('\n' +
       '<nav role="tablist">' +
           tabs.tabs.join('') +
@@ -5244,7 +5282,7 @@
   DumpStringEncoded.prototype.buildTabsAndPanes = function (abs) {
     var tabs = {
       tabs: [],
-      panes: []
+      panes: [],
     };
     var index = 1;
     var vals;
@@ -5265,7 +5303,7 @@
     var attribs = JSON.parse(JSON.stringify(dumpOpts.attribs));
     attribs.class.push('no-quotes');
     attribs.class.push('t_' + abs.type);
-    attribs.class = attribs.class.join(' ');
+    // attribs.class = attribs.class.join(' ')
     if (abs.typeMore === 'base64' && abs.brief) {
       dumpOpts.postDump = function (val) {
         return '<span class="t_keyword">string</span><span class="text-muted">(base64)</span><span class="t_punct colon">:</span> ' + val
@@ -5274,9 +5312,9 @@
     return tabValuesFinish({
       labelDecoded: 'decoded',
       labelRaw: 'raw',
-      valRaw: $$1('<span />', attribs).html(
+      valRaw: $('<span />', attribs).html(
         dumper.dump(abs.value, { tagName: null })
-      )[0].outerHTML
+      )[0].outerHTML,
     }, abs, dumper)
   }
 
@@ -5354,25 +5392,25 @@
   StrDump.prototype.cpToUtf8Bytes = function (cp) {
     if (cp < 0x80) {
       return [
-        cp & 0x7F
+        cp & 0x7F,
       ]
     } else if (cp < 0x800) {
       return [
         ((cp >> 6) & 0x1F) | 0xC0,
-        (cp & 0x3F) | 0x80
+        (cp & 0x3F) | 0x80,
       ]
     } else if (cp < 0x10000) {
       return [
         ((cp >> 12) & 0x0F) | 0xE0,
         ((cp >> 6) & 0x3F) | 0x80,
-        (cp & 0x3F) | 0x80
+        (cp & 0x3F) | 0x80,
       ]
     }
     return [
       ((cp >> 18) & 0x07) | 0xF0,
       ((cp >> 12) & 0x3F) | 0x80,
       ((cp >> 6) & 0x3F) | 0x80,
-      (cp & 0x3F) | 0x80
+      (cp & 0x3F) | 0x80,
     ]
   };
 
@@ -5465,9 +5503,8 @@
     if (code > 0xFFFF) {
       code -= 0x10000;
       return String.fromCharCode(0xD800 + (code >> 10), 0xDC00 + (code & 0x3FF))
-    } else {
-      return String.fromCharCode(code)
     }
+    return String.fromCharCode(code)
   };
 
   StrDump.prototype.encodeUTF16toUTF8 = function (str) {
@@ -5635,7 +5672,7 @@
       bytesLen: this.bytes.length,
       bytesOther: 0,
       bytesSpecial: 0, // special UTF-8
-      bytesUtf8: 0 // includes ASCII
+      bytesUtf8: 0, // includes ASCII
     };
   };
 
@@ -5706,9 +5743,9 @@
     var self = this;
     this.dumpString = dumpString;
     fetch('./?action=charData')
-      .then(function(response) {
+      .then(function (response) {
         return response.json()
-      }).then(function(charData) {
+      }).then(function (charData) {
         self.charData = charData;
         self.charRegex = self.buildCharRegex();
       });
@@ -5724,40 +5761,47 @@
     })
   };
 
-  CharHighlight.prototype.highlight = function (str) {
+  CharHighlight.prototype.highlight = function (str, highlightTrim) {
     var self = this;
     if (typeof str !== 'string') {
       return str
     }
-    return str.replace(this.charRegex, function (char) {
-      var info = $$1.extend({
+    str = str.replace(this.charRegex, function (char) {
+      var info = $.extend({
         char: char,
         class: 'unicode',
         codePoint: char.codePointAt(0).toString(16),
         desc: '',
         replaceWith: char,
       }, self.charData[char]);
-      return $$1('<span></span>', {
+      return $('<span></span>', {
         class: info.class,
         'data-abbr': info.abbr
           ? info.abbr
           : null,
         'data-code-point': info.codePoint,
         title: [
-            char.codePointAt(0) < 0x80
-              ? '\\x' + info.codePoint.padStart(2, '0')
-              : 'U-' + info.codePoint,
-            info.desc,
+          char.codePointAt(0) < 0x80
+            ? '\\x' + info.codePoint.padStart(2, '0')
+            : 'U-' + info.codePoint,
+          info.desc,
         ].filter(function (val) {
           return val.length > 0
         }).join(': '),
-        html: info.replaceWith
+        html: info.replaceWith,
       })[0].outerHTML
-    })
+    });
+    if (highlightTrim) {
+      str = str.replace(/(^\s+|\s+$)/g, function (match) {
+        var substr = match.replace(' ', '<span class="ws_s"> </span>');
+        return '<span class="char-ws" title="whitespace">' + substr + '</span>'
+      });
+    }
+    return str
   };
 
   CharHighlight.prototype.buildCharRegex = function () {
-    var charList = '[' +  Object.keys(this.charData).join('') + ']';
+    var charList = '[' + Object.keys(this.charData).join('') + ']';
     var charControl = '[^\\P{C}\\r\\n\\t]';   // \p{C} includes \r, \n, & \t
     var charSeparator = '[^\\P{Z} ]';         // \p{Z} includes space (but not \r, \n, & \t)
     var regExTemp = new RegExp('(' + charControl + '|' + charSeparator + ')', 'ug');
@@ -5777,7 +5821,7 @@
 
   DumpString.prototype.dump = function (val, abs) {
     var dumpOpts = this.dumper.getDumpOpts();
-    if ($$1.isNumeric(val)) {
+    if ($.isNumeric(val)) {
       this.dumper.checkTimestamp(val, abs);
     }
     val = abs
@@ -5795,7 +5839,7 @@
       val = val.escapeHtml();
     }
     if (opts.charHighlight) {
-      val = this.charHighlight.highlight(val);
+      val = this.charHighlight.highlight(val, opts.charHighlightTrim);
     }
     if (opts.visualWhiteSpace) {
       val = visualWhiteSpace(val);
@@ -5807,33 +5851,63 @@
     // console.log('DumpString.dumpAbs', JSON.parse(JSON.stringify(abs)))
     var dumpOpts = this.dumper.getDumpOpts();
     var parsed;
-    var val;
+    var val = '';
     if (abs.typeMore === 'classname') {
       val = this.dumper.markupIdentifier(abs.value, 'classname');
       parsed = this.dumper.parseTag(val);
-      $$1.extend(dumpOpts.attribs, parsed.attribs);
+      $.extend(true, dumpOpts.attribs, parsed.attribs);
       return parsed.innerhtml
     }
-    val = this.helper(abs.value);
     if (this.isEncoded(abs)) {
-      return this.dumpEncoded.dump(val, abs)
+      return this.dumpEncoded.dump(abs)
     }
     if (abs.typeMore === 'binary') {
       return this.dumpStringBinary.dump(abs)
     }
+    if (abs.typeMore === 'filepath') {
+      return this.dumpFilepath(abs)
+    }
+    val = this.helper(abs.value);
     if (abs.strlen) {
       val += '<span class="maxlen">&hellip; ' + (abs.strlen - abs.value.length) + ' more bytes (not logged)</span>';
     }
     if (abs.prettifiedTag) {
       dumpOpts.postDump = function (val, dumpOpts) {
-        return $$1('<span />', {
+        return $('<span />', {
           class: 'value-container',
           'data-type': dumpOpts.type,
-          html: '<span class="prettified">(prettified)</span> '
+          html: '<span class="prettified">(prettified)</span> ',
         }).append(val)
       };
     }
     return val
+  };
+
+  DumpString.prototype.dumpFilepath = function (abs) {
+    // console.log('dumpFilepath', abs)
+    var $wrapped = $(
+      '<span>'
+      + (abs.docRoot ? '<span class="file-docroot">DOCUMENT_ROOT</span>' : '')
+      + (abs.pathCommon
+        ? this.dumper.dump(abs.pathCommon, {attribs: {class: ['file-path-common']}})
+        : '')
+      + (abs.pathRel
+        ? this.dumper.dump(abs.pathRel, {attribs: {class: ['file-path-rel']}})
+        : '')
+      + this.dumper.dump(abs.baseName, {attribs: {class: ['file-basename']}})
+      + '</span>'
+    );
+    $wrapped.find('.t_string').removeClass('t_string');
+    var file = $wrapped.html();
+    if (!abs.line) {
+      return file
+    }
+    var dumpOpts = this.dumper.getDumpOpts();
+    dumpOpts.addQuotes = false;
+    var line = abs.evalLine
+      ? ' (line <span class="t_int">' + abs.line + '</span>, line eval\'d <span class="t_int">' + abs.evalLine + '</span>)'
+      : ' (line <span class="t_int">' + abs.line + '</span>)';
+    return '<span class="t_string">' + file + '</span>' + line
   };
 
   DumpString.prototype.dumpAsSubstitution = function (val) {
@@ -5855,7 +5929,7 @@
     }
     // we do NOT wrap in <span>...  log('<a href="%s">link</a>', $url)
     return this.dumper.dump(val, {
-      tagName: null
+      tagName: null,
     })
   };
 
@@ -5864,13 +5938,16 @@
       ? new Uint8Array(base64.decode(val.substr(6)))
       : strDump.encodeUTF16toUTF8(val);
     var dumpOpts = this.dumper.getDumpOpts();
-    return strDump.dump(bytes, dumpOpts.sanitize)
+    val = strDump.dump(bytes, dumpOpts.sanitize);
+    if (dumpOpts.charHighlight) {
+      val = this.charHighlight.highlight(val, dumpOpts.charHighlightTrim);
+    }
     /*
     if (dumpOpts.visualWhiteSpace) {
       val = visualWhiteSpace(val)
     }
-    return val
     */
+    return val
   };
 
   DumpString.prototype.isEncoded = function (val) {
@@ -5891,7 +5968,7 @@
     var strBr = '';
     var searchReplacePairs = [
       [/\r/g, '<span class="ws_r"></span>'],
-      [/\n/g, '<span class="ws_n"></span>' + strBr + '\n']
+      [/\n/g, '<span class="ws_n"></span>' + strBr + '\n'],
     ];
     var length = searchReplacePairs.length;
     str = str.replace(/(\r\n|\r|\n)/g, function (match) {
@@ -5918,7 +5995,8 @@
     */
   ];
 
-  var Dump = function () {
+  var Dump = function (config) {
+    this.config = config; // phpDebugConsole config... so we have access to dict/translations
     this.objectDumper = new DumpObject(this);
     this.stringDumper = new DumpString(this);
     this.ABSTRACTION = '\x00debug\x00'.parseHex();
@@ -5939,37 +6017,37 @@
     dumpOpts = this.getDumpOpts();
     dumpOpts.postDump = function (dumped, opts) {
       if (opts.tagName === 'td') {
-        opts.attribs.class = 't_' + opts.type;
-        return $$1('<td />', {
+        opts.attribs.class.push('t_' + opts.type);
+        return $('<td />', {
           class: 'timestamp value-container',
           title: date,
-          html: $$1('<span />', opts.attribs).html(val)
+          html: $('<span />', opts.attribs).html(val),
         })
       }
-      return $$1('<span />', {
+      return $('<span />', {
         class: 'timestamp value-container',
         title: date,
-        html: dumped
+        html: dumped,
       })
     };
   };
 
   Dump.prototype.dump = function (val, opts) {
-    var $wrap;
-    var dumpOpts = $$1.extend({
+    var dumpOpts = $.extend(true, {
       addQuotes: true,
       attribs: {
-        class: []
+        class: [],
       },
       charHighlight: true,
+      charHighlightTrim: false,
       postDump: null, // set to function
       requestInfo: null,
       sanitize: true,
       tagName: '__default__',
       type: null,
       typeMore: null,
-      visualWhiteSpace: true
-    }, JSON.parse(JSON.stringify(opts || {})));
+      visualWhiteSpace: true,
+    }, opts || {});
     var tagName;
     var type; // = this.getType(val)
     var method; // = 'dump' + type[0].ucfirst()
@@ -5981,13 +6059,19 @@
     if (typeof dumpOpts.attribs.class === 'undefined') {
       dumpOpts.attribs.class = [];
     } else if (typeof dumpOpts.attribs.class === 'string') {
-      dumpOpts.attribs.class = [dumpOpts.attribs.class];
+      dumpOpts.attribs.class = dumpOpts.attribs.class.split(' ');
     }
     dumpOptStack.push(dumpOpts);
-    method = 'dump' + dumpOpts.type.ucfirst();
-    val = dumpOpts.typeMore === 'abstraction'
-      ? this.dumpAbstraction(val)
-      : this[method](val);
+    try {
+      method = 'dump' + dumpOpts.type.ucfirst();
+      val = dumpOpts.typeMore === 'abstraction'
+        ? this.dumpAbstraction(val)
+        : this[method](val);
+    } catch (err) {
+      console.error('Error dumping value:', err);
+      console.log('val:', JSON.parse(JSON.stringify(val)));
+      val = '<b>ERROR</b> dumping value';
+    }
     dumpOpts = dumpOptStack.pop();
     tagName = dumpOpts.tagName;
     if (tagName === '__default__') {
@@ -5998,19 +6082,13 @@
       dumpOpts.tagName = tagName;
     }
     if (tagName) {
-      dumpOpts.attribs.class.push('t_' + dumpOpts.type);
+      if (dumpOpts.type) {
+        dumpOpts.attribs.class.push('t_' + dumpOpts.type);
+      }
       if (dumpOpts.typeMore && dumpOpts.typeMore !== 'abstraction') {
         dumpOpts.attribs['data-type-more'] = dumpOpts.typeMore.replace(/\0/g, '');
       }
-      $wrap = $$1('<' + tagName + ' />')
-        .addClass(dumpOpts.attribs.class.join(' '));
-      delete dumpOpts.attribs.class;
-      $wrap.attr(dumpOpts.attribs);
-      if (typeof dumpOpts.attribs.style !== 'undefined') {
-        // .attr() doesn't apply style when single object passed
-        $wrap.attr('style', dumpOpts.attribs.style);
-      }
-      val = $wrap.html(val)[0].outerHTML;
+      val = this.createElement(tagName, dumpOpts.attribs, val)[0].outerHTML;
     }
     if (dumpOpts.postDump) {
       val = dumpOpts.postDump(val, dumpOpts);
@@ -6021,9 +6099,23 @@
     return val
   };
 
+  /**
+   * issues with (jQuery) $element.attr({})
+   * doesn't handle style (when passed as value in single object param)
+   * doesn't handle class array
+   * deleting class from attribs leads to other problems
+   */
+  Dump.prototype.createElement = function (tagName, attribs, innerHtml) {
+    var $el = $('<' + tagName + ' />')
+      .attr(attribs);
+    if (typeof innerHtml !== 'undefined') {
+      $el.html(innerHtml);
+    }
+    return $el
+  };
+
   Dump.prototype.dumpAbstraction = function (abs) {
     var dumpOpts = this.getDumpOpts();
-    var k;
     var method = 'dump' + abs.type.ucfirst();
     var simpleTypes = [
       'array',
@@ -6031,36 +6123,31 @@
       'float',
       'int',
       'null',
-      'string'
+      'string',
     ];
     var value;
-    dumpOpts.attribs = abs.attribs || {};
-    if (dumpOpts.attribs.class === undefined) {
-      dumpOpts.attribs.class = [];
-    }
-    for (k in dumpOpts) {
-      if (abs[k] !== undefined) {
-        dumpOpts[k] = abs[k];
-      }
-    }
+
+    // copy abs values to dumpOpts
+    $.extend(true, dumpOpts, abs);
+    delete dumpOpts.value;
+
     if (abs.options) {
-      $$1.extend(dumpOpts, abs.options);
+      $.extend(true, dumpOpts, abs.options);
     }
-    if (simpleTypes.indexOf(abs.type) > -1) {
-      value = abs.value;
-      if (abs.type === 'array') {
-        // remove value so not setting as dumpOpt or passing redundantly to dumpXxxx in 2nd param
-        delete abs.value;
-      }
-      for (k in abs) {
-        if (dumpOpts[k] === undefined) {
-          dumpOpts[k] = abs[k];
-        }
-      }
-      dumpOpts.typeMore = abs.typeMore; // likely null
-      return this[method](value, abs)
+    if (simpleTypes.indexOf(abs.type) < 0) {
+      // not a simpleType
+      value = this[method](abs);
+      return value
     }
-    return this[method](abs)
+
+    // simple type
+    value = abs.value;
+    if (['array'].indexOf(abs.type) > -1) {
+      // remove value so not setting as dumpOpt or passing redundantly to dumpXxxx in 2nd param
+      delete abs.value;
+    }
+    dumpOpts.typeMore = abs.typeMore; // likely null
+    return this[method](value, abs)
   };
 
   Dump.prototype.dumpArray = function (array, abs) {
@@ -6075,11 +6162,11 @@
     var absKeys = typeof abs?.keys === 'object'
       ? abs.keys
       : {};
-    var dumpOpts = $$1.extend({
+    var dumpOpts = $.extend({
       asFileTree: false,
       expand: null,
       isMaxDepth: false,
-      showListKeys: true
+      showListKeys: true,
     }, this.getDumpOpts());
     var isList = (function () {
       for (i = 0; i < length; i++) {
@@ -6090,12 +6177,6 @@
       return true
     })();
     var showKeys = dumpOpts.showListKeys || !isList;
-    /*
-    console.warn('dumpArray', {
-      array: JSON.parse(JSON.stringify(array)),
-      dumpOpts: JSON.parse(JSON.stringify(dumpOpts))
-    })
-    */
     if (dumpOpts.expand !== null) {
       dumpOpts.attribs['data-expand'] = dumpOpts.expand;
     }
@@ -6104,12 +6185,12 @@
     }
     if (dumpOpts.isMaxDepth) {
       return '<span class="t_keyword">array</span>' +
-          ' <span class="t_maxDepth">*MAX DEPTH*</span>'
+        ' <span class="t_maxDepth">*MAX DEPTH*</span>'
     }
     if (length === 0) {
       return '<span class="t_keyword">array</span>' +
-          '<span class="t_punct">(</span>\n' +
-          '<span class="t_punct">)</span>'
+        '<span class="t_punct">(</span>\n' +
+        '<span class="t_punct">)</span>'
     }
     delete array.__debug_key_order__;
     html = '<span class="t_keyword">array</span>' +
@@ -6118,7 +6199,7 @@
     for (i = 0; i < length; i++) {
       key = keys[i];
       keyShow = key;
-      if (absKeys.hasOwnProperty(key)) {
+      if (Object.hasOwn(absKeys, key)) {
         keyShow = absKeys[key];
       }
       html += this.dumpArrayValue(keyShow, array[key], showKeys);
@@ -6129,14 +6210,15 @@
   };
 
   Dump.prototype.dumpArrayValue = function (key, val, withKey) {
-    var $key = $$1('<span></span>');
+    var $key = $('<span></span>');
     if (withKey === false) {
       return this.dump(val, { tagName: 'li' })
     }
     $key
       .addClass('t_key')
       .html(this.dump(key, {
-        tagName : null
+        charHighlightTrim: true,
+        tagName: null,
       }));
     if (/^\d+$/.test(key)) {
       $key.addClass('t_int');
@@ -6181,7 +6263,8 @@
 
   Dump.prototype.dumpIdentifier = function (abs) {
     var dumpOpts = this.getDumpOpts();
-    if (dumpOpts.attribs.title === undefined && [undefined, this.UNDEFINED].indexOf(abs.backedValue) >= 0) {
+    if (dumpOpts.attribs.title === undefined && [undefined, this.UNDEFINED].indexOf(abs.backedValue) < 0) {
+      // backedValue is not undefined
       dumpOpts.attribs.title = 'value: ' + this.dump(abs.backedValue);
     }
     return this.markupIdentifier(abs.value, abs.typeMore)
@@ -6270,7 +6353,7 @@
       if (val === this.UNDEFINED) {
         return ['undefined', null]
       }
-      if ($$1.isNumeric(val)) {
+      if ($.isNumeric(val)) {
         return ['string', 'numeric']
       }
       return ['string', null]
@@ -6337,11 +6420,11 @@
         parts.className = '<span class="namespace">' + split.join('\\') + '\\</span>' +
           parts.className;
       }
-      attribs.class = 'classname';
-      parts.className = $$1('<' + tag + '/>', attribs).html(parts.className)[0].outerHTML;
+      attribs.class = ['classname'];
+      parts.className = $('<' + tag + '/>', attribs).html(parts.className)[0].outerHTML;
     } else if (parts.namespace) {
-      attribs.class = 'namespace';
-      parts.className = $$1('<' + tag + '/>', attribs).html(parts.namespace)[0].outerHTML;
+      attribs.class = ['namespace'];
+      parts.className = $('<' + tag + '/>', attribs).html(parts.namespace)[0].outerHTML;
     }
     if (parts.operator) {
       parts.operator = '<span class="t_operator">' + parts.operator.escapeHtml() + '</span>';
@@ -6356,13 +6439,13 @@
   };
 
   Dump.prototype.parseTag = function parseTag (html) {
-    var $node = $$1(html);
+    var $node = $(html);
     var parsed = {
       tag: $node[0].tagName.toLowerCase(),
       attribs: {},
-      innerhtml: $node[0].innerHTML
+      innerhtml: $node[0].innerHTML,
     };
-    $$1.each($node[0].attributes, function () {
+    $.each($node[0].attributes, function () {
       if (this.specified) {
         parsed.attribs[this.name] = this.value;
       }
@@ -6373,7 +6456,8 @@
     return parsed
   };
 
-  var dump = new Dump();
+  var config$1;
+  var dump;
   var subRegex = new RegExp('%' +
     '(?:' +
     '[coO]|' + // c: css, o: obj with max info, O: obj w generic info
@@ -6384,11 +6468,17 @@
     '(?:\\.\\d+)?' + // precision specifier
     '[difs]' +
     ')', 'g');
-  var table = new Table(dump);
+  var table;
+
+  const init$1 = function (cfg) {
+    config$1 = cfg;
+    dump = new Dump(config$1);
+    table = new Table(dump);
+  };
 
   var methods = {
     alert: function (logEntry, info) {
-      var $node = $$1('<div class="m_alert"></div>')
+      var $node = $('<div class="m_alert"></div>')
         .addClass('alert-' + (logEntry.meta.level || logEntry.meta.class))
         // .html(message)
         .attr('data-channel', logEntry.meta.channel); // using attr so can use [data-channel="xxx"] selector
@@ -6402,7 +6492,7 @@
         });
       $node.html(html);
       if (dismissible) {
-        $node.prepend('<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+        $node.prepend('<button type="button" class="close" data-dismiss="alert" aria-label="' + config$1.dict.get('word.close') + '">' +
           '<span aria-hidden="true">&times;</span>' +
           '</button>');
         $node.addClass('alert-dismissible');
@@ -6418,10 +6508,10 @@
       var attribs = {
         class: 'm_clear',
         'data-file': logEntry.meta.file,
-        'data-line': logEntry.meta.line
+        'data-line': logEntry.meta.line,
       };
       var channelFilter = function () {
-        return $$1(this).data('channel') === logEntry.meta.channel
+        return $(this).data('channel') === logEntry.meta.channel
       };
       var flags = logEntry.meta.flags;
       var i;
@@ -6454,7 +6544,7 @@
       }
       if (flags.summary) {
         $tabPane.find('.debug-log-summary > .m_groupSummary').each(function () {
-          $remove = $$1(this)
+          $remove = $(this)
             .find('*')
             .not($curTreeSummary)
             .filter(channelFilter);
@@ -6486,7 +6576,7 @@
           info.$node = $tabPane.find('.debug-log');
         }
         info.$node = $curNodeLog;
-        return $$1('<li>', attribs).html(logEntry.args[0])
+        return $('<li>', attribs).html(logEntry.args[0])
       }
     },
 
@@ -6498,8 +6588,8 @@
       $container.find('.card-header .fa-spinner').remove();
       $container.find('.debug > .fa-spinner').remove();
       if (responseCode && responseCode + '' !== '200') {
-        $container.find('.card-title .response-code').remove(); 
-        $container.find('.card-title').append(' <span class="label label-default response-code" title="Response Code">' + responseCode + '</span>');
+        $container.find('.card-title .response-code').remove();
+        $container.find('.card-title').append(' <span class="label label-default response-code" title="' + config$1.dict.get('response-code') + '">' + responseCode + '</span>');
         if (responseCode.toString().match(/^5/)) {
           $container.addClass('bg-danger');
         }
@@ -6512,7 +6602,7 @@
       var $tabPane = info.$tabPane;
       var $node = $tabPane.find('.alert.error-summary');
       if (!$node.length) {
-        $node = $$1('<div class="alert alert-error error-summary">' +
+        $node = $('<div class="alert alert-error error-summary">' +
           '<h3><i class="fa fa-lg fa-times-circle"></i> Error(s) not consoled</h3>' +
           '<ul class="list-unstyled">' +
           '</ul>' +
@@ -6533,12 +6623,12 @@
     },
 
     group: function (logEntry, info) {
-      var $group = $$1('<li>', {
-        class: 'empty expanded m_group'
+      var $group = $('<li>', {
+        class: 'empty expanded m_group',
       });
       var $groupHeader = groupHeader(logEntry, info);
-      var $groupBody = $$1('<ul>', {
-        class: 'group-body'
+      var $groupBody = $('<ul>', {
+        class: 'group-body',
       });
       var nodes = info.$tabPane.data('nodes');
       if (logEntry.meta.hideIfEmpty) {
@@ -6571,21 +6661,21 @@
       var $tabPane = info.$tabPane;
       var nodes = $tabPane.data('nodes');
       $tabPane.find('.debug-log-summary .m_groupSummary').each(function () {
-        var priorityCur = $$1(this).data('priority');
+        var priorityCur = $(this).data('priority');
         if (priorityCur === priority) {
-          $node = $$1(this);
+          $node = $(this);
           return false // break
         } else if (priority > priorityCur) {
-          $node = $$1('<li>')
+          $node = $('<li>')
             .addClass('m_groupSummary')
             .data('priority', priority)
             .html('<ul class="group-body"></ul>');
-          $$1(this).before($node);
+          $(this).before($node);
           return false // break
         }
       });
       if (!$node) {
-        $node = $$1('<li>')
+        $node = $('<li>')
           .addClass('m_groupSummary')
           .data('priority', priority)
           .html('<ul class="group-body"></ul>');
@@ -6620,7 +6710,7 @@
       } else if ($group.hasClass('ungroup')) {
         var $children = $group.find('> ul.group-body > li');
         var $groupLabel = $group.find('> .group-header > .group-label');
-        var $li = $$1('<li></li>').data($group.data());
+        var $li = $('<li></li>').data($group.data());
         if ($children.length === 0) {
           $group.replaceWith(
             $li.html($groupLabel.html())
@@ -6653,18 +6743,23 @@
       var k;
       var classDefinition;
       if (isInit) {
+        $.extend(
+          info.meta,
+          {
+            debugVersion: meta.debugVersion,
+            requestId: meta.requestId,
+          },
+          metaVals
+        );
         info.$container.data('classDefinitions', {});
-        info.$container.data('meta', $$1.extend({
-          debugVersion: meta.debugVersion,
-          requestId: meta.requestId,
-        }, metaVals));
+        info.$container.find('> .debug').data('meta', info.meta);
       }
-      if (meta.channelNameRoot) {
-        info.$container.find('.debug').data('channelNameRoot', meta.channelNameRoot);
+      if (meta.channelKeyRoot) {
+        info.$container.find('> .debug').data('channelKeyRoot', meta.channelKeyRoot);
       }
       if (typeof meta.drawer === 'boolean') {
         info.$container.data('options', {
-          drawer: meta.drawer
+          drawer: meta.drawer,
         });
       }
       if (meta.interface) {
@@ -6677,8 +6772,8 @@
         for (k in metaVals.classDefinitions) {
           classDefinition = metaVals.classDefinitions[k];
           classDefinition.implementsList = buildImplementsList(classDefinition.implements);
-          if (k.substr(0, 6) === '_b64_:') {
-            k = atob(k.substr(6));
+          if (k.substring(0, 6) === '_b64_:') {
+            k = atob(k.substring(6));
           }
           info.$container.data('classDefinitions')[k] = classDefinition;
         }
@@ -6697,13 +6792,11 @@
 
     table: function (logEntry, info) {
       var onBuildRow = [];
-      if (logEntry.method === 'trace') {
-        onBuildRow.push(tableTraceRow);
-      }
+      if (logEntry.method === 'trace') ;
       if (logEntry.meta.inclContext) {
         onBuildRow.push(tableAddContextRow);
       }
-      return $$1('<li>', { class: 'm_' + logEntry.method })
+      return $('<li>', { class: 'm_' + logEntry.method })
         .append(table.build(
           logEntry.args[0],
           logEntry.meta,
@@ -6713,21 +6806,25 @@
     },
 
     trace: function (logEntry, info) {
+      // console.warn('trace', JSON.parse(JSON.stringify(logEntry)))
+      $.extend(true, logEntry.meta.tableInfo.columns[0], {
+        attribs: { class: ['no-quotes'] },
+      });
       return this.table(logEntry, info)
     },
 
     default: function (logEntry, info) {
       var attribs = {
-        class: 'm_' + logEntry.method
+        class: 'm_' + logEntry.method,
       };
       var $container = info.$container;
       var $node;
       var method = logEntry.method;
       var meta = logEntry.meta;
-      if (meta.file && meta.channel !== info.channelNameRoot + '.phpError') {
-        attribs = $$1.extend({
+      if (meta.file && meta.channel !== info.channelKeyRoot + '.phpError') {
+        attribs = $.extend({
           'data-file': meta.file,
-          'data-line': meta.line
+          'data-line': meta.line,
         }, attribs);
       }
       /*
@@ -6767,7 +6864,7 @@
       $node.attr(attribs);
       if (meta.trace && meta.trace.length > 1) {
         $node.append(
-          $$1('<ul>', { class: 'list-unstyled no-indent' }).append(
+          $('<ul>', { class: 'list-unstyled no-indent' }).append(
             methods.trace({
               method: 'trace',
               args: [meta.trace],
@@ -6775,7 +6872,7 @@
             }, info).attr('data-detect-files', 'true')
           )
         );
-        $node.find('.m_trace').debugEnhance();
+        // $node.find('.m_trace').debugEnhance() // enhance later (via enhanceEntries.js)... after insertion into DOM
       } else if (meta.context) {
         // console.log('context', meta.context)
         $node.append(
@@ -6786,20 +6883,20 @@
         this.endOutput(logEntry, info);
       }
       return $node
-    } // end default
+    }, // end default
   };
 
   function buildContext (context, lineNumber) {
     var keys = Object.keys(context || {}); // .map(function(val){return parseInt(val)}),
     var start = Math.min.apply(null, keys);
-    return $$1('<pre>', {
+    return $('<pre>', {
       class: 'highlight line-numbers',
       'data-line': lineNumber,
       'data-start': start,
       'data-line-offset': start,
     }).append(
-      $$1('<code>', {
-        class: 'language-php'
+      $('<code>', {
+        class: 'language-php',
       }).text(Object.values(context).join(''))
     )
   }
@@ -6812,9 +6909,9 @@
     var numArgs = args.length;
     var typeInfo;
     var typeMore;
-    logEntry.meta = $$1.extend({
+    logEntry.meta = $.extend({
       sanitize: true,
-      sanitizeFirst: null
+      sanitizeFirst: null,
     }, logEntry.meta);
     if (logEntry.meta.sanitizeFirst === null) {
       logEntry.meta.sanitizeFirst = logEntry.meta.sanitize;
@@ -6829,7 +6926,7 @@
       if (args[0].match(/[=:]\s*$/)) {
         // first arg ends with '=' or ':'
         glueAfterFirst = false;
-        args[0] = $$1.trim(args[0]) + ' ';
+        args[0] = args[0].trim() + ' ';
       } else if (numArgs === 2) {
         glue = ' = ';
       }
@@ -6847,15 +6944,15 @@
           : logEntry.meta.sanitize,
         type: typeInfo[0],
         typeMore: typeInfo[1] || null,
-        visualWhiteSpace: i !== 0
+        visualWhiteSpace: i !== 0,
       });
     }
     return glueAfterFirst
-      ? $$1('<li>').html(args.join(glue))
-      : $$1('<li>').html(args[0] + ' ' + args.slice(1).join(glue))
+      ? $('<li>').html(args.join(glue))
+      : $('<li>').html(args[0] + ' ' + args.slice(1).join(glue))
   }
 
-  function buildImplementsList(obj) {
+  function buildImplementsList (obj) {
     var list = [];
     var key;
     var val;
@@ -6888,8 +6985,7 @@
     return title
   }
 
-  function containsSubstitutions(logEntry)
-  {
+  function containsSubstitutions (logEntry) {
     if (logEntry.args.length < 2 || typeof logEntry.args[0] !== 'string') {
       return false
     }
@@ -6897,16 +6993,16 @@
   }
 
   function getTab (info) {
-    var classname = 'debug-tab-' + info.channelNameTop.toLowerCase().replace(/\W+/g, '-');
+    var classname = 'debug-tab-' + info.channelKeyTop.toLowerCase().replace(/\W+/g, '-');
     return classname === 'debug-tab-general'
-      ? $$1()
+      ? $()
       : info.$container.find('.debug-menu-bar .nav-link[data-toggle=tab][data-target=".' + classname + '"]')
   }
 
   /**
    * Generates groupHeader HTML
    *
-   * @return jQuery obj
+   * @return jQuery/zest obj
    */
   function groupHeader (logEntry, requestInfo) {
     var i = 0;
@@ -6919,7 +7015,7 @@
     label = logEntry.meta.isFuncName
       ? dump.markupIdentifier(label, 'function')
       : dump.dump(label, {
-        requestInfo: requestInfo
+        requestInfo: requestInfo,
       }).replace(new RegExp('^<span class="t_string">(.+)</span>$', 's'), '$1');
     for (i = 0; i < logEntry.args.length; i++) {
       logEntry.args[i] = dump.dump(logEntry.args[i], {
@@ -6937,7 +7033,7 @@
         argStr;
       argStr = argStr.replace(/:<\/span> $/, '</span>');
     }
-    $header = $$1('<div class="group-header">' +
+    $header = $('<div class="group-header">' +
       argStr +
       '</div>');
     if (typeof logEntry.meta.boldLabel === 'undefined' || logEntry.meta.boldLabel) {
@@ -6946,37 +7042,41 @@
     return $header
   }
 
-  function markupFilePath(filePath, commonPrefix, docRoot) {
-    var fileParts = parseFilePath(filePath || '', commonPrefix, docRoot);
-    return (fileParts.docRoot ? '<span class="file-docroot">DOCUMENT_ROOT</span>' : '')
-      + (fileParts.relPathCommon ? '<span class="file-basepath">' + dump.dump(fileParts.relPathCommon, {tagName:null}) + '</span>' : '')
-      + (fileParts.relPath ? '<span class="file-relpath">' + dump.dump(fileParts.relPath, {tagName:null}) + '</span>' : '')
-      + '<span class="file-basename">' + dump.dump(fileParts.baseName, {tagName:null}) + '</span>'
+  /*
+  function markupFilePath (filePath, commonPrefix, docRoot) {
+    var fileParts = parseFilePath(filePath || '', commonPrefix, docRoot)
+    return (fileParts.docRoot ? '<span class="file-docroot">DOCUMENT_ROOT</span>' : '') +
+      (fileParts.pathCommon ? '<span class="file-path-common">' + dump.dump(fileParts.pathCommon, { tagName: null }) + '</span>' : '') +
+      (fileParts.pathRel ? '<span class="file-path-rel">' + dump.dump(fileParts.pathRel, { tagName: null }) + '</span>' : '') +
+      '<span class="file-basename">' + dump.dump(fileParts.baseName, { tagName: null }) + '</span>'
   }
+  */
 
+  /*
   function parseFilePath (filePath, commonPrefix, docRoot) {
-    var baseName = (filePath.match(/[^\/]+$/) || [''])[0];
-    var containsDocRoot = filePath.indexOf(docRoot) === 0;
-    var basePath = '';
-    var relPath = filePath.slice(0, 0 - baseName.length);
+    var baseName = (filePath.match(/[^/]+$/) || [''])[0]
+    var containsDocRoot = filePath.indexOf(docRoot) === 0
+    var pathCommon = ''
+    var pathRel = filePath.slice(0, 0 - baseName.length)
     var maxLen = Math.max.apply(null, [
       commonPrefix ? commonPrefix.length : 0,
       containsDocRoot ? docRoot.length : 0,
-    ]);
+    ])
     if (maxLen) {
-      basePath = relPath.substring(0, maxLen);
-      relPath = relPath.substring(maxLen);
+      pathCommon = pathRel.substring(0, maxLen)
+      pathRel = pathRel.substring(maxLen)
       if (containsDocRoot) {
-        basePath = basePath.substring(docRoot.length);
+        pathCommon = pathCommon.substring(docRoot.length)
       }
     }
     return {
       docRoot: containsDocRoot ? docRoot : '',
-      relPathCommon: basePath,
-      relPath: relPath,
+      pathCommon: pathCommon,
+      pathRel: relPath,
       baseName: baseName,
     }
   }
+  */
 
   /**
    * @param logEntry
@@ -6988,14 +7088,14 @@
     var argLen = args.length;
     var index = 0;
     var typeCounts = {
-      c: 0
+      c: 0,
     };
     if (containsSubstitutions(logEntry) === false) {
       return
     }
     args[0] = dump.dump(args[0], {
       sanitize: logEntry.meta.sanitizeFirst,
-      tagName: null
+      tagName: null,
     });
     args[0] = args[0].replace(subRegex, function (match) {
       var replacement = match;
@@ -7065,7 +7165,7 @@
     if (abs.methods.__toString.returnValue) {
       return abs.methods.__toString.returnValue
     }
-    return dump.markupIdentifier(val.className, 'classname')
+    return dump.markupIdentifier(abs.className, 'classname')
   }
 
   function tableAddContextRow ($tr, row, rowInfo, i) {
@@ -7081,39 +7181,38 @@
     }
     return [
       $tr,
-      $$1('<tr>', {
+      $('<tr>', {
         class: 'context',
         style: i === 0
           ? 'display:table-row;'
-          : null
+          : null,
       }).append(
-        $$1('<td>', {
-          colspan: 4
+        $('<td>', {
+          colspan: 4,
         }).append(
           [
-            buildContext(rowInfo.context, row.line),
+            buildContext(rowInfo.context, row[1]),
             Array.isArray(rowInfo.args) && rowInfo.args.length
-              ? '<hr />Arguments = ' + dump.dump(row.args)
-              : ''
+              ? '<hr />Arguments = ' + dump.dump(rowInfo.args)
+              : '',
           ]
         )
-      )
+      ),
     ]
   }
-
+  /*
   function tableTraceRow ($tr, row, rowInfo, i) {
     // var tr = $tr[0].outerHTML
-    var docRoot = rowInfo.requestInfo.$container.data('meta').DOCUMENT_ROOT || '';
-    var filePath = markupFilePath(row.file, rowInfo.commonFilePrefix, docRoot);
-    var method = row.function ? dump.markupIdentifier(row.function, 'method') : '';
+    var docRoot = rowInfo.requestInfo.$container.data('meta').DOCUMENT_ROOT || ''
+    var filePath = markupFilePath(row[0], rowInfo.commonFilePrefix, docRoot)
+    var method = row[2] ? dump.markupIdentifier(row[2], 'method') : ''
 
-    /*
     tr = tr.replace(
       '<td class="t_string">' + row.file + '</td>',
       '<td class="no-quotes t_string">'
         + (fileParts.docRoot ? '<span class="file-docroot">DOCUMENT_ROOT</span>' : '')
-        + (fileParts.relPathCommon ? '<span class="file-basepath">' + fileParts.relPathCommon + '</span>' : '')
-        + (fileParts.relPath ? '<span class="file-relpath">' + fileParts.relPath + '</span>' : '')
+        + (fileParts.pathCommon ? '<span class="file-path-common">' + fileParts.pathCommon + '</span>' : '')
+        + (fileParts.pathRel ? '<span class="file-path-rel">' + fileParts.pathRel + '</span>' : '')
         + '<span class="file-basename">' + fileParts.baseName + '</span>'
         + '</td>'
     )
@@ -7127,24 +7226,25 @@
       '<td class="t_string">' + row.function.escapeHtml() + '</td>',
       '<td class="no-quotes t_identifier t_string">' + dump.markupIdentifier(row.function, 'method') + '</td>'
     )
-    */
 
-    $tr.find('td.t_string').eq(0).html(filePath).addClass('no-quotes');
+    $tr.find('td.t_string').eq(0).html(filePath).addClass('no-quotes')
     if (filePath.indexOf('DOCUMENT_ROOT') >= 0) {
-      $tr.attr('data-file', row.file);
+      $tr.attr('data-file', row[0])
     }
-    $tr.find('td.t_string').eq(1).html(method).addClass('no-quotes t_identifier');
+    $tr.find('td.t_string').eq(1).html(method).addClass('no-quotes t_identifier')
 
     return $tr
   }
+  */
+
+  const init = function (config) {
+    init$1(config);
+  };
 
   function processEntry (logEntry) {
-    // console.log(JSON.parse(JSON.stringify(logEntry)))
+    // console.log('processEntry', JSON.parse(JSON.stringify(logEntry)))
     var meta = logEntry.meta;
     var info = getNodeInfo(meta);
-    var channelsTab = info.channels.filter(function (channelInfo) {
-      return channelInfo.name === info.channelNameTop || channelInfo.name.indexOf(info.channelNameTop + '.') === 0
-    });
     var $node;
 
     try {
@@ -7160,22 +7260,21 @@
       $node.attr('data-channel', meta.channel); // using attr so can use [data-channel="xxx"] selector
       if (meta.attribs && Object.keys(meta.attribs).length) {
         if (meta.attribs.class) {
-          $node.addClass(Array.isArray(meta.attribs.class) ? meta.attribs.class.join(' ') : meta.attribs.class);
+          // $node.addClass(Array.isArray(meta.attribs.class) ? meta.attribs.class.join(' ') : meta.attribs.class)
+          $node.addClass(meta.attribs.class);
           delete meta.attribs.class;
         }
         if (meta.attribs.id) {
-          meta.attribs.id = buildId(meta);
+          meta.attribs.id = buildId(meta, null, ['group', 'groupCollapsed'].includes(logEntry.method) ? 'group' : null);
         }
         $node.attr(meta.attribs);
       }
       if (meta.icon) {
         $node.data('icon', meta.icon);
       }
-      if (
-        channelsTab.length > 1 &&
-        info.channelName !== info.channelNameRoot + '.phpError' &&
-        !info.$container.find('.channels input[value="' + info.channelName + '"]').prop('checked')
-      ) {
+      // apply initial filter
+      //   don't hide expando errors
+      if (!isVisible(logEntry, info, $node)) {
         $node.addClass('filter-hidden');
       }
       if (meta.detectFiles) {
@@ -7193,59 +7292,83 @@
     }
   }
 
+  /**
+   * Test initial filter visibility
+   *
+   * @return bool
+   */
+  function isVisible (logEntry, info, $node) {
+    var channelsTab = [];
+    var isExpandoError = ['warn', 'error'].indexOf(logEntry.method) > -1 &&
+      logEntry.meta.uncollapse !== false;
+    if (isExpandoError) {
+      $node.parentsUntil('.debug', function () {
+        return $(this).hasClass('m_group')
+      }).removeClass('filter-hidden');
+      return true
+    }
+    channelsTab = info.channels.filter(function (channelInfo) {
+      return channelInfo.Key === info.channelKeyTop || channelInfo.key.indexOf(info.channelKeyTop + '.') === 0
+    });
+    var isHidden = channelsTab.length > 0 &&
+      info.channelKey !== info.channelKeyRoot + '.phpError' &&
+      !info.$container.find('.channels input[value="' + info.channelKey + '"]').prop('checked');
+    return !isHidden
+  }
+
   function buildLogEntryNode (logEntry, info) {
     var method = logEntry.method;
     var $node;
     var i;
     if (logEntry.meta.format === 'html') {
       if (typeof logEntry.args === 'object') {
-        $node = $$1('<li />', { class: 'm_' + method });
+        $node = $('<li />', { class: 'm_' + method });
         for (i = 0; i < logEntry.args.length; i++) {
           $node.append(logEntry.args[i]);
         }
         return $node
       }
-      $node = $$1(logEntry.args);
+      $node = $(logEntry.args);
       if (!$node.is('.m_' + method)) {
-        $node = $$1('<li />', { class: 'm_' + method }).html(logEntry.args);
+        $node = $('<li />', { class: 'm_' + method }).html(logEntry.args);
       }
       return $node
     }
-    if (methods[method]) {
-      return methods[method](logEntry, info)
-    }
-    return methods.default(logEntry, info)
+    return methods[method]
+      ? methods[method](logEntry, info)
+      : methods.default(logEntry, info)
   }
 
   function getNodeInfo (meta) {
-    var $container = $$1('#' + meta.requestId);
+    var $container = $('#request_' + meta.requestId);
     var $debug;
     var $node;
     var $tabPane;
-    var channelNameRoot = $container.find('.debug').data('channelNameRoot') || meta.channelNameRoot || 'general';
-    var channelName = meta.channel || channelNameRoot;
-    var channelSplit = channelName.split('.');
+    var channelKeyRoot = $container.find('> .debug').data('channelKeyRoot') || meta.channelKeyRoot || 'general';
+    var channelKey = meta.channel || channelKeyRoot;
+    var channelKeySplit = channelKey.split('.');
     var info = {
       $container: $container,
       $node: null,
       $tabPane: null,
-      channelName: channelName,
-      channelNameRoot: channelNameRoot,
-      channelNameTop: channelSplit.shift(), // ie channelName of tab
-      channels: []
+      channelKey: channelKey,
+      channelKeyRoot: channelKeyRoot,
+      channelKeyTop: channelKeySplit.shift(), // ie channelKey of tab
+      channelName: meta.channelName || meta.channel || channelKeyRoot,
+      channels: [],
     };
     if ($container.length) {
       $tabPane = getTabPane(info, meta);
       $node = $tabPane.data('nodes').slice(-1)[0] || $tabPane.find('> .debug-log');
       if (meta.appendGroup) {
-        $node = $tabPane.find('#' + buildId(meta, meta.appendGroup) + ' > .group-body');
+        $node = $tabPane.find('#' + buildId(meta, meta.appendGroup, 'group') + ' > .group-body');
       }
     } else {
       // create
       //   header and card are separate so we can sticky the header
-      $container = $$1('' +
-        '<div class="card mb-3 sticky working" id="' + meta.requestId + '">' +
-          '<div class="card-header" data-toggle="collapse" data-target="#' + meta.requestId + ' &gt; .collapse">' +
+      $container = $('' +
+        '<div class="card mb-3 sticky working" id="request_' + meta.requestId + '">' +
+          '<div class="card-header" data-toggle="collapse" data-target="#request_' + meta.requestId + ' &gt; .collapse">' +
             '<i class="fa fa-chevron-right"></i>' +
             '<i class="fa fa-times float-end btn-remove-session"></i>' +
             '<div class="card-header-body">' +
@@ -7256,11 +7379,11 @@
           '<div class="card-body collapse debug debug-enhanced-ui" data-theme="' + 'dark' + '">' +
             '<header class="debug-bar debug-menu-bar">' +
               '<nav role="tablist">' +
-                '<a class="active nav-link" data-target=".' + nameToClassname$1(channelNameRoot) + '" data-toggle="tab" role="tab"><i class="fa fa-list-ul"></i>Log</a>' +
+                '<a class="active nav-link" data-target=".' + keyToClassname(channelKeyRoot) + '" data-toggle="tab" role="tab"><i class="fa fa-list-ul"></i>Log</a>' +
               '</nav>' +
             '</header>' +
             '<div class="tab-panes">' +
-              '<div class="active ' + nameToClassname$1(channelNameRoot) + ' tab-pane tab-primary" role="tabpanel">' +
+              '<div class="active ' + keyToClassname(channelKeyRoot) + ' tab-pane tab-primary" role="tabpanel">' +
                 '<div class="sidebar-trigger"></div>' +
                 '<div class="tab-body">' +
                   '<ul class="debug-log-summary group-body"></ul>' +
@@ -7273,9 +7396,10 @@
           '</div>' +
         '</div>'
       );
-      $debug = $container.find('.debug');
+      $debug = $container.find('> .debug');
       $debug.data('channels', []);
-      $debug.data('channelNameRoot', channelNameRoot);
+      $debug.data('channelKeyRoot', channelKeyRoot);
+      $debug.data('meta', {});
       $debug.debugEnhance('sidebar', 'add');
       $debug.debugEnhance('sidebar', 'close');
       // $debug.find('nav').data('tabPanes', $debug.find('.tab-panes'))
@@ -7283,19 +7407,20 @@
       $tabPane = $debug.find('.tab-primary');
       $node = $tabPane.find('.debug-log');
       $tabPane.data('nodes', [
-        $node
+        $node,
       ]);
       $tabPane.data('options', {
-        sidebar: true
+        sidebar: true,
       });
-      $$1('#debug-cards').append($container);
+      $('#debug-cards').append($container);
       $container.trigger('added.debug.card');
     }
-    $$1.extend(info, {
+    $.extend(info, {
       $container: $container,
       $node: $node,
       $tabPane: $tabPane,
-      channels: $container.find('.debug').data('channels')
+      channels: $container.find('> .debug').data('channels'),
+      meta: $container.find('> .debug').data('meta'),
     });
     addChannel(info, meta);
     return info
@@ -7303,36 +7428,41 @@
 
   function addChannel (info, meta) {
     var $container = info.$container;
-    var $debug = $container.find('.debug');
+    var $debug = $container.find('> .debug');
     var $channels = $container.find('.channels');
     var channelsChecked = [];
     var channelsTab;
     var $ul;
-    if (info.channelName === info.channelNameRoot + '.phpError' || haveChannel(info.channelName, info.channels)) {
+    if (info.channelKey === info.channelKeyRoot + '.phpError' || haveChannel(info.channelKey, info.channels)) {
       return false
     }
-    /*
-    console.info('adding channel', {
-      name: info.channelName,
-      icon: meta.channelIcon,
-      show: meta.channelShow
-    })
-    */
     info.channels.push({
-      name: info.channelName,
+      key: info.channelKey,
       icon: meta.channelIcon,
-      show: meta.channelShow
+      name: info.channelName,
+      show: meta.channelShow,
     });
-    if (info.channelName !== info.channelNameRoot && info.channelName.indexOf(info.channelNameRoot + '.') !== 0) {
+    if (info.channelKey !== info.channelKeyRoot && info.channelKey.indexOf(info.channelKeyRoot + '.') !== 0) {
       // not main tab
       return true
     }
 
     /*
+    console.warn('adding channel', {
+      key: info.channelKey,
+      name: info.channelName,
+      icon: meta.channelIcon,
+      show: meta.channelShow,
+      channelKeyRoot: info.channelKeyRoot,
+      // info: info,
+    })
+    */
+
+    /*
       only interested in main tab's channels
     */
     channelsTab = info.channels.filter(function (channel) {
-      return channel.name === info.channelNameRoot || channel.name.indexOf(info.channelNameRoot + '.') === 0
+      return channel.key === info.channelKeyRoot || channel.key.indexOf(info.channelKeyRoot + '.') === 0
     });
     if (channelsTab.length < 2) {
       return true
@@ -7342,16 +7472,16 @@
     */
     if (channelsTab.length === 2) {
       // checkboxes weren't added when there was only one...
-      channelsChecked.push(channelsTab[0].name);
+      channelsChecked.push(channelsTab[0].key);
     }
     if (meta.channelShow) {
-      channelsChecked.push(info.channelName);
+      channelsChecked.push(info.channelKey);
     }
     $channels.find('input:checked').each(function () {
-      channelsChecked.push($$1(this).val());
+      channelsChecked.push($(this).val());
     });
 
-    $ul = $debug.debugEnhance('buildChannelList', channelsTab, info.channelNameRoot, channelsChecked);
+    $ul = $debug.debugEnhance('buildChannelList', channelsTab, info.channelKeyRoot, channelsChecked);
     $channels.find('> ul').replaceWith($ul);
     $channels.show();
     $debug.trigger('channelAdded.debug');
@@ -7365,8 +7495,9 @@
     var $input = $ul.find('input[value=' + logEntry.meta.errorCat + ']');
     var $label = $input.closest('label');
     var $badge = $label.find('.badge');
-    var order = ['fatal', 'warning', 'deprecated', 'notice', 'strict'];
     var count = 1;
+    var dict = $('#debug-cards').data('config').dict;
+    var order = ['fatal', 'warning', 'deprecated', 'notice', 'strict'];
     var i = 0;
     var rows = [];
     if ($input.length) {
@@ -7375,27 +7506,27 @@
       $badge.text(count);
     } else {
       $ul.append(
-        $$1('<li>'
+        $('<li>'
         ).append(
-          $$1('<label>', {
-            class: 'toggle active'
+          $('<label>', {
+            class: 'toggle active',
           }).append(
-            $$1('<input>', {
+            $('<input>', {
               type: 'checkbox',
               checked: true,
               'data-toggle': 'error',
               'data-count': 1,
-              value: logEntry.meta.errorCat
+              value: logEntry.meta.errorCat,
             })
           ).append(
-            logEntry.meta.errorCat + ' <span class="badge">' + 1 + '</span>'
+            dict.get('error.cat.' + logEntry.meta.errorCat) + ' <span class="badge">' + 1 + '</span>'
           )
         )
       );
       rows = $ul.find('> li');
       rows.sort(function (liA, liB) {
-        var liAindex = order.indexOf($$1(liA).find('input').val());
-        var liBindex = order.indexOf($$1(liB).find('input').val());
+        var liAindex = order.indexOf($(liA).find('input').val());
+        var liBindex = order.indexOf($(liB).find('input').val());
         return liAindex > liBindex ? 1 : -1
       });
       for (i = 0; i < rows.length; ++i) {
@@ -7410,8 +7541,8 @@
     var length = $navLinks.length;
     var sort = $link.data('sort');
     var text = $link.text().trim();
-    $navLinks.each(function (i, node) {
-      var $navLink = $$1(this);
+    $navLinks.each(function (node, i) {
+      var $navLink = $(this);
       var curSort = $navLink.data('sort');
       var curText = $navLink.text().trim();
       var cmp = (function () {
@@ -7425,19 +7556,19 @@
         return curText.localeCompare(text)
       })();
       if (cmp > 0) {
-        $$1(this).before($link);
+        $(this).before($link);
         return false // break
       }
       if (i + 1 === length) {
         // we're on last tab..  insert now or never
-        $$1(this).after($link);
+        $(this).after($link);
       }
     });
   }
 
   function getTabPane (info, meta) {
-    // console.log('getTabPane', info.channelNameTop, info.$container.data('channelNameRoot'))
-    var classname = nameToClassname$1(info.channelNameTop);
+    // console.log('getTabPane', info.channelKeyTop, info.$container.data('channelKeyRoot'))
+    var classname = keyToClassname(info.channelKeyTop);
     var $tabPanes = info.$container.find('> .debug > .tab-panes');
     var $tabPane = $tabPanes.find('> .' + classname);
     var $link;
@@ -7445,31 +7576,31 @@
       return $tabPane
     }
     meta.channelSort = meta.channelSort || 0;
-    $link = $$1('<a>', {
+    $link = $('<a>', {
       class: 'nav-link',
       'data-sort': meta.channelSort,
       'data-target': '.' + classname,
       'data-toggle': 'tab',
       role: 'tab',
-      html: info.channelNameTop
+      html: info.channelName,
     });
     if (meta.channelIcon) {
       $link.prepend(
         meta.channelIcon.match('<')
-          ? $$1(meta.channelIcon)
-          : $$1('<i>').addClass(meta.channelIcon)
+          ? $(meta.channelIcon)
+          : $('<i>').addClass(meta.channelIcon)
       );
     }
     addTab(info, $link);
-    $tabPane = $$1('<div>', {
+    $tabPane = $('<div>', {
       class: 'tab-pane ' + classname,
-      role: 'tabpanel'
+      role: 'tabpanel',
     })
-      .append($$1('<div>', {
+      .append($('<div>', {
         class: 'tab-body',
         html: '<ul class="debug-log-summary group-body"></ul>' +
           '<hr />' +
-          '<ul class="debug-log group-body"></ul>'
+          '<ul class="debug-log group-body"></ul>',
       }));
     $tabPane.data('nodes', [$tabPane.find('.debug-log')]);
     $tabPanes.append($tabPane);
@@ -7487,7 +7618,7 @@
     /*
       Update error filters
     */
-    if (['error', 'warn'].indexOf(method) > -1 && logEntry.meta.channel === info.channelNameRoot + '.phpError') {
+    if (['error', 'warn'].indexOf(method) > -1 && logEntry.meta.channel === info.channelKeyRoot + '.phpError') {
       addError(logEntry, info);
       return
     }
@@ -7514,66 +7645,78 @@
     }
   }
 
-  function nameToClassname$1 (name) {
-    return 'debug-tab-' + name.toLowerCase().replace(/\W+/g, '-')
+  function keyToClassname (key) {
+    return 'debug-tab-' + key.toLowerCase().replace(/\W+/g, '-')
   }
 
-  function haveChannel (channelName, channels) {
+  function haveChannel (channelKey, channels) {
     // channels.indexOf(channelName) > -1
     var i;
     var len = channels.length;
     var channel;
     for (i = 0; i < len; i++) {
       channel = channels[i];
-      if (channel.name === channelName) {
+      if (channel.key === channelKey) {
         return true
       }
     }
     return false
   }
 
-  function buildId (meta, id) {
+  function buildId (meta, id, prefix) {
     id = id || meta.attribs.id;
-    id = id.replace(/\W+/g, '-');
+
     if (id.indexOf(meta.requestId) !== 0) {
+      // ensure id is unique per request
       id = meta.requestId + '_' + id;
     }
+
+    if (prefix) {
+      id = prefix + '_' + id;
+    }
+
+    // id must begin with a letter (a-z or A-Z)
+    id = id.replace(/^[^A-Za-z]+/, '')
+      // note that ":" and "." are  allowed chars but not practical... removing
+      .replace(/[^a-zA-Z0-9_-]+/, '_')
+      .replace(/_+/, '_');
+
     return id
   }
 
-  function Xdebug(pubSub) {
-  	var self = this;
-    var $root = $$1('#debug-cards');
-  	this.pubSub = pubSub;
+  function Xdebug (pubSub) {
+    var self = this;
+    var $root = $('#debug-cards');
+    this.pubSub = pubSub;
     this.contextMsgReceived = null;
     this.contextTimer = null;
-  	$root.on('click', '.xdebug-commands .btn[data-cmd]', function () {
-  		var cmd = $$1(this).data('cmd');
-      var appId = $$1(this).closest('.card-body').find('.xdebug').data('appId');
-      $$1(this).blur();
+    $root.on('click', '.xdebug-commands .btn[data-cmd]', function () {
+      var cmd = $(this).data('cmd');
+      var appId = $(this).closest('.card-body').find('.xdebug').data('appId');
+      $(this).blur();
       self.sendCmd(appId, cmd);
-  	});
+    });
     $root.on('click', '.xdebug-menu-bar .btn[data-target]', function () {
-      var $node = $$1(this).closest('.card-body').find($$1(this).data('target'));
-      $$1(this).blur();
+      var $node = $(this).closest('.card-body').find($(this).data('target'));
+      $(this).blur();
       self.scrollIntoView($node);
     });
     $root.on('expanded.debug.array expanded.debug.object', '.max-depth', function (e) {
-      var appId = $$1(this).closest('.card-body').find('.xdebug').data('appId');
+      var appId = $(this).closest('.card-body').find('.xdebug').data('appId');
       // console.log('xdebug expanded .max-depth', this)
-      $$1(this).find('.array-inner, .object-inner').html(
+      $(this).find('.array-inner, .object-inner').html(
         '<i class="fa fa-spinner fa-pulse fa-lg"></i>'
       );
       self.sendCmd(
         appId,
         'property_get',
         {
-          n: $$1(this).data('fullname')
+          n: $(this).data('fullname'),
         }
       );
     });
     $root.on('shown.bs.collapse', '.card-body', function (e) {
-      var $menuBar = $$1(this).find('.xdebug-menu-bar');
+      var $menuBar = $(this).find('.xdebug-menu-bar');
       self.positionToolbar($menuBar);
     });
     $root.on('endOutput', '.card', function (e) {
@@ -7582,19 +7725,19 @@
   }
 
   Xdebug.prototype.sendCmd = function (appId, cmd, args, data) {
-      this.pubSub.publish(
-        'wamp',
-        'publish',
-        'bdk.debug.xdebug',
-        [appId, cmd, args, data]
-      );
+    this.pubSub.publish(
+      'wamp',
+      'publish',
+      'bdk.debug.xdebug',
+      [appId, cmd, args, data]
+    );
   };
 
-  Xdebug.prototype.positionToolbar = function($menuBar) {
+  Xdebug.prototype.positionToolbar = function ($menuBar) {
     var $card = $menuBar.closest('.card');
-    $menuBar.css('top',
+    $menuBar.style('top',
       (
-        $$1('nav.navbar').outerHeight() +
+        $('nav.navbar').outerHeight() +
         $card.find('> .card-header').outerHeight() +
         $card.find('> .card-body > .debug-menu-bar').outerHeight()
       ) + 'px'
@@ -7640,8 +7783,8 @@
         if (['property_get', 'property_value'].indexOf(meta.command) > -1) {
           $node = methods.default(logEntry, nodeInfo).find('> *'); // array = span, object = div
           // find  open .max-depth where data-fullname = meta.fullname
-          $node2 = nodeInfo.$node.find('.max-depth.expanded').filter(function (i, nodeTemp) {
-            return $$1(nodeTemp).data('fullname') === meta.fullname
+          $node2 = nodeInfo.$node.find('.max-depth.expanded').filter(function (nodeTemp) {
+            return $(nodeTemp).data('fullname') === meta.fullname
           });
           $node2.replaceWith($node);
           $node.debugEnhance().debugEnhance('expand');
@@ -7673,14 +7816,14 @@
   Xdebug.prototype.getNodeInfo = function (appId) {
     var id = 'xdebug';
     // var $container = $('#' + id)
-    var $container = $$1('#debug-cards .card.working').filter(function () {
-      var dataCard = $$1(this).data() || {};
-      var dataXdebug = $$1(this).find('.xdebug').data() || {};
+    var $container = $('#debug-cards .card.working').filter(function () {
+      var dataCard = $(this).data() || {};
+      var dataXdebug = $(this).find('.xdebug').data() || {};
       if (dataXdebug.appId === appId) {
         // xdebug appId match
         return true
       }
-      if (dataCard.meta.processId == appId) {
+      if (dataCard.meta.processId === appId) {
         // card processId match
         return true
       }
@@ -7694,7 +7837,7 @@
       Step 1: find or create primary container (card)
     */
     if ($container.length === 0) {
-      $container = $$1('' +
+      $container = $('' +
         '<div class="card mb-3 sticky" id="' + id + '">' +
           '<div class="card-header" data-toggle="collapse" data-target="#' + id + ' &gt; .collapse">' +
             '<i class="fa fa-chevron-right"></i>' +
@@ -7706,7 +7849,7 @@
           '</div>' +
           '<div class="bg-white card-body collapse debug debug-enhanced-ui">' +
             '<header class="debug-bar debug-menu-bar">' +
-          	/*
+            /*
               '<nav role="tablist">' +
                 '<a class="active nav-link" data-target=".' + nameToClassname(channelNameRoot) + '" data-toggle="tab" role="tab"><i class="fa fa-list-ul"></i>Log</a>' +
               '</nav>' +
@@ -7725,14 +7868,14 @@
           '</div>' +
         '</div>'
       );
-  	  $$1('#debug-cards').append($container);
+      $('#debug-cards').append($container);
     }
     /*
       Step 2: find or create xdebug area
     */
     $xdebug = $container.find('.xdebug');
     if ($xdebug.length === 0) {
-      $menuBar = $$1('' +
+      $menuBar = $('' +
         '<header class="debug-bar xdebug-menu-bar">' +
           '<div class="btn-toolbar" role="toolbar" aria-label="Xdebug">' +
             '<div class="btn-group xdebug-commands mr-2" role="group" aria-label="Xdebug Commands">' +
@@ -7749,7 +7892,7 @@
            '</div>' +
         '</header>'
       );
-      $xdebug = $$1('<ul class="xdebug group-body"></ul>');
+      $xdebug = $('<ul class="xdebug group-body"></ul>');
       $xdebug.data('appId', appId);
       $container.find('.debug > header').after($menuBar);
       $container.find('.tab-primary .tab-body').append($xdebug);
@@ -7759,22 +7902,22 @@
     info = {
       $container: $container,
       $node: $xdebug,
-      $toolbar: $container.find('.xdebug-menu-bar')
+      $toolbar: $container.find('.xdebug-menu-bar'),
     };
     return info
   };
 
   Xdebug.prototype.remove = function ($container) {
-    $container = $$1($container);
+    $container = $($container);
     $container.find('.xdebug-menu-bar').remove();
     $container.find('.xdebug.group-body').remove();
   };
 
   Xdebug.prototype.scrollIntoView = function (node) {
-    var toolbarBottom = $$1(node).closest('.card-body').find('.xdebug-menu-bar')[0].getBoundingClientRect().bottom;
+    var toolbarBottom = $(node).closest('.card-body').find('.xdebug-menu-bar')[0].getBoundingClientRect().bottom;
     var nodePos;
     var adjustY;
-    node = $$1(node)[0];
+    node = $(node)[0];
     nodePos = node.getBoundingClientRect();
     adjustY = nodePos.top - toolbarBottom;
     /*
@@ -7805,7 +7948,7 @@
     var prop;
     for (i = 0, length = arguments.length; i < length; i++) {
       for (prop in arguments[i]) {
-        if (Object.prototype.hasOwnProperty.call(arguments[i], prop)) {
+        if (Object.hasOwn(arguments[i], prop)) {
           extended[prop] = arguments[i][prop];
         }
       }
@@ -7912,7 +8055,7 @@
     if (haveDbVal) {
       PubSub.publish('phpDebugConsoleConfig', {
         linkFiles: this.config.linkFiles,
-        linkFilesTemplate: this.config.linkFilesTemplate
+        linkFilesTemplate: this.config.linkFilesTemplate,
       });
     }
   };
@@ -8062,7 +8205,7 @@
   function requireAutobahn_min () {
   	if (hasRequiredAutobahn_min) return autobahn_min.exports;
   	hasRequiredAutobahn_min = 1;
-  	(function (module, exports) {
+  	(function (module, exports$1) {
   		(function(z){module.exports=z();})(function(){return function(){function z(O,A,f){function e(b,d){if(!A[b]){if(!O[b]){var v="function"==typeof commonjsRequire&&commonjsRequire;if(!d&&v)return v(b,true);if(g)return g(b,true);d=Error("Cannot find module '"+b+"'");throw d.code="MODULE_NOT_FOUND",
   		d;}d=A[b]={exports:{}};O[b][0].call(d.exports,function(m){return e(O[b][1][m]||m)},d,d.exports,z,O,A,f);}return A[b].exports}for(var g="function"==typeof commonjsRequire&&commonjsRequire,a=0;a<f.length;a++)e(f[a]);return e}return z}()({1:[function(z,O,A){var f=z("crypto-js");A.sign=function(e,g){return f.HmacSHA256(g,e).toString(f.enc.Base64)};A.derive_key=function(e,g,a,b){return f.PBKDF2(e,g,{keySize:(b||32)/4,iterations:a||1E3,hasher:f.algo.SHA256}).toString(f.enc.Base64)};},{"crypto-js":68}],2:[function(z,O,A){function f(v,
   		m){m=a.htob(m.challenge);v=g.sign.detached(m,v.secretKey);return a.btoh(v)+a.btoh(m)}function e(v){return a.btoh(v.publicKey)}var g=z("tweetnacl"),a=z("../util.js"),b=z("../log.js"),d=z("../connection.js");A.load_private_key=function(v,m){var r=a.atob(localStorage.getItem(v));!r||m?(r=g.randomBytes(g.sign.seedLength),localStorage.setItem(v,a.btoa(r)),b.debug('new key seed "'+v+'" saved to local storage!')):b.debug('key seed "'+v+'" loaded from local storage!');return g.sign.keyPair.fromSeed(r)};A.delete_private_key=
@@ -8806,7 +8949,7 @@
   SocketWorker.prototype.getConnection = function () {
     var connection = new autobahn.Connection({
       url: this.config.get('url'),
-      realm: this.config.get('realm')
+      realm: this.config.get('realm'),
     });
     var self = this;
     connection.onopen = function (session, details) {
@@ -8857,7 +9000,7 @@
         // postMessage(['msg', row])
         self.pubSub.publish('wamp', 'msg', {
           topic: topic,
-          msg: msg
+          msg: msg,
         });
       } else {
         self.msgQueue.push(msg);
@@ -8871,24 +9014,27 @@
     realm: 'debug',
     fontSize: '1em',
     linkFiles: false,
-    linkFilesTemplate: 'subl://open?url=file://%file&line=%line'
+    linkFilesTemplate: 'subl://open?url=file://%file&line=%line',
   }, 'debugWampClient');
 
   initWamp();
   var xdebug = initXdebug();
 
-  $$1(function () {
+  $(function () {
     var hasConnected = false;
-    var $root = $$1('#debug-cards');
+    var $root = $('#debug-cards');
 
-    init(config);
     /*
       init on #debug-cards vs body so we can stop event propagation before bubbles to body  (ie clipboard.js)
     */
     $root.debugEnhance('init', {
       sidebar: true,
-      useLocalStorage: false
+      useLocalStorage: false,
     });
+    var debugConfig = $root.data('config');
+
+    init$2(config);
+    init(debugConfig);
 
     PubSub.subscribe('wamp', function (cmd, data) {
       var logEntry = {};
@@ -8896,14 +9042,14 @@
         logEntry = {
           method: data.msg[0],
           args: data.msg[1],
-          meta: data.msg[2]
+          meta: data.msg[2],
         };
         if (data.topic === 'bdk.debug') {
           processEntry(logEntry);
           if (logEntry.method === 'meta' && logEntry.meta.linkFilesTemplateDefault) {
             config.setDefault({
               linkFiles: true,
-              linkFilesTemplate: logEntry.meta.linkFilesTemplateDefault
+              linkFilesTemplate: logEntry.meta.linkFilesTemplateDefault,
             });
           }
         } else if (data.topic === 'bdk.debug.xdebug') {
@@ -8912,22 +9058,22 @@
         // myWorker.postMessage('getMsg') // request next msg
         PubSub.publish('wamp', 'getMsg');
       } else if (cmd === 'connectionClosed') {
-        $$1('#alert.connecting').remove();
-        if ($$1('#alert.closed').length) {
+        $('#alert.connecting').remove();
+        if ($('#alert.closed').length) {
           return
         }
-        $$1('#debug-cards').prepend(
-          '<div id="alert" class="alert alert-warning alert-dismissible closed">' +
+        $('#debug-cards').prepend(
+          '<div id="alert" class="alert alert-warning closed">' +
             'Not connected to debug server' +
-            '<button type="button" class="btn-close" data-dismiss="alert" aria-label="Close"></button>' +
+            // '<button type="button" class="btn-close" data-dismiss="alert" aria-label="' + debugConfig.dict.get('word.close') + '"></button>' +
           '</div>'
         );
         if (!config.haveSavedConfig && !hasConnected) {
-          $$1('#modal-settings').modal('show');
+          $('#modal-settings').modal('show');
         }
       } else if (cmd === 'connectionOpened') {
         hasConnected = true;
-        $$1('#alert').remove();
+        $('#alert').remove();
       }
     });
 
@@ -8952,4 +9098,4 @@
     return new Xdebug(PubSub)
   }
 
-})(window.jQuery);
+})(window.zest);

@@ -1,5 +1,3 @@
-import $ from 'jquery' // external global
-
 export function PhpDoc (valDumper) {
   this.valDumper = valDumper
 }
@@ -34,7 +32,6 @@ PhpDoc.prototype.dump = function (abs) {
 }
 
 PhpDoc.prototype.dumpTag = function (tagData) {
-  var i
   var tagName = tagData.tagName
   var value = ''
   switch (tagName) {

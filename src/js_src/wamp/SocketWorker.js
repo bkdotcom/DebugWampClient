@@ -41,7 +41,7 @@ export function SocketWorker (pubSub, config) {
 SocketWorker.prototype.getConnection = function () {
   var connection = new autobahn.Connection({
     url: this.config.get('url'),
-    realm: this.config.get('realm')
+    realm: this.config.get('realm'),
   })
   var self = this
   connection.onopen = function (session, details) {
@@ -92,7 +92,7 @@ SocketWorker.prototype.onMsgFactory = function (topic) {
       // postMessage(['msg', row])
       self.pubSub.publish('wamp', 'msg', {
         topic: topic,
-        msg: msg
+        msg: msg,
       })
     } else {
       self.msgQueue.push(msg)

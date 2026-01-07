@@ -1,4 +1,4 @@
-import $ from 'jquery' // external global
+import $ from 'zest' // external global
 import { updateCssProperty } from './Css.js'
 
 export function init (config) {
@@ -18,7 +18,7 @@ export function init (config) {
       realm: $('#realm').val(),
       fontSize: $('#font-size').val(),
       linkFiles: $('#link-files').prop('checked'),
-      linkFilesTemplate: $('#link-files-template').val()
+      linkFilesTemplate: $('#link-files-template').val(),
     })
     $(this).modal('hide')
   })

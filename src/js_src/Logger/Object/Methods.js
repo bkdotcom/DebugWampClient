@@ -1,4 +1,4 @@
-import $ from 'jquery' // external global
+import $ from 'zest' // external global
 import { sectionPrototype } from './SectionPrototype.js'
 
 export function Methods (valDumper) {
@@ -13,18 +13,15 @@ for (name in sectionPrototype) {
 
 Methods.prototype.addAttribs = function ($element, info, cfg) {
   var classes = {
+    debug: false,
     method: true,
     isDeprecated: info.isDeprecated,
     isFinal: info.isFinal,
-    isStatic: info.isStatic
+    isStatic: info.isStatic,
   }
   var self = this
-  $element.addClass(info.visibility).removeClass('debug')
-  $.each(classes, function (className, useClass) {
-    if (useClass) {
-      $element.addClass(className)
-    }
-  })
+  $element.addClass(info.visibility)
+    .toggleClass(classes)
   sectionPrototype.addAttribs($element, info, cfg)
   if (info.implements && info.implements.length) {
     $element.attr('data-implements', info.implements)
@@ -44,13 +41,13 @@ Methods.prototype.addAttribs = function ($element, info, cfg) {
 
 Methods.prototype.dump = function (abs) {
   var cfg = {
-    attributeOutput : abs.cfgFlags & this.valDumper.objectDumper.METHOD_ATTRIBUTE_OUTPUT,
-    collect : abs.cfgFlags & this.valDumper.objectDumper.METHOD_COLLECT,
-    methodDescOutput : abs.cfgFlags & this.valDumper.objectDumper.METHOD_DESC_OUTPUT,
-    output : abs.cfgFlags & this.valDumper.objectDumper.METHOD_OUTPUT,
-    paramAttributeOutput : abs.cfgFlags & this.valDumper.objectDumper.PARAM_ATTRIBUTE_OUTPUT,
-    phpDocOutput : abs.cfgFlags & this.valDumper.objectDumper.PHPDOC_OUTPUT,
-    staticVarOutput : abs.cfgFlags & this.valDumper.objectDumper.METHOD_STATIC_VAR_OUTPUT,
+    attributeOutput: abs.cfgFlags & this.valDumper.objectDumper.METHOD_ATTRIBUTE_OUTPUT,
+    collect: abs.cfgFlags & this.valDumper.objectDumper.METHOD_COLLECT,
+    methodDescOutput: abs.cfgFlags & this.valDumper.objectDumper.METHOD_DESC_OUTPUT,
+    output: abs.cfgFlags & this.valDumper.objectDumper.METHOD_OUTPUT,
+    paramAttributeOutput: abs.cfgFlags & this.valDumper.objectDumper.PARAM_ATTRIBUTE_OUTPUT,
+    phpDocOutput: abs.cfgFlags & this.valDumper.objectDumper.PHPDOC_OUTPUT,
+    staticVarOutput: abs.cfgFlags & this.valDumper.objectDumper.METHOD_STATIC_VAR_OUTPUT,
   }
   var html = ''
   if (!cfg.output) {
@@ -72,12 +69,12 @@ Methods.prototype.dumpInner = function (name, info, cfg) {
     this.dumpReturn(info, cfg) +
     this.dumpStaticVars(info, cfg) +
     (name === '__toString'
-      ? '<h3>return value</h3>' +
+      ? '<h3>' + this.valDumper.config.dict.get('object.methods.return-value') + '</h3>' +
           '<ul class="list-unstyled"><li>' +
           this.valDumper.dump(info.returnValue, {
             attribs: {
-              class : 'return-value'
-            }
+              class: 'return-value',
+            },
           }) +
           '</li></ul>'
       : ''
@@ -95,19 +92,7 @@ Methods.prototype.dumpModifiers = function (info) {
     [vis.join(' ')]: true,
     static: info.isStatic,
   }
-  /*
-  if (info.isAbstract) {
-    modifiers.push('abstract')
-  }
-  if (info.isFinal) {
-    modifiers.push('final')
-  }
-  modifiers.push(vis.join('  '))
-  if (info.isStatic) {
-    modifiers.push('static')
-  }
-  */
-  $.each(modifiers, function (modifier, isSet) {
+  $.each(modifiers, function (isSet, modifier) {
     if (isSet) {
       html += '<span class="t_modifier_' + modifier + '">' + modifier + '</span> '
     }
@@ -125,7 +110,7 @@ Methods.prototype.dumpName = function (name, info, cfg) {
       ? info.phpDoc?.desc || ''
       : '',
   ]
-  var title = titleParts.join("\n\n").trim()
+  var title = titleParts.join('\n\n').trim()
   return ' <span class="t_identifier"' +
     (cfg.phpDocOutput && title !== ''
       ? ' title="' + this.valDumper.dumpPhpDocStr(title).escapeHtml() + '"'
@@ -137,13 +122,13 @@ Methods.prototype.dumpName = function (name, info, cfg) {
 Methods.prototype.dumpParams = function (info, cfg) {
   var self = this
   var params = []
-  $.each(info.params, function (i, info) {
+  $.each(info.params, function (info) {
     var $param = $('<span />', {
-      class: 'parameter'
+      class: 'parameter',
     })
     info = $.extend({
       desc: null,
-      defaultValue: self.valDumper.UNDEFINED
+      defaultValue: self.valDumper.UNDEFINED,
     }, info)
     if (info.isPromoted) {
       $param.addClass('isPromoted')
@@ -201,7 +186,7 @@ Methods.prototype.dumpReturn = function (info, cfg) {
     this.valDumper.objectDumper.markupType(returnType, {
       title: cfg.phpDocOutput && info.return.desc !== null
         ? info.return.desc
-        : ''
+        : '',
     })
 }
 
@@ -209,17 +194,17 @@ Methods.prototype.dumpStaticVars = function (info, cfg) {
   var self = this
   var html = ''
   if (!cfg.staticVarOutput || typeof info.staticVars === 'undefined' || info.staticVars.length < 1) {
-      return ''
+    return ''
   }
-  html = '<h3>static variables</h3>'
+  html = '<h3>' + this.valDumper.config.dict.get('object.methods.static-variables') + '</h3>'
   html += '<ul class="list-unstyled">'
-  $.each(info.staticVars, function (name, value) {
+  $.each(info.staticVars, function (value, name) {
     html += '<li>' +
       self.valDumper.dump(name, {
-        addQuotes : false,
-        attribs : {
-          class : 't_identifier'
-        }
+        addQuotes: false,
+        attribs: {
+          class: 't_identifier',
+        },
       }) +
       '<span class="t_operator">=</span> ' + self.valDumper.dump(value) +
       '</li>'
@@ -233,7 +218,7 @@ Methods.prototype.getLabel = function (abs) {
     ? 'methods'
     : 'no methods'
   if (!(abs.cfgFlags & this.valDumper.objectDumper.METHOD_COLLECT)) {
-      label = 'methods <i>not collected</i>'
+    label = 'methods <i>not collected</i>'
   }
   return label
 }
