@@ -7436,16 +7436,6 @@
     if (info.channelKey === info.channelKeyRoot + '.phpError' || haveChannel(info.channelKey, info.channels)) {
       return false
     }
-    /*
-    console.warn('adding channel', {
-      key: info.channelKey,
-      name: info.channelName,
-      icon: meta.channelIcon,
-      show: meta.channelShow,
-      channelKeyRoot: info.channelKeyRoot,
-      // info: info,
-    })
-    */
     info.channels.push({
       key: info.channelKey,
       icon: meta.channelIcon,
@@ -7456,6 +7446,17 @@
       // not main tab
       return true
     }
+
+    /*
+    console.warn('adding channel', {
+      key: info.channelKey,
+      name: info.channelName,
+      icon: meta.channelIcon,
+      show: meta.channelShow,
+      channelKeyRoot: info.channelKeyRoot,
+      // info: info,
+    })
+    */
 
     /*
       only interested in main tab's channels
