@@ -29,7 +29,7 @@
     "@rollup/plugin-legacy": "^3.0.2",
     "@rollup/plugin-node-resolve": "^16.0.0",
     "@rollup/plugin-replace": "^6.0.2",
-    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-terser": "^1.0.0",
     "autobahn-browser": "^22.11.1",
     "base64-arraybuffer": "^0.1.5",
     "eslint": "^9.32.0",
