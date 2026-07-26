@@ -22,9 +22,9 @@
     "watch:scss": "npx nodemon --watch ./src/scss/ --ext scss --exec \"npm run build:css\""
   },
   "devDependencies": {
-    "@babel/core": "^7.4.0",
-    "@babel/plugin-external-helpers": "^7.2.0",
-    "@babel/preset-env": "^7.4.2",
+    "@babel/core": "^8.0.1",
+    "@babel/plugin-external-helpers": "^8.0.1",
+    "@babel/preset-env": "^8.0.2",
     "@rollup/plugin-commonjs": "^28.0.2",
     "@rollup/plugin-legacy": "^3.0.2",
     "@rollup/plugin-node-resolve": "^16.0.0",
